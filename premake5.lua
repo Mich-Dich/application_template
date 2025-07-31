@@ -43,7 +43,7 @@ group ""
 group "core"
     project "application_template"
 
-        location "%{wks.location}/gluttony"
+        location "%{wks.location}"
         kind "WindowedApp"
         language "C++"
         cppdialect "C++20"
@@ -66,9 +66,6 @@ group "core"
             "src/**.h",
             "src/**.cpp",
             "src/**.embed",
-
-            "%{vendor_path.ImGuizmo}/ImGuizmo.h",
-            "%{vendor_path.ImGuizmo}/ImGuizmo.cpp",
         }
 
         includedirs
@@ -83,9 +80,6 @@ group "core"
             "%{IncludeDir.ImGui}",
             "%{IncludeDir.ImGui}/backends/",
             "%{IncludeDir.stb_image}",
-            "%{wks.location}/vendor/bvh/",
-            "%{wks.location}/vendor/bvh/src",
-            "%{wks.location}/vendor/bvh/src/bvh",
         }
         
         links
@@ -99,10 +93,6 @@ group "core"
             "vendor/imgui/bin/" .. outputs .. "/imgui",
         }
 
-        filter "files:vendor/ImGuizmo/**.cpp"
-            defines { "IMGUI_DEFINE_MATH_OPERATORS" }
-            flags { "NoPCH" }
-        
         filter "system:linux"
             systemversion "latest"
             defines "PLATFORM_LINUX"
@@ -110,13 +100,12 @@ group "core"
             includedirs
             {
                 "/usr/include",
-                "%{IncludeDir.bvh}",
             }
             
             externalincludedirs											-- treat VMA as system headers (prevent warnings)
             {
-                "/usr/include",
-                "/usr/include/c++/13",
+                -- "/usr/include",
+                -- "/usr/include/c++/13",
                 "/usr/include/x86_64-linux-gnu/qt5", 				-- Base Qt include path
                 "/usr/include/x86_64-linux-gnu/qt5/QtCore",
                 "/usr/include/x86_64-linux-gnu/qt5/QtWidgets",
@@ -132,8 +121,6 @@ group "core"
         
             links
             {
-                "vulkan",
-                "meshoptimizer",
                 "GLEW",
                 "GL",
                 "glfw3",
@@ -152,8 +139,8 @@ group "core"
 
             postbuildcommands
             {
-                -- '{COPYDIR} "%{wks.location}/gluttony/shaders" "%{wks.location}/bin/' .. outputs .. '"',
-                -- '{COPYDIR} "%{wks.location}/gluttony/assets" "%{wks.location}/bin/' .. outputs .. '"',
+                -- '{COPYDIR} "%{wks.location}/shaders" "%{wks.location}/bin/' .. outputs .. '"',
+                -- '{COPYDIR} "%{wks.location}/assets" "%{wks.location}/bin/' .. outputs .. '"',
             }
             
         filter "configurations:Debug"

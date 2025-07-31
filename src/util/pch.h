@@ -1,11 +1,7 @@
-#ifndef UTIL_PCH_H
-#define UTIL_PCH_H
 
-#pragma once
-
-#ifndef NOMINMAX
-	#define NOMINMAX				// See github.com/skypjack/entt/wiki/Frequently-Asked-Questions#warning-c4003-the-min-the-max-and-the-macro
-#endif
+// #ifndef NOMINMAX
+// 	#define NOMINMAX				// See github.com/skypjack/entt/wiki/Frequently-Asked-Questions#warning-c4003-the-min-the-max-and-the-macro
+// #endif
 
 // ======================================================= general =======================================================
 
@@ -69,7 +65,7 @@
 // Variadic and Debugging Utilities
 #include <cstdarg>
 #include <cassert>
-#include <cstdlib>
+// #include <cstdlib>
 
 #include <regex>
 
@@ -91,21 +87,18 @@
 
 // ======================================================= platform specific  =======================================================
 
-#include "util/linux_util.h"
-#include <cxxabi.h>
-
-#ifndef PLATFORM_LINUX
+#ifdef PLATFORM_LINUX
+    #include "util/linux_util.h"
+    #include <cxxabi.h>
+#else
 	#error Unsupported OS detected (ONLY LINUX)
 #endif
 
 // ------------------------- independent files (single includes)-------------------------
 #include "util/core_config.h"
 #include "util/data_structures/data_types.h"
+#include "util/data_structures/path_manipulation.h"
 #include "util/macros.h"
 #include "util/math/math.h"
 #include "util/timing/instrumentor.h"
 #include "util/io/logger.h"
-
-// #include "util/data_structures/path_manipulation.h"
-
-#endif // UTIL_PCH_H

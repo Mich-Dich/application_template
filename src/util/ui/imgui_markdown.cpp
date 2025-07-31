@@ -6,7 +6,7 @@
 
 #include "application.h"
 #include "util/timing/instrumentor.h"
-#include "layer/imgui_layer.h"
+#include "config/imgui_config.h"
 #include "pannel_collection.h"
 
 #include "imgui_markdown.h"
@@ -21,14 +21,14 @@ namespace AT::UI {
 // USER DATA
 // ====================================================================================================================================
 
-#define FONT_ITALLIC                application::get().get_imgui_layer()->get_font("italic")
-#define FONT_BOLD                   application::get().get_imgui_layer()->get_font("bold")
-#define FONT_HEADER_0               application::get().get_imgui_layer()->get_font("header_0")
-#define FONT_HEADER_1               application::get().get_imgui_layer()->get_font("header_1")
-#define FONT_HEADER_2               application::get().get_imgui_layer()->get_font("header_2")
-#define FONT_HEADER_DEFAULT         application::get().get_imgui_layer()->get_font("header_default")
+#define FONT_ITALLIC                application::get().get_imgui_config().get_font("italic")
+#define FONT_BOLD                   application::get().get_imgui_config().get_font("bold")
+#define FONT_HEADER_0               application::get().get_imgui_config().get_font("header_0")
+#define FONT_HEADER_1               application::get().get_imgui_config().get_font("header_1")
+#define FONT_HEADER_2               application::get().get_imgui_config().get_font("header_2")
+#define FONT_HEADER_DEFAULT         application::get().get_imgui_config().get_font("header_default")
 
-#define FONT_MONOSPACE_DEFAULT      application::get().get_imgui_layer()->get_font("monospace_regular")
+#define FONT_MONOSPACE_DEFAULT      application::get().get_imgui_config().get_font("monospace_regular")
 
     const f32 INDENTATION_SPACING = 16;
     static const bool skip_empty_lines = false;

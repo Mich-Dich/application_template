@@ -7,7 +7,9 @@ import socket
 import scripts.utils as utils
 
 if platform.system() == "Linux":
+    from scripts.linux.setup_env import env_configuration                  # <= create a file and use here
     from scripts.linux.setup_premake import premake_configuration
+    import scripts.linux.IDE_setup as IDE_setup
 else:
     raise Exception("Unsupported operating system")
 
@@ -67,10 +69,71 @@ except:
     sys.exit(1)
 
 try:
+    
+    if platform.system() == "Linux":
+        if not env_configuration.validate():
+            utils.print_c("Missing required packages - setup aborted", "red")
+            sys.exit(1)
 
     utils.print_u("\nCHECK PREMAKE-5 SETUP")
     premake_installed = premake_configuration.validate()
     
+    # Initialize all submodules first
+    if not initialize_submodules():
+        utils.print_c("Submodule initialization failed - setup aborted", "red")
+        sys.exit(1)
     
+    update_submodule("vendor/glfw", "main")
+    update_submodule("vendor/imgui", "docking")
+    update_submodule("vendor/glm", "master")
+
+    # utils.print_u("\nCHECKING PYTHON SETUP")
+    # python_installed = python_requirements.validate()
+
+    # if (True == python_installed == premake_installed):
+    if (True == premake_installed):                         # DISABLE "python_installed" for now
+        if platform.system() == "Windows":
+
+            utils.print_c("Windows not supported yet", "red")
+
+        else:               # because of [Load platform dependent script] only remaining option is Linux
+
+            utils.print_u("\nCHECK WORKSPACE SETUP")
+            
+            selected_ide = IDE_setup.prompt_ide_selection()
+            premake_action = "gmake2"  # Default action
+            if selected_ide == "JetBrains Rider":
+                premake_action = "rider"
+            elif "VSCode" in selected_ide:
+                premake_action = "gmake2"
+            elif "Makefile" in selected_ide:
+                premake_action = "gmake2"
+            
+            premake_result = subprocess.run(['vendor/premake/premake5', premake_action], text=True)
+            if premake_result.returncode != 0:
+                utils.print_c(f"BUILD FAILED! the premake script encountered [{premake_result.returncode}] errors", "red")
+            else:
+                utils.print_c("BUILD SUCCESSFUL!", "green")
+
+
+            if "VSCode" in selected_ide:                                                # generate build/compile tasks
+                premake_action = "gmake2"
+                build_config = IDE_setup.prompt_build_config()
+                IDE_setup.setup_vscode_configs(os.getcwd(), build_config)
+
+            utils.print_c("\nhelpful hints", "blue")
+            print("  apply changed premake scripts:     vendor/premake/premake5 gmake2")
+            print("  cleanup all generated files:       make clean")
+            print("  compile application:               make -j             (-j for multiprocessor compilation)")
+            print("  for more help:                     vendor/premake/premake5 --help OR visit[https://premake.github.io/docs/Using-Premake/]")
+        
+    else:
+        # Print error message if any requirements failed
+        failed_requirements = []
+        if not python_installed:
+            failed_requirements.append("Python")
+        if not premake_installed:
+            failed_requirements.append("Premake5")
+
 except KeyboardInterrupt:
     utils.print_c("\nProcess interrupted by user.", "red")
