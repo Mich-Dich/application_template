@@ -8,18 +8,21 @@ from .. import utils
 
 class env_configuration:
     required_packages = [
-        "build-essential",   # GCC, make, etc.
-        "cmake",             # CMake build system
-        "libgl1-mesa-dev",   # OpenGL development files
-        "libglfw3-dev",      # GLFW development files
-        "libglew-dev",       # GLEW development files
-        "libassimp-dev",     # Assimp model loading library
-        "libxinerama-dev",   # X11 input handling
-        "libxcursor-dev",    # X11 cursor handling
-        "libxi-dev",         # X11 input extension
-        "xorg-dev",          # X11 development metapackage
-        "pkg-config",        # Library configuration tool
-        "git"                # Git version control
+        "build-essential",      # GCC, make, etc.
+        "cmake",                # CMake build system
+        "libgl1-mesa-dev",      # OpenGL development files
+        "libglfw3-dev",         # GLFW development files
+        "libglew-dev",          # GLEW development files
+        "libassimp-dev",        # Assimp model loading library
+        "libxinerama-dev",      # X11 input handling
+        "libxcursor-dev",       # X11 cursor handling
+        "libxi-dev",            # X11 input extension
+        "xorg-dev",             # X11 development metapackage
+        "pkg-config",           # Library configuration tool
+        "qtbase5-dev",          # Qt core libraries
+        "qttools5-dev",         # Qt tools
+        "qttools5-dev-tools",   # Qt development tools
+        "git"                   # Git version control
     ]
     
     @classmethod
