@@ -59,20 +59,6 @@ namespace AT::config {
         }
     }
 
-    /*
-    template<typename T>
-    void load(const file config_file, const std::string& section, const std::string& key, T& value) {
-
-        access(config_file, section, key, value, false);
-    }
-
-    template<typename T>
-    void save(const file config_file, const std::string& section, const std::string& key, T& value) {
-
-        access(config_file, section, key, value, true);
-    }
-    */
-
     // 
     bool check_for_configuration(const file target_config_file, const std::string& section, const std::string& key, std::string& value, const bool override) {
 
@@ -174,10 +160,6 @@ namespace AT::config {
     }
 
     // ----------------------------------------------- file path resolution ----------------------------------------------- 
-
-    //std::filesystem::path get_projerct_filepath_from_configtype(file type) { return util::get_executable_path() / CONFIG_DIR / (config::file_type_to_string(type) + FILE_EXTENSION_CONFIG); }
-
-    //std::filesystem::path get_editor_filepath_from_configtype(file type) { return util::get_executable_path() / CONFIG_DIR / (config::file_type_to_string(type) + FILE_EXTENSION_CONFIG); }
 
     std::filesystem::path get_filepath_from_configtype(std::filesystem::path root, file type) { return root / CONFIG_DIR / (config::file_type_to_string(type) + FILE_EXTENSION_CONFIG); }
 

@@ -90,6 +90,7 @@ namespace AT::UI {
 			std::filesystem::path Inconsolata_path = base_path / "Inconsolata" / "static";
 
 			auto io = ImGui::GetIO();
+						
 			io.FontAllowUserScaling = true;
 			m_fonts["regular"] =		io.Fonts->AddFontFromFileTTF((OpenSans_path/ "OpenSans-Regular.ttf").string().c_str(), m_font_size);
 			m_fonts["bold"] =			io.Fonts->AddFontFromFileTTF((OpenSans_path/ "OpenSans-Bold.ttf").string().c_str(), m_font_size);
@@ -127,21 +128,6 @@ namespace AT::UI {
 
 		serialize(serializer::option::save_to_file);
 	}
-
-
-	// void imgui_config::on_update(const f32 delta_time) {
-
-	// 	if (m_show_FPS_window)
-	// 		application::get().get_fps_values(m_limit_fps, m_target_fps, m_current_fps, m_work_time, m_sleep_time);
-	// }
-
-
-
-	// void imgui_config::on_imgui_render() {
-
-	// 	PROFILE_FUNCTION();
-	// 	ImGui::SetCurrentContext(m_context);
-	// }
 
 
 	ImFont* imgui_config::get_font(const std::string& name) {

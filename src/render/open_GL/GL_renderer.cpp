@@ -3,6 +3,7 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <imgui.h>
+#include <imgui_internal.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 
@@ -92,6 +93,10 @@ namespace AT::render::open_GL {
 
         IMGUI_CHECKVERSION();
         ImGuiIO& io = ImGui::GetIO();
+        
+        std::filesystem::path ini_path = config::get_filepath_from_configtype_ini(util::get_executable_path(), config::file::imgui);
+        io.IniFilename = ImStrdup(ini_path.string().c_str());
+        
 		io.BackendFlags |= ImGuiBackendFlags_PlatformHasViewports;
 		io.BackendFlags |= ImGuiBackendFlags_RendererHasViewports;
 		// Viewport enable flags (require both ImGuiBackendFlags_PlatformHasViewports + ImGuiBackendFlags_RendererHasViewports set by the respective backends)
@@ -99,6 +104,9 @@ namespace AT::render::open_GL {
 		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;		// Enable Keyboard Controls
 		io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;		// Enable Gamepad Controls
 		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
+    	// io.IniFilename = (util::get_executable_path().parent_path() / "config" / "imgui.ini").generic_string().c_str();
+
+        // util::get_executable_path();
 
         ImGui_ImplGlfw_InitForOpenGL(m_window->get_window(), true);
         ImGui_ImplOpenGL3_Init("#version 330");

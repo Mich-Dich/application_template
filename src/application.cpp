@@ -56,6 +56,8 @@ namespace AT {
 
     application::~application() {
 
+		m_imgui_config.reset();
+        
         m_renderer->resource_free();         // need to call free manually because some destructors need the applications access to the renderer (eg: image)
 		m_renderer.reset();
         m_window.reset();
