@@ -11,12 +11,8 @@ namespace AT::config {
 
     enum class file : u8 {
 		ui,
-		editor,
-		engine,
 		imgui,
-		game,
 		input,
-		launcher,
 	};
 
     enum class operation : u8 {

@@ -170,12 +170,8 @@ namespace AT::config {
 
         static const std::unordered_map<file, std::string> typeStrings{
             {file::ui, "ui" },
-            {file::editor, "editor"},
-            {file::engine, "engine"},
             {file::imgui, "imgui"},
-            {file::game, "game"},
             {file::input, "input"},
-            {file::launcher, "launcher"},
         };
 
         auto it = typeStrings.find(type);
