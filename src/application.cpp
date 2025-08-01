@@ -29,7 +29,7 @@ namespace AT {
 
     application::application(int argc, char* argv[]) {
 
-        logger::init("[$B$T:$J$E] [$B$L$X $I - $P:$G$E] $C$Z", true);
+        logger::init("[$B$T:$J$E] [$B$L$X $I - $P:$G$E] $C$Z", true, util::get_executable_path() / "logs", "application.log", true);
         logger::set_buffer_threshold(logger::severity::Warn);
         
         ASSERT(!s_instance, "", "Application already exists");
@@ -50,12 +50,13 @@ namespace AT {
     #endif
 
         // ----------- user defined system -----------
+        m_imgui_config = create_ref<UI::imgui_config>();
         m_dashboard = dashboard();
     }
 
     application::~application() {
 
-        m_renderer->resource_free();         // need to call free manualy because some destructors need the applications access to the renderer (eg: image)
+        m_renderer->resource_free();         // need to call free manually because some destructors need the applications access to the renderer (eg: image)
 		m_renderer.reset();
         m_window.reset();
         util::shutdown_qt();
@@ -79,9 +80,7 @@ namespace AT {
     
             // PROFILE_SCOPE("run")
             m_window->poll_events();				// update internal state
-            
             m_dashboard.update(m_delta_time);
-    
             m_renderer->draw_frame(m_delta_time);
             limit_fps();
         }

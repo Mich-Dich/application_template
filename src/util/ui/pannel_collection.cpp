@@ -431,7 +431,7 @@ namespace AT::UI {
 
 	void big_text(const char* text, bool wrapped) {
 
-		ImGui::PushFont(application::get().get_imgui_config().get_font("regular_big"));
+		ImGui::PushFont(application::get().get_imgui_config_ref()->get_font("regular_big"));
 
 		if (wrapped)
 			ImGui::TextWrapped("%s", text);
@@ -444,7 +444,7 @@ namespace AT::UI {
 
 	void text_bold(const char* text, bool wrapped) {
 
-		ImGui::PushFont(application::get().get_imgui_config().get_font("bold"));
+		ImGui::PushFont(application::get().get_imgui_config_ref()->get_font("bold"));
 
 		if (wrapped)
 			ImGui::TextWrapped("%s", text);
@@ -457,7 +457,7 @@ namespace AT::UI {
 
 	void text_italic(const char* text, bool wrapped) {
 
-		ImGui::PushFont(application::get().get_imgui_config().get_font("italic"));
+		ImGui::PushFont(application::get().get_imgui_config_ref()->get_font("italic"));
 
 		if (wrapped)
 			ImGui::TextWrapped("%s", text);

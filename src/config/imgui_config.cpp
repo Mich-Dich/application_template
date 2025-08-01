@@ -77,8 +77,6 @@ namespace AT::UI {
 		action_color_00_default = LERP_MAIN_COLOR_DARK(0.7f);
 		action_color_00_hover = LERP_MAIN_COLOR_DARK(0.85f);
 		action_color_00_active = LERP_MAIN_COLOR_DARK(1.f);
-
-		
 	
 		IMGUI_CHECKVERSION();
 		m_context = ImGui::CreateContext();
@@ -87,7 +85,7 @@ namespace AT::UI {
 		serialize(serializer::option::load_from_file);
 
 		{	// Load fonts
-			std::filesystem::path base_path = AT::util::get_executable_path() / std::filesystem::path("..") / "assets" / "fonts";
+			std::filesystem::path base_path = AT::util::get_executable_path() / "assets" / "fonts";
 			std::filesystem::path OpenSans_path = base_path / "Open_Sans" / "static";
 			std::filesystem::path Inconsolata_path = base_path / "Inconsolata" / "static";
 
@@ -158,7 +156,7 @@ namespace AT::UI {
 
 	void imgui_config::serialize(serializer::option option) {
 
-		AT::serializer::yaml(config::get_filepath_from_configtype(util::get_executable_path().parent_path(), config::file::ui), "theme", option)			// load general aperance settings
+		AT::serializer::yaml(config::get_filepath_from_configtype(util::get_executable_path(), config::file::ui), "theme", option)			// load general aperance settings
 			.entry(KEY_VALUE(m_font_size))
 			.entry(KEY_VALUE(m_font_size_header_0))
 			.entry(KEY_VALUE(m_font_size_header_1))
@@ -196,7 +194,7 @@ namespace AT::UI {
 	void update_UI_colors(ImVec4 new_color) {
 
 		main_color = new_color;
-		application::get().get_imgui_config().serialize(serializer::option::save_to_file);
+		application::get().get_imgui_config_ref()->serialize(serializer::option::save_to_file);
 		update_UI_theme();
 	}
 

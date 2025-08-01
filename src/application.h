@@ -3,6 +3,7 @@
 
 #include "config/imgui_config.h"
 #include "dashboard/dashboard.h"
+
 namespace AT {
 
     class window;
@@ -24,7 +25,7 @@ namespace AT {
         DEFAULT_GETTER_C(f64,											    delta_time);
         DEFAULT_GETTER(ref<AT::render::renderer>,					        renderer);
         DEFAULT_GETTER(static ref<window>,							        window);
-        DEFAULT_GETTER(UI::imgui_config,                                    imgui_config);
+        DEFAULT_GETTER_REF(ref<UI::imgui_config>,                           imgui_config);
         DEFAULT_GETTER(dashboard,                                           dashboard);
 
         FORCEINLINE static application& get()								{ return *s_instance; }
@@ -40,7 +41,7 @@ namespace AT {
 
     protected:
 
-        UI::imgui_config                    m_imgui_config;
+        ref<UI::imgui_config>               m_imgui_config;
         std::vector<event>			        m_event_queue;		// TODO: change to queue
         ref<AT::render::renderer>           m_renderer{};
 

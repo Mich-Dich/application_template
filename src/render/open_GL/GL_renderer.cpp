@@ -56,44 +56,17 @@ namespace AT::render::open_GL {
     
 
 
-
     void GL_renderer::draw_frame(float delta_time) {
             
-        // execute_pending_commands();
+        // execute_pending_commands();              // DISABLED: dont need custom shaders yet
         
-        // if (m_render_world_viewport && m_viewport_size.x > 0 && m_viewport_size.y > 0) {
-    
-        // #ifdef DEBUG
-        //     m_general_performance_metrik.next_iteration();
-        //     glBeginQuery(GL_TIME_ELAPSED, m_total_render_time);
-        // #endif
-
-        //     // glUseProgram(m_shader_program);
-        //     // glBindImageTexture(0, m_output_texture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-
-        //     // // Dispatch compute shader
-        //     // glm::uvec2 work_groups = glm::ceil(glm::vec2(m_viewport_size.x, m_viewport_size.y) / glm::vec2(8, 8));
-        //     // glDispatchCompute(work_groups.x, work_groups.y, 1);
-        //     // glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
-
-        // #ifdef DEBUG        // set performance stuff
-        //     m_general_performance_metrik.mesh_instances = component_group.size();
-        //     glEndQuery(GL_TIME_ELAPSED);
-        //     GLint available = 0;
-        //     while (!available)
-        //         glGetQueryObjectiv(m_total_render_time, GL_QUERY_RESULT_AVAILABLE, &available);
-
-        //     GLuint64 elapsed_time;
-        //     glGetQueryObjectui64v(m_total_render_time, GL_QUERY_RESULT, &elapsed_time);
-        //     m_general_performance_metrik.renderer_draw_time[m_general_performance_metrik.current_index] = elapsed_time / 1e6f;
-        //     m_general_performance_metrik.vertices = m_global_vertex_offset;
-        // #endif
-        // }
+        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
 
         if (m_imgui_initalized) {
 
             // ------ start new ImGui frame ------
-		    ImGui::SetCurrentContext(application::get().get_imgui_config().get_context());
+		    ImGui::SetCurrentContext(application::get().get_imgui_config_ref()->get_context());
             ImGui_ImplOpenGL3_NewFrame();
             ImGui_ImplGlfw_NewFrame();
             ImGui::NewFrame();
@@ -118,7 +91,6 @@ namespace AT::render::open_GL {
     void GL_renderer::imgui_init() {
 
         IMGUI_CHECKVERSION();
-        // ImGui::CreateContext();
         ImGuiIO& io = ImGui::GetIO();
 		io.BackendFlags |= ImGuiBackendFlags_PlatformHasViewports;
 		io.BackendFlags |= ImGuiBackendFlags_RendererHasViewports;
@@ -131,6 +103,7 @@ namespace AT::render::open_GL {
         ImGui_ImplGlfw_InitForOpenGL(m_window->get_window(), true);
         ImGui_ImplOpenGL3_Init("#version 330");
         ImGui::StyleColorsDark();
+        m_imgui_initalized = true;
     }
 
 
@@ -172,9 +145,10 @@ namespace AT::render::open_GL {
     // ================================================ shader ================================================
     
     void GL_renderer::execute_pending_commands() {
-        for (auto& command : m_shader_command_queue) {
+
+        for (auto& command : m_shader_command_queue)
             command();
-        }
+        
         m_shader_command_queue.clear();
     }
 

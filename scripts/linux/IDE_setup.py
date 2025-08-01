@@ -124,8 +124,8 @@ def setup_vscode_configs(project_root, build_config):
 set -e
 
 build_config="{build_config}"
-timestamp=$(date '+%Y-%m-%d--%H:%M:%S')
-stage_name="${{build_config}}_${{timestamp}}"
+timestamp=$(date '+%Y-%m-%d-%H:%M:%S')
+stage_name="application_template_${{build_config}}_${{timestamp}}"
 STAGE_DIR="{bin_dir}/${{stage_name}}"
 
 echo "------ Clearing previous artifacts (trash at: $STAGE_DIR) ------"

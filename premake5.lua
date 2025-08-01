@@ -140,7 +140,7 @@ group "core"
             postbuildcommands
             {
                 -- '{COPYDIR} "%{wks.location}/shaders" "%{wks.location}/bin/' .. outputs .. '"',
-                -- '{COPYDIR} "%{wks.location}/assets" "%{wks.location}/bin/' .. outputs .. '"',
+                '{COPYDIR} "%{wks.location}/assets" "%{wks.location}/bin/' .. outputs .. '/application_template"',
             }
             
         filter "configurations:Debug"
