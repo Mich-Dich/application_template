@@ -2,6 +2,7 @@
 #include "util/pch.h"
 
 #include <imgui.h>
+#include <implot.h>
 
 #include "util/system.h"
 #include "util/io/serializer_yaml.h"
@@ -79,7 +80,8 @@ namespace AT::UI {
 		action_color_00_active = LERP_MAIN_COLOR_DARK(1.f);
 	
 		IMGUI_CHECKVERSION();
-		m_context = ImGui::CreateContext();
+		m_context_imgui = ImGui::CreateContext();
+		m_context_implot = ImPlot::CreateContext();
 		application::get().get_renderer()->imgui_init();
 		
 		serialize(serializer::option::load_from_file);
@@ -124,7 +126,8 @@ namespace AT::UI {
 		LOG_SHUTDOWN
 				
 		application::get().get_renderer()->imgui_shutdown();
-		ImGui::DestroyContext(m_context);
+		ImGui::DestroyContext(m_context_imgui);
+		ImPlot::DestroyContext(m_context_implot);
 
 		serialize(serializer::option::save_to_file);
 	}

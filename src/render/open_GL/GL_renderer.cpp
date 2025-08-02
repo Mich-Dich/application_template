@@ -67,7 +67,7 @@ namespace AT::render::open_GL {
         if (m_imgui_initalized) {
 
             // ------ start new ImGui frame ------
-		    ImGui::SetCurrentContext(application::get().get_imgui_config_ref()->get_context());
+		    ImGui::SetCurrentContext(application::get().get_imgui_config_ref()->get_context_imgui());
             ImGui_ImplOpenGL3_NewFrame();
             ImGui_ImplGlfw_NewFrame();
             ImGui::NewFrame();

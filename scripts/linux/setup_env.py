@@ -20,8 +20,8 @@ class env_configuration:
         "xorg-dev",             # X11 development metapackage
         "pkg-config",           # Library configuration tool
         "qtbase5-dev",          # Qt core libraries
-        "qttools5-dev",         # Qt tools
-        "qttools5-dev-tools",   # Qt development tools
+        # "qttools5-dev",         # Qt tools
+        # "qttools5-dev-tools",   # Qt development tools
         "git"                   # Git version control
     ]
     

@@ -43,6 +43,9 @@ namespace AT {
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 		glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
+		#if defined(PLATFORM_APPLE)
+        	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
+    	#endif
 		glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
 #elif defined(RENDER_API_VULKAN)
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);

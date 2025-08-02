@@ -64,6 +64,7 @@ namespace AT {
 
         // main content
         ImGui::ShowDemoWindow();
+        ImPlot::ShowDemoWindow();
 
     }
 

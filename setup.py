@@ -112,8 +112,9 @@ try:
     
     # Update submodules to desired branches
     update_submodule("vendor/glfw", "main")
-    update_submodule("vendor/imgui", "docking")
     update_submodule("vendor/glm", "master")
+    update_submodule("vendor/imgui", "docking")
+    update_submodule("vendor/implot", "master")
 
     if premake_installed:
         if platform.system() == "Windows":

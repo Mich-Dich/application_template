@@ -66,6 +66,9 @@ group "core"
             "src/**.h",
             "src/**.cpp",
             "src/**.embed",
+
+            "vendor/implot/*.h",              -- directly bake implot into application
+            "vendor/implot/*.cpp",
         }
 
         includedirs
@@ -79,6 +82,7 @@ group "core"
             "%{IncludeDir.glfw}/include",
             "%{IncludeDir.ImGui}",
             "%{IncludeDir.ImGui}/backends/",
+            "%{IncludeDir.implot}",
             "%{IncludeDir.stb_image}",
         }
         

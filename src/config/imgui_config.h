@@ -1,6 +1,7 @@
 #pragma once
 
 #include <imgui.h>
+#include <implot.h>
 
 #include "util/system.h"
 #include "util/io/serializer_data.h"
@@ -55,7 +56,8 @@ namespace AT::UI {
 		imgui_config();
 		~imgui_config();
 
-		DEFAULT_GETTER(ImGuiContext*, 		context)
+		DEFAULT_GETTER(ImGuiContext*, 		context_imgui)
+		DEFAULT_GETTER(ImPlotContext*, 		context_implot)
 		DEFAULT_GETTER_SETTER_ALL(bool, 	show_FPS_window);
 
 		void serialize(AT::serializer::option option);
@@ -65,7 +67,8 @@ namespace AT::UI {
 	private:
 
 		// ------------------------- general -------------------------
-		ImGuiContext* 								m_context{};
+		ImGuiContext* 								m_context_imgui{};
+		ImPlotContext* 								m_context_implot{};
 		std::unordered_map<std::string, ImFont*> 	m_fonts{};
 
 		// ------------------------- performance display -------------------------
