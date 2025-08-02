@@ -42,6 +42,9 @@ def print_u(text):
     print(f"\033[4m{text}\033[0m")
 
 def download_file(url, filepath):
+    # Force UTF-8 encoding for stdout
+    sys.stdout = open(sys.stdout.fileno(), mode='w', encoding='utf-8', buffering=1)
+    
     path = filepath
     filepath = os.path.abspath(filepath)
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
@@ -99,6 +102,8 @@ def download_file(url, filepath):
                 if (avgKBPerSecond > 1024):
                     avgMBPerSecond = avgKBPerSecond / 1024
                     avgSpeedString = '{:.2f} MB/s'.format(avgMBPerSecond)
+                
+                # Use Unicode character safely with UTF-8
                 sys.stdout.write('\r[{}{}] {:.2f}% ({})     '.format('█' * done, '.' * (50-done), percentage, avgSpeedString))
                 sys.stdout.flush()
     sys.stdout.write('\n')
