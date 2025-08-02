@@ -1,0 +1,29 @@
+name: Linux Compatibility Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-setup:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, fedora-latest]  # Debian-based and Red Hat-based
+
+    steps:
+      # checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # (Optional) Debug OS info
+      - name: Verify OS
+        run: |
+          cat /etc/os-release
+          echo "Running on: ${{ matrix.os }}"
+
+      # testing setup script execution here later
+      # - name: Run Setup Script
+      #   run: ./setup.py
