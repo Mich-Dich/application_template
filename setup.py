@@ -5,6 +5,7 @@ import platform
 import socket
 import scripts.utils as utils
 import scripts.git_util as git_util
+IS_CI = os.getenv("CI") == "true"
 
 if platform.system() == "Linux":
     from scripts.linux.setup_env import env_configuration
@@ -21,20 +22,21 @@ else:
 
 
 def main():
-    try:
-        socket.setdefaulttimeout(3)
-        socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect(("8.8.8.8", 53))
-        utils.print_c("\nInternet connection found\n", "green")
-    except:
-        utils.print_c("\nNo Internet connection found\n", "red")
-        sys.exit(1)
+    # Skip internet check in CI
+    if not IS_CI:
+        try:
+            socket.setdefaulttimeout(3)
+            socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect(("8.8.8.8", 53))
+        except:
+            utils.print_c("\nNo Internet connection found\n", "red")
+            sys.exit(1)
 
-    # try:
-    #     if platform.system() == "Linux":
-    #         if not env_configuration.validate():
-    #             utils.print_c("Missing required packages - setup aborted", "red")
-    #             sys.exit(1)
-    #
+    try:
+        if platform.system() == "Linux":
+            if not env_configuration.validate():
+                utils.print_c("Missing required packages - setup aborted", "red")
+                sys.exit(1)
+
     #     utils.print_u("\nCHECK PREMAKE-5 SETUP")
     #     premake_installed = premake_configuration.validate()
     #   
@@ -82,9 +84,9 @@ def main():
     #    else:
     #        utils.print_c("Premake5 installation failed - setup aborted", "red")
     #        sys.exit(1)
-    #
-    # except KeyboardInterrupt:
-    #     utils.print_c("\nProcess interrupted by user.", "red")
+    
+    except KeyboardInterrupt:
+        utils.print_c("\nProcess interrupted by user.", "red")
 
 
 if __name__ == "__main__":

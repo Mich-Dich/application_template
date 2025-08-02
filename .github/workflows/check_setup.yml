@@ -12,10 +12,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # os: [ubuntu-latest, fedora-latest]              # Option 0
-        os: [ubuntu-latest, fedora-40]                  # Option 1
-        # os: [ubuntu-latest, centos-stream-9]          # Option 2
-        # os: [ubuntu-latest, rocky-linux-9]            # Option 3
+        # os: [ubuntu-latest, fedora-latest]
+        # os: [ubuntu-latest, fedora-40]
+        # os: [ubuntu-latest, centos-stream-9]
+        # os: [ubuntu-latest, rocky-linux-9]
+        os: [ubuntu-latest, archlinux]
+        # os: [ubuntu-latest, fedora-latest, archlinux]
         
     steps:
       - name: Checkout code
@@ -35,9 +37,16 @@ jobs:
         with:
           python-version: '3.x'
           
+      - name: Install system dependencies
+        # Archlinux requires explicit package installation
+        if: matrix.os == 'archlinux'
+        run: |
+          sudo pacman -Syu --noconfirm base-devel cmake git
+          
       - name: Run setup.py
         run: python setup.py
         env:
+          CI: "true"
           PYTHONPATH: ${{ github.workspace }}
 
   windows-test:
@@ -61,4 +70,5 @@ jobs:
       - name: Run setup.py
         run: python setup.py
         env:
+          CI: "true"
           PYTHONPATH: ${{ github.workspace }}
