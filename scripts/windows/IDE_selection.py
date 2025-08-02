@@ -56,7 +56,6 @@ def detect_vscode():
 
 def prompt_ide_selection():
     ides = []
-
     vs_versions = detect_visual_studio_versions()
     if vs_versions:
         ides.extend([f"Visual Studio {version}" for version in vs_versions])

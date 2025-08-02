@@ -50,6 +50,9 @@ jobs:
           CI: "true"
           PYTHONPATH: ${{ github.workspace }}
 
+      - name: Build project
+        run: gmake -j -k
+
   windows-test:
     runs-on: windows-latest
     steps:
@@ -73,3 +76,6 @@ jobs:
         env:
           CI: "true"
           PYTHONPATH: ${{ github.workspace }}
+
+      - name: Build project
+        run: msbuild build\*.sln /p:Configuration=Debug
