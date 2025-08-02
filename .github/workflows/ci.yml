@@ -11,7 +11,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, fedora-latest]              # Option 0
+        # os: [ubuntu-latest, fedora-latest]              # Option 0
         os: [ubuntu-latest, fedora-40]                  # Option 1
         # os: [ubuntu-latest, centos-stream-9]          # Option 2
         # os: [ubuntu-latest, rocky-linux-9]            # Option 3
