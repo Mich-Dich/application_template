@@ -29,9 +29,16 @@ jobs:
           uname -a
           echo "========= SHELL VERSION ========="
           echo $SHELL --version
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
           
-      - name: Basic system test
-        run: echo "Successfully ran on ${{ matrix.os }}"
+      - name: Run setup.py
+        run: python setup.py
+        env:
+          PYTHONPATH: ${{ github.workspace }}
 
   windows-test:
     runs-on: windows-latest
@@ -46,5 +53,12 @@ jobs:
           echo "========= POWERSHELL VERSION ========="
           pwsh --version
           
-      - name: Basic system test
-        run: Write-Host "Successfully ran on Windows"
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+          
+      - name: Run setup.py
+        run: python setup.py
+        env:
+          PYTHONPATH: ${{ github.workspace }}
