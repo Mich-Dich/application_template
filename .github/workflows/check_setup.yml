@@ -1,4 +1,4 @@
-name: Cross-Platform Test
+name: Cross-Platform Setup Test
 
 on:
   push:
@@ -22,15 +22,15 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+        with:
+          submodules: recursive  # Important for premake installation
+          
       - name: Show Linux version
         run: |
           echo "========= OS VERSION ========="
           cat /etc/os-release || true
           echo "========= KERNEL VERSION ========="
           uname -a
-          echo "========= SHELL VERSION ========="
-          echo $SHELL --version
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -54,13 +54,13 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+        with:
+          submodules: recursive  # Important for premake installation
+          
       - name: Show Windows version
         run: |
           echo "========= WINDOWS VERSION ========="
           systeminfo | findstr /B /C:"OS Name" /C:"OS Version"
-          echo "========= POWERSHELL VERSION ========="
-          pwsh --version
           
       - name: Set up Python
         uses: actions/setup-python@v5

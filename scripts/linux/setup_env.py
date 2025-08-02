@@ -182,8 +182,8 @@ class env_configuration:
         
         try:
             if distro_id in ["debian", "ubuntu"]:
-                subprocess.run(["sudo", "apt", "update"], check=True)
-                subprocess.run(["sudo", "apt", "install", "-y"] + packages, check=True)
+                subprocess.run(["sudo", "apt-get", "update"], check=True)
+                subprocess.run(["sudo", "apt-get", "install", "-y"] + packages, check=True)
             elif distro_id in ["fedora", "centos", "rhel"]:
                 subprocess.run(["sudo", "dnf", "install", "-y"] + packages, check=True)
             elif distro_id in ["arch", "manjaro"]:

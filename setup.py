@@ -37,9 +37,9 @@ def main():
                 utils.print_c("Missing required packages - setup aborted", "red")
                 sys.exit(1)
 
-    #     utils.print_u("\nCHECK PREMAKE-5 SETUP")
-    #     premake_installed = premake_configuration.validate()
-    #   
+        utils.print_u("\nCHECK PREMAKE-5 SETUP")
+        premake_installed = premake_configuration.validate()
+      
     #     # Initialize submodule configuration
     #     if not git_util.initialize_submodules():
     #         utils.print_c("Submodule initialization failed - setup aborted", "red")
