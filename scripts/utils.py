@@ -44,6 +44,7 @@ def print_u(text):
 
 
 def download_file(url, filepath):
+    is_ci = os.getenv("CI") == "true"
     path = filepath
     filepath = os.path.abspath(filepath)
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
@@ -101,6 +102,9 @@ def download_file(url, filepath):
                 if (avgKBPerSecond > 1024):
                     avgMBPerSecond = avgKBPerSecond / 1024
                     avgSpeedString = '{:.2f} MB/s'.format(avgMBPerSecond)
-                sys.stdout.write('\r[{}{}] {:.2f}% ({})     '.format('█' * done, '.' * (50-done), percentage, avgSpeedString))
+                if (is_ci):
+                    sys.stdout.write('\r[{}{}] {:.2f}% ({})     '.format('#' * done, '.' * (50-done), percentage, avgSpeedString))
+                else:
+                    sys.stdout.write('\r[{}{}] {:.2f}% ({})     '.format('█' * done, '.' * (50-done), percentage, avgSpeedString))
                 sys.stdout.flush()
     sys.stdout.write('\n')

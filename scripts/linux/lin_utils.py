@@ -14,6 +14,7 @@ def ensure_executable(filepath):
 
 
 def un_targz_file(filepath, deleteTarGzFile=True):
+    is_ci = os.getenv("CI") == "true"
     tarGzFilePath = os.path.abspath(filepath)  # Get full path of the file
     tarGzFileLocation = os.path.dirname(tarGzFilePath)
 
@@ -60,7 +61,10 @@ def un_targz_file(filepath, deleteTarGzFile=True):
                 avgMBPerSecond = avgKBPerSecond / 1024
                 avgSpeedString = '{:.2f} MB/s'.format(avgMBPerSecond)
 
-            sys.stdout.write('\r[{}{}] {:.2f}% ({})     '.format('█' * done, '.' * (50 - done), percentage, avgSpeedString))
+            if (is_ci):
+                sys.stdout.write('\r[{}{}] {:.2f}% ({})     '.format('#' * done, '.' * (50-done), percentage, avgSpeedString))
+            else:
+                sys.stdout.write('\r[{}{}] {:.2f}% ({})     '.format('█' * done, '.' * (50-done), percentage, avgSpeedString))
             sys.stdout.flush()
 
     sys.stdout.write('\n')
