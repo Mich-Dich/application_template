@@ -40,16 +40,16 @@ def main():
         utils.print_u("\nCHECK PREMAKE-5 SETUP")
         premake_installed = premake_configuration.validate()
       
-    #     # Initialize submodule configuration
-    #     if not git_util.initialize_submodules():
-    #         utils.print_c("Submodule initialization failed - setup aborted", "red")
-    #         sys.exit(1)
-    #
-    #    # Update submodules to desired branches
-    #    git_util.update_submodule("vendor/glfw", "main")
-    #    git_util.update_submodule("vendor/glm", "master")
-    #    git_util.update_submodule("vendor/imgui", "docking")
-    #    git_util.update_submodule("vendor/implot", "master")
+        # Initialize submodule configuration
+        if not git_util.initialize_submodules():
+            utils.print_c("Submodule initialization failed - setup aborted", "red")
+            sys.exit(1)
+    
+        # Update submodules to desired branches
+        git_util.update_submodule("vendor/glfw", "main")
+        git_util.update_submodule("vendor/glm", "master")
+        git_util.update_submodule("vendor/imgui", "docking")
+        git_util.update_submodule("vendor/implot", "master")
     #
     #    if premake_installed:
     #        if platform.system() == "Windows":
