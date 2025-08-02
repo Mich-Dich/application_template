@@ -16,8 +16,9 @@ jobs:
         # os: [ubuntu-latest, fedora-40]
         # os: [ubuntu-latest, centos-stream-9]
         # os: [ubuntu-latest, rocky-linux-9]
-        os: [ubuntu-latest, archlinux]
+        # os: [ubuntu-latest, archlinux]
         # os: [ubuntu-latest, fedora-latest, archlinux]
+        os: [ubuntu-latest]                         # arch runner make trouble => disable for now
         
     steps:
       - name: Checkout code

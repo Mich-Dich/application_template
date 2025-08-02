@@ -38,8 +38,10 @@ def print_c(text, color):
     }
     print(f"{colors.get(color, colors['reset'])}{text}{colors['reset']}")
 
+
 def print_u(text):
     print(f"\033[4m{text}\033[0m")
+
 
 def download_file(url, filepath):
     # Force UTF-8 encoding for stdout
