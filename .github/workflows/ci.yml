@@ -1,4 +1,4 @@
-name: Linux Compatibility Test
+name: Cross-Platform Test
 
 on:
   push:
@@ -7,26 +7,44 @@ on:
     branches: [main]
 
 jobs:
-  test-setup:
+  linux-test:
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         # os: [ubuntu-latest, fedora-latest]              # Option 0
         os: [ubuntu-latest, fedora-40]                  # Option 1
         # os: [ubuntu-latest, centos-stream-9]          # Option 2
         # os: [ubuntu-latest, rocky-linux-9]            # Option 3
-
+        
     steps:
-      # checkout code
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
-
-      # (Optional) Debug OS info
-      - name: Verify OS
+        
+      - name: Show Linux version
         run: |
-          cat /etc/os-release
-          echo "Running on: ${{ matrix.os }}"
+          echo "========= OS VERSION ========="
+          cat /etc/os-release || true
+          echo "========= KERNEL VERSION ========="
+          uname -a
+          echo "========= SHELL VERSION ========="
+          echo $SHELL --version
+          
+      - name: Basic system test
+        run: echo "Successfully ran on ${{ matrix.os }}"
 
-      # testing setup script execution here later
-      # - name: Run Setup Script
-      #   run: ./setup.py
+  windows-test:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Show Windows version
+        run: |
+          echo "========= WINDOWS VERSION ========="
+          systeminfo | findstr /B /C:"OS Name" /C:"OS Version"
+          echo "========= POWERSHELL VERSION ========="
+          pwsh --version
+          
+      - name: Basic system test
+        run: Write-Host "Successfully ran on Windows"
