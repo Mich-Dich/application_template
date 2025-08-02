@@ -11,7 +11,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, fedora-latest]  # Debian-based and Red Hat-based
+        container:
+          - ubuntu:latest
+          - fedora:latest
+          - centos:latest
+
+    container: ${{ matrix.container }}
 
     steps:
       # checkout code
