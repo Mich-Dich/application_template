@@ -4,6 +4,7 @@ import winreg
 from zipfile import ZipFile
 import time
 import sys
+import scripts.utils as utils
 
 
 def enable_ansi_support():
@@ -14,7 +15,7 @@ def enable_ansi_support():
         kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)
 
 
-def GetSystemEnvironmentVariable(name):
+def get_system_environment_variable(name):
     key = winreg.CreateKey(winreg.HKEY_LOCAL_MACHINE, r"System\CurrentControlSet\Control\Session Manager\Environment")
     try:
         return winreg.QueryValueEx(key, name)[0]
@@ -22,7 +23,7 @@ def GetSystemEnvironmentVariable(name):
         return None
 
 
-def GetUserEnvironmentVariable(name):
+def get_user_environment_variable(name):
     key = winreg.CreateKey(winreg.HKEY_CURRENT_USER, r"Environment")
     try:
         return winreg.QueryValueEx(key, name)[0]
@@ -30,12 +31,13 @@ def GetUserEnvironmentVariable(name):
         return None
 
 
-def UnzipFile(filepath, deleteZipFile=True):
+def unzip_file(filepath, deleteZipFile=True):
+    is_ci = os.getenv("CI") == "true"
     zipFilePath = os.path.abspath(filepath) # get full path of files
     zipFileLocation = os.path.dirname(zipFilePath)
-
     zipFileContent = dict()
     zipFileContentSize = 0
+
     with ZipFile(zipFilePath, 'r') as zipFileFolder:
         for name in zipFileFolder.namelist():
             zipFileContent[name] = zipFileFolder.getinfo(name).file_size
@@ -65,7 +67,11 @@ def UnzipFile(filepath, deleteZipFile=True):
             if (avgKBPerSecond > 1024):
                 avgMBPerSecond = avgKBPerSecond / 1024
                 avgSpeedString = '{:.2f} MB/s'.format(avgMBPerSecond)
-            sys.stdout.write('\r[{}{}] {:.2f}% ({})     '.format('█' * done, '.' * (50-done), percentage, avgSpeedString))
+            if (is_ci):
+                sys.stdout.write('\r[{}{}] {:.2f}% ({})     '.format('#' * done, '.' * (50-done), percentage, avgSpeedString))
+            else:
+                sys.stdout.write('\r[{}{}] {:.2f}% ({})     '.format('█' * done, '.' * (50-done), percentage, avgSpeedString))
+                
             sys.stdout.flush()
     sys.stdout.write('\n')
 
