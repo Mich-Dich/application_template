@@ -111,10 +111,11 @@ try:
         sys.exit(1)
     
     # Update submodules to desired branches
-    update_submodule("vendor/glfw", "main")
-    update_submodule("vendor/glm", "master")
-    update_submodule("vendor/imgui", "docking")
-    update_submodule("vendor/implot", "master")
+    # update_submodule("vendor/glfw", "main")
+    # update_submodule("vendor/glm", "master")
+    # update_submodule("vendor/imgui", "docking")
+    # update_submodule("vendor/implot", "master")
+    utils.print_c("skipping submodule updates", "red")
 
     if premake_installed:
         if platform.system() == "Windows":
@@ -142,8 +143,8 @@ try:
 
             utils.print_c("\nHelpful hints", "blue")
             print("  Apply changed premake scripts:     vendor/premake/premake5 gmake2")
-            print("  Cleanup generated files:           make clean")
-            print("  Compile application:               make -j")
+            print("  Cleanup generated files:           gmake clean")
+            print("  Compile application:               gmake -j")
             print("  More help:                         vendor/premake/premake5 --help OR https://premake.github.io/docs/Using-Premake/")
         
     else:

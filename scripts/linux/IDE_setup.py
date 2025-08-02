@@ -141,7 +141,10 @@ find . -name "Makefile" -delete
 
 echo "------ Regenerating Makefiles and rebuilding ------"
 ./vendor/premake/premake5 gmake2
-gmake -j
+
+# Convert build config to lowercase for Makefile compatibility
+make_config=$(echo "{build_config}" | tr '[:upper:]' '[:lower:]')
+gmake config=${{make_config}}_x64 -j -k
 
 echo "------ Done ------"
 """
