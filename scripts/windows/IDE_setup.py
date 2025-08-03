@@ -54,35 +54,40 @@ def detect_vscode():
     return any(os.path.exists(p) for p in paths)
 
 
-def prompt_ide_selection():
-    ides = []
+def detect_IDEs():
+    IDEs = []
     vs_versions = detect_visual_studio_versions()
     if vs_versions:
-        ides.extend([f"Visual Studio {version}" for version in vs_versions])
-
-    if detect_rider():
-        ides.append("JetBrains Rider")
+        IDEs.extend([f"Visual Studio {version}" for version in vs_versions])
 
     if detect_vscode():
-        ides.append("VSCode")
+        IDEs.append("VSCode")
 
-    if not ides:
+    if detect_rider():
+        IDEs.append("JetBrains Rider")
+
+    if not IDEs:
         print("No supported IDEs detected.")
         sys.exit(1)
+    
+    return IDEs
 
+def prompt_ide_selection():
+    
+    IDEs = detect_IDEs()
     print("Detected IDEs:")
-    for i, ide in enumerate(ides):
+    for i, ide in enumerate(IDEs):
         print(f"{i}. {ide}")
 
-    if len(ides) == 1:
+    if len(IDEs) == 1:
         print("only one IDE detected")
-        return ides[0]
+        return IDEs[0]
 
     choice = input("Select an IDE to use (enter the number): ")
     try:
         choice_index = int(choice)
-        if 0 <= choice_index < len(ides):
-            return ides[choice_index]
+        if 0 <= choice_index < len(IDEs):
+            return IDEs[choice_index]
         else:
             print("Invalid selection.")
             sys.exit(1)

@@ -55,37 +55,41 @@ def detect_vscode():
     return False
 
 
-def prompt_ide_selection():
-    ides = []
-    
-    # Detect available IDEs
-    if detect_rider():
-        ides.append("JetBrains Rider")
+def detect_IDEs():
+    IDEs = []
     
     if detect_vscode():
-        ides.append("VSCode")
-
-    # Always include Makefile option
-    ides.append("Makefile (CLion/Ninja compatible)")
+        IDEs.append("VSCode")
     
-    if not ides:
+    if detect_rider():                      # Detect available IDEs
+        IDEs.append("JetBrains Rider")
+
+    IDEs.append("Makefile (CLion/Ninja compatible)")
+    
+    if not IDEs:
         print("No supported IDEs detected.")
         sys.exit(1)
+    
+    return IDEs
+
         
+def prompt_ide_selection():
+    
+    IDEs = detect_IDEs()
     print("\nDetected IDEs:")
-    for i, ide in enumerate(ides):
+    for i, ide in enumerate(IDEs):
         print(f"{i}. {ide}")
 
-    if len(ides) == 1:
+    if len(IDEs) == 1:
         print("Only one IDE detected")
-        return ides[0]
+        return IDEs[0]
 
     while True:
         choice = input("Select an IDE to use (enter the number): ")
         try:
             choice_index = int(choice)
-            if 0 <= choice_index < len(ides):
-                return ides[choice_index]
+            if 0 <= choice_index < len(IDEs):
+                return IDEs[choice_index]
             print("Invalid selection number.")
         except ValueError:
             print("Please enter a valid number.")
