@@ -83,4 +83,4 @@ jobs:
       - name: Build project
         run: |
           dir
-          msbuild application_template.sln /p:Configuration=Debug
+          msbuild application.sln /p:Configuration=Debug
