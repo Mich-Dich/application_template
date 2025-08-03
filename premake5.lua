@@ -169,13 +169,13 @@ group "core"
                 "glew32s",  -- Static GLEW library
                 "opengl32",
                 "gdi32",
-                "user32"
+                "user32",
             }
 
             libdirs
             {
-                "%{wks.location}/vendor/glfw/lib-vc2022"  -- Path to GLFW libraries
-                "%{vendor_path.glew}/lib/Release/x64"
+                "%{wks.location}/vendor/glfw/lib-vc2022",  -- Path to GLFW libraries
+                "%{vendor_path.glew}/lib/Release/x64",
             }
 
         filter "configurations:Debug"
