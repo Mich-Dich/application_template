@@ -11,20 +11,20 @@ class env_configuration:
         "debian": {
             "base_packages": [
                 "build-essential", "cmake", "libgl1-mesa-dev", "libglfw3-dev",
-                "libglew-dev", "libassimp-dev", "libxinerama-dev", "libxcursor-dev",
+                "libglew-dev", "libxinerama-dev", "libxcursor-dev",
                 "libxi-dev", "xorg-dev", "pkg-config", "qtbase5-dev", "git"
             ]
         },
         "fedora": {
             "base_packages": [
                 "gcc", "gcc-c++", "make", "cmake", "mesa-libGL-devel", "glfw-devel",
-                "glew-devel", "assimp-devel", "libXinerama-devel", "libXcursor-devel",
+                "glew-devel", "libXinerama-devel", "libXcursor-devel",
                 "libXi-devel", "xorg-x11-server-devel", "pkgconf", "qt5-qtbase-devel", "git"
             ]
         },
         "arch": {
             "base_packages": [
-                "base-devel", "cmake", "mesa", "glfw-x11", "glew", "assimp",
+                "base-devel", "cmake", "mesa", "glfw-x11", "glew", 
                 "libxinerama", "libxcursor", "libxi", "xorg-server-devel",
                 "pkgconf", "qt5-base", "git"
             ]

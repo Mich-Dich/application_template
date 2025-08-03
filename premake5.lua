@@ -91,7 +91,6 @@ group "core"
         links
         {
             "ImGui",
-            "assimp",
         }
 
         libdirs 
