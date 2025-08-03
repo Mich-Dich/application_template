@@ -147,8 +147,8 @@ group "core"
                 '{COPYDIR} "%{wks.location}/assets" "%{wks.location}/bin/' .. outputs .. '/application_template"',
             }
 
-        filter "system:windows"
-            location "build"        -- overwrite location for windows
+        -- filter "system:windows"
+        --     location "build"        -- overwrite location for windows
 
             
         filter "configurations:Debug"
