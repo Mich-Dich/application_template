@@ -1,6 +1,11 @@
 #include "util/pch.h"
 
-#include <GL/glew.h>
+#if defined(PLATFORM_LINUX)
+    #include <GL/glew.h>
+#elif defined(PLATFORM_WINDOWS)
+    #define GLFW_EXPOSE_NATIVE_WIN32
+    #include <GLFW/glfw3native.h>
+#endif
 
 #include <GLFW/glfw3.h>
 #include <imgui.h>

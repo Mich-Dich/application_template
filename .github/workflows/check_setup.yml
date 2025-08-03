@@ -74,12 +74,18 @@ jobs:
       - name: Setup Visual Studio
         uses: microsoft/setup-msbuild@v1
 
-      - name: Install GLEW
+      - name: Install GLFW and GLEW
         run: |
+          # Download and extract GLFW
+          curl -L -o glfw.zip https://github.com/glfw/glfw/releases/download/3.3.8/glfw-3.3.8.bin.WIN64.zip
+          7z x glfw.zip -o"vendor/glfw"
+          move vendor\glfw\glfw-3.3.8.bin.WIN64\* vendor\glfw\
+          
+          # Download and extract GLEW
           curl -L -o glew.zip https://sourceforge.net/projects/glew/files/glew/2.1.0/glew-2.1.0-win32.zip/download
-          7z x glew.zip -o"vendor/glew"
-          move vendor\glew\glew-2.1.0\* vendor\glew\
-
+          7z x glew.zip -o"vendor"
+          move vendor\glew-2.1.0 vendor\glew
+          
       - name: Run setup.py
         run: python setup.py
         env:

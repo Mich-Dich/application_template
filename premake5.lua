@@ -159,17 +159,22 @@ group "core"
             defines
             {
                 "PLATFORM_WINDOWS",
-                "WIN32_LEAN_AND_MEAN"
+                "WIN32_LEAN_AND_MEAN",
+                "GLEW_STATIC",
             }
 
             links
             {
-                "glew32.lib",
+                "glfw3",
+                "glew32s",  -- Static GLEW library
+                "opengl32",
+                "gdi32",
+                "user32"
             }
 
             libdirs
             {
-                "%{vendor_path.glew}/lib/Release/x64",
+                "%{wks.location}/vendor/glfw/lib-vc2022"  -- Path to GLFW libraries
             }
 
         filter "configurations:Debug"
