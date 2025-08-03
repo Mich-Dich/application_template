@@ -165,7 +165,6 @@ group "core"
 
             links
             {
-                "glfw3",
                 "glew32s",  -- Static GLEW library
                 "opengl32",
                 "gdi32",

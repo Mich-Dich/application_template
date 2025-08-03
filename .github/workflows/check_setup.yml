@@ -74,7 +74,7 @@ jobs:
       - name: Setup Visual Studio
         uses: microsoft/setup-msbuild@v1
 
-      - name: Install GLFW and GLEW
+      - name: Install GLEW
         run: |
           # Download and extract GLEW
           curl -L -o glew.zip https://sourceforge.net/projects/glew/files/glew/2.1.0/glew-2.1.0-win32.zip/download
