@@ -4,7 +4,6 @@ import scripts.utils as utils
 
 def initialize_submodules():
     """Initialize and update all submodules with SSH/HTTPS fallback"""
-    utils.print_u("\nINITIALIZING SUBMODULES")
     
     # Check if we're in CI environment
     is_ci = os.getenv("CI") == "true"
