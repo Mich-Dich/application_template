@@ -52,7 +52,7 @@ group "core"
         targetdir ("%{wks.location}/bin/" .. outputs  .. "/%{prj.name}")
         objdir ("%{wks.location}/bin-int/" .. outputs  .. "/%{prj.name}")
         
-        pchheader "src/util/pch.h"
+        pchheader "util/pch.h"
         pchsource "src/util/pch.cpp"
 
         defines
@@ -153,6 +153,8 @@ group "core"
             systemversion "latest"
             defines "PLATFORM_WINDOWS"
 
+            pchheader "pch.h"
+            pchsource "src/util/pch.cpp"
             
         filter "configurations:Debug"
             defines "DEBUG"
