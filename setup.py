@@ -55,99 +55,68 @@ def main():
         git_util.update_submodule("vendor/implot", "master")
 
         # setup IDE
-        utils.print_u("\nCHECK IDE SETUP")
-        if platform.system() == "Linux":
-            
-            # select first detected IDE in CI
-            if IS_CI:
-                IDEs = IDE_setup.detect_IDEs()
-                selected_ide = IDEs[0]
-                print(f"Selected IDE: {selected_ide}")
-                
-                premake_action = "gmake2"
-                if selected_ide == "JetBrains Rider":
-                    premake_action = "rider"
-                elif "VSCode" in selected_ide:
-                    premake_action = "gmake2"
-                elif "Makefile" in selected_ide:
-                    premake_action = "gmake2"
-                
-                if "VSCode" in selected_ide:
-                    build_config = "Debug"
-                    IDE_setup.setup_vscode_configs(os.getcwd(), build_config)
+        utils.print_u("\nSETUP IDE")
 
+        if IS_CI:                                       # select first detected IDE in CI
+            IDEs = IDE_setup.detect_IDEs()
+            selected_ide = IDEs[0]
+            print(f"Selected IDE: {selected_ide}")
+        else:
+            selected_ide = IDE_setup.prompt_ide_selection()
+
+        # VSCode spcific setup
+        if "VSCode" in selected_ide:
+            if IS_CI:
+                build_config = "Debug"
             else:
-                selected_ide = IDE_setup.prompt_ide_selection()
+                build_config = IDE_setup.prompt_build_config()
+            IDE_setup.setup_vscode_configs(os.getcwd(), build_config)
+        
+
+        if platform.system() == "Linux":                # ---- LINUX VERSION ----
+            # prepare premake command
+            premake_action = "gmake2"  # Default to VSCode
+            if selected_ide == "JetBrains Rider":
+                premake_action = "rider"
+            elif "VSCode" in selected_ide:
                 premake_action = "gmake2"
-                if selected_ide == "JetBrains Rider":
-                    premake_action = "rider"
-                elif "VSCode" in selected_ide:
-                    premake_action = "gmake2"
-                elif "Makefile" in selected_ide:
-                    premake_action = "gmake2"
-                
-                if "VSCode" in selected_ide:
-                    build_config = IDE_setup.prompt_build_config()
-                    IDE_setup.setup_vscode_configs(os.getcwd(), build_config)
+            elif "Makefile" in selected_ide:
+                premake_action = "gmake2"
 
             premake_result = subprocess.run(['vendor/premake/premake5', premake_action], text=True)
-            if premake_result.returncode != 0:
-                utils.print_c(f"BUILD FAILED! Premake script encountered errors [{premake_result.returncode}]", "red")
-            else:
-                utils.print_c("BUILD SUCCESSFUL!", "green")
 
+        else:                                           # ---- WINDOWS VERSION ----
+            # prepare premake command
+            premake_action = "vs2022"  # Default to VS2022
+            if selected_ide == "VSCode":
+                premake_action = "gmake2"  # For MinGW-based builds
+            elif "Visual Studio" in selected_ide:       # Map IDE selection to premake action
+                if "2022" in selected_ide:
+                    premake_action = "vs2022"
+                elif "2019" in selected_ide:
+                    premake_action = "vs2019"
+                elif "2017" in selected_ide:
+                    premake_action = "vs2017"
+            elif selected_ide == "JetBrains Rider":
+                premake_action = "rider"
+            
+            premake_result = subprocess.run(['vendor/premake/premake5.exe', premake_action], text=True)
+
+        if premake_result.returncode != 0:
+            utils.print_c(f"BUILD FAILED! Premake script encountered errors [{premake_result.returncode}]", "red")
+        else:
+            utils.print_c("BUILD SUCCESSFUL!", "green")
+
+
+        # print helpful hints
+        if platform.system() == "Linux":                # ---- LINUX VERSION ----
             utils.print_c("\nHelpful hints", "blue")
             print("  Apply changed premake scripts:     vendor/premake/premake5 gmake2")
             print("  Cleanup generated files:           gmake clean")
             print("  Compile application:               gmake -j")
             print("  More help:                         vendor/premake/premake5 --help OR https://premake.github.io/docs/Using-Premake/")
 
-        else:       # ---- WINDOWS VERSION ----
-            if IS_CI:
-                # Auto-select Visual Studio in CI
-                IDEs = IDE_setup.detect_IDEs()
-                selected_ide = IDEs[0]
-                print(f"Selected IDE: {selected_ide}")
-
-                if selected_ide == "VSCode":
-                    premake_action = "gmake2"  # For MinGW-based builds
-
-                elif "Visual Studio" in selected_ide:       # Map IDE selection to premake action
-                    if "2022" in selected_ide:
-                        premake_action = "vs2022"
-                    elif "2019" in selected_ide:
-                        premake_action = "vs2019"
-                    elif "2017" in selected_ide:
-                        premake_action = "vs2017"
-
-                elif selected_ide == "JetBrains Rider":
-                    premake_action = "rider"
-
-            else:
-                selected_ide = IDE_setup.prompt_ide_selection()
-                premake_action = "vs2022"  # Default to VS2022
-                
-                # Map IDE selection to premake action
-                if "Visual Studio" in selected_ide:
-                    if "2022" in selected_ide:
-                        premake_action = "vs2022"
-                    elif "2019" in selected_ide:
-                        premake_action = "vs2019"
-                    elif "2017" in selected_ide:
-                        premake_action = "vs2017"
-                elif selected_ide == "JetBrains Rider":
-                    premake_action = "rider"
-                elif selected_ide == "VSCode":
-                    premake_action = "gmake2"  # For MinGW-based builds
-            
-            # Run premake
-            premake_result = subprocess.run(['vendor/premake/premake5', premake_action], text=True)
-            if premake_result.returncode != 0:
-                utils.print_c(f"BUILD FAILED! Premake script encountered errors [{premake_result.returncode}]", "red")
-                sys.exit(1)
-            else:
-                utils.print_c("BUILD SUCCESSFUL!", "green")
-            
+        else:                                           # ---- WINDOWS VERSION ----
             # Print helpful hints
             utils.print_c("\nHelpful hints for Windows", "blue")
             if "Visual Studio" in selected_ide or "Rider" in selected_ide:
@@ -159,7 +128,7 @@ def main():
                 print("  Clean solution:                   gmake clean")
                 print("  Build solution:                   gmake -j")
             print("  More help:                        vendor/premake/premake5 --help")
-            
+
 
     except KeyboardInterrupt:
         utils.print_c("\nProcess interrupted by user.", "red")
