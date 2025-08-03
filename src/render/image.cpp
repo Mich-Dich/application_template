@@ -3,8 +3,6 @@
 
 // Include Windows headers first for Windows platform
 #if defined(PLATFORM_WINDOWS)
-    #define NOMINMAX
-    #define WIN32_LEAN_AND_MEAN
     #include <Windows.h>
 #endif
 

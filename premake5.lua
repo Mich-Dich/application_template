@@ -59,6 +59,7 @@ group "core"
         {
             "_CRT_SECURE_NO_WARNINGS",
             "GLFW_INCLUDE_NONE",
+            "NOMINMAX",
         }
 
         files
@@ -159,7 +160,6 @@ group "core"
             {
                 "PLATFORM_WINDOWS",
                 "WIN32_LEAN_AND_MEAN",
-                "NOMINMAX",
                 "GLEW_STATIC",
             }
 
