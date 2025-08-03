@@ -87,9 +87,11 @@
 
 // ======================================================= platform specific  =======================================================
 
-#ifdef PLATFORM_LINUX
+#if defined(PLATFORM_LINUX)
     #include "util/linux_util.h"
     #include <cxxabi.h>
+#elif defined(PLATFORM_WINDOWS)
+    #include "util/windows_util.h"
 #else
 	#error Unsupported OS detected (ONLY LINUX)
 #endif
