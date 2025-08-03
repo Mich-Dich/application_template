@@ -80,8 +80,7 @@ jobs:
           CI: "true"
           PYTHONPATH: ${{ github.workspace }}
 
-      # - name: Generate solution
-      #   run: vendor/premake/premake5 vs2022
-
       - name: Build project
-        run: msbuild application_template.sln /p:Configuration=Debug
+        run: |
+          dir /s /a
+          msbuild application_template.sln /p:Configuration=Debug
