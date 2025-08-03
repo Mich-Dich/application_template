@@ -1,16 +1,15 @@
 #include "util/pch.h"
 
-#if defined(RENDER_API_OPENGL)
-    #if defined(PLATFORM_LINUX)
-        #include <GL/glew.h>
-    #elif defined(PLATFORM_WINDOWS)
-        #define GLFW_EXPOSE_NATIVE_WIN32
-        #include <GLFW/glfw3native.h>
-    #endif
-#elif defined(RENDER_API_VULKAN)
+#if defined(RENDER_API_VULKAN)
     #include "application.h"
     #include "engine/render/vulkan/vk_types.h"
     #include "engine/render/vulkan/vk_renderer.h"
+#elif defined(RENDER_API_OPENGL)
+    #if defined(PLATFORM_LINUX)
+        #include <GL/glew.h>
+    #elif defined(PLATFORM_WINDOWS)
+        #include <GL/glew.h>
+    #endif
 #endif
 
 #include <glm/glm.hpp>

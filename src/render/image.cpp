@@ -1,6 +1,13 @@
 #include "util/pch.h"
 #include <imgui.h>
 
+// Include Windows headers first for Windows platform
+#if defined(PLATFORM_WINDOWS)
+    #define NOMINMAX
+    #define WIN32_LEAN_AND_MEAN
+    #include <Windows.h>
+#endif
+
 #if defined(RENDER_API_VULKAN)
 	#include "application.h"
     #include <vulkan/vulkan.h>
@@ -10,12 +17,11 @@
     #include "engine/render/vulkan/vk_types.h"
     #include "engine/render/vulkan/vk_renderer.h"
 #elif defined(RENDER_API_OPENGL)
-	#if defined(PLATFORM_LINUX)
-		#include <GL/glew.h>
-	#elif defined(PLATFORM_WINDOWS)
-		#define GLFW_EXPOSE_NATIVE_WIN32
-		#include <GLFW/glfw3native.h>
-	#endif
+    #if defined(PLATFORM_LINUX)
+        #include <GL/glew.h>
+    #elif defined(PLATFORM_WINDOWS)
+        #include <GL/glew.h>
+    #endif
 #endif
 
 #define STB_IMAGE_IMPLEMENTATION

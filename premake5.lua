@@ -159,11 +159,13 @@ group "core"
             {
                 "PLATFORM_WINDOWS",
                 "WIN32_LEAN_AND_MEAN",
+                "NOMINMAX",
                 "GLEW_STATIC",
             }
 
             links
             {
+                "glfw3",
                 "glew32s",  -- Static GLEW library
                 "opengl32",
                 "gdi32",
@@ -173,6 +175,7 @@ group "core"
             libdirs
             {
                 "%{wks.location}/vendor/glfw/lib-vc2022"  -- Path to GLFW libraries
+                "%{vendor_path.glew}/lib/Release/x64"
             }
 
         filter "configurations:Debug"

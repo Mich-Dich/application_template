@@ -3,7 +3,23 @@
 
 #include <stb_image.h>
 
-#include "GLFW/glfw3.h"
+#if defined(PLATFORM_WINDOWS)
+    #define NOMINMAX
+    #define WIN32_LEAN_AND_MEAN
+    #include <Windows.h>
+    #define GLFW_EXPOSE_NATIVE_WIN32
+#endif
+
+#if defined(PLATFORM_LINUX)
+    #include <GL/glew.h>
+#elif defined(PLATFORM_WINDOWS)
+    #include <GL/glew.h>
+#endif
+	
+#include <GLFW/glfw3.h>
+#if defined(PLATFORM_WINDOWS)
+	#include <GLFW/glfw3native.h>  // Include after Windows.h
+#endif
 
 #include "application.h"
 #include "events/event.h"
