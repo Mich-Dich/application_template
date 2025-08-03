@@ -159,6 +159,16 @@ group "core"
             systemversion "latest"
             defines "PLATFORM_WINDOWS"
 
+            links
+            {
+                "glew32.lib",
+            }
+
+            libdirs
+            {
+                "%{vendor_path.glew}/lib/Release/x64",
+            }
+
         filter "configurations:Debug"
             defines "DEBUG"
             runtime "Debug"

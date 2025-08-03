@@ -232,6 +232,7 @@ namespace AT::util {
 
 
 	void launch_detached_program(const std::string& command) {
+#if defined(PLATFORM_LINUX)
 		
         pid_t first_child = fork();                                         // First fork
 		if (first_child < 0) {
@@ -256,6 +257,11 @@ namespace AT::util {
 			exit(EXIT_SUCCESS);                                             // First child exits immediately after creating grandchild
 		}
 		waitpid(first_child, nullptr, 0);                                   // Parent process: Wait for first child to exit
+#elif defined(PLATFORM_WINDOWS)
+
+        LOG(Error, "Not implemented yet")
+
+#endif
 	}
 
 

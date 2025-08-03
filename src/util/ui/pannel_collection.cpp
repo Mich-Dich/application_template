@@ -4,7 +4,9 @@
 #include <emmintrin.h>    // SSE2
 #include <immintrin.h>    // for future‑proofing (AVX)
 #include <imgui_impl_glfw.h>
-#include <imgui_impl_vulkan.h>
+#if defined(RENDER_API_VULKAN)
+	#include <imgui_impl_vulkan.h>
+#endif
 #include <imgui_internal.h>
 
 #include "config/imgui_config.h"

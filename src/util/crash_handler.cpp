@@ -5,6 +5,9 @@
 #include "crash_handler.h"
 
 #if defined(PLATFORM_WINDOWS)
+	#ifndef WIN32_LEAN_AND_MEAN
+		#define WIN32_LEAN_AND_MEAN
+	#endif
     #include <windows.h>
 #endif
 

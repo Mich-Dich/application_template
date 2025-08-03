@@ -37,7 +37,9 @@ namespace AT {
         s_instance = this;
     
         // ----------- general subsystems -----------
+    #if defined(PLATFORM_LINUX)
         util::init_qt();
+    #endif
         set_fps_settings(m_target_fps);
         m_window = std::make_shared<window>();
         m_window->set_event_callback(BIND_FUNCTION(application::on_event));
@@ -61,7 +63,9 @@ namespace AT {
         m_renderer->resource_free();         // need to call free manually because some destructors need the applications access to the renderer (eg: image)
 		m_renderer.reset();
         m_window.reset();
+    #if defined(PLATFORM_LINUX)
         util::shutdown_qt();
+    #endif
         LOG_SHUTDOWN
         logger::shutdown();
     }
