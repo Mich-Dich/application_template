@@ -157,7 +157,11 @@ group "core"
 
         filter "system:windows"
             systemversion "latest"
-            defines "PLATFORM_WINDOWS"
+            defines
+            {
+                "PLATFORM_WINDOWS",
+                "WIN32_LEAN_AND_MEAN"
+            }
 
             links
             {

@@ -79,6 +79,8 @@ jobs:
           curl -L -o glew.zip https://sourceforge.net/projects/glew/files/glew/2.1.0/glew-2.1.0-win32.zip/download
           7z x glew.zip -o"vendor/glew"
           move vendor\glew\glew-2.1.0\* vendor\glew\
+          dir
+          dir include
 
       - name: Run setup.py
         run: python setup.py
