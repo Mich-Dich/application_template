@@ -1,6 +1,5 @@
 #pragma once
 
-#include <sys/wait.h>
 
 namespace AT::util {
 

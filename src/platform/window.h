@@ -73,9 +73,11 @@ namespace AT {
 		void get_monitor_size(int* width, int* height);
 		void get_mouse_position(glm::vec2& pos);
 	
+	#if defined(RENDER_API_VULKAN)
 		void create_vulkan_surface(VkInstance_T* instance, VkSurfaceKHR_T** get_surface);
+	#endif
 	
-		VkExtent2D get_extend();
+		glm::ivec2 get_extend();
 		bool should_close();
 		void poll_events();
 		void capture_cursor();

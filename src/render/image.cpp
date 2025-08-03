@@ -10,7 +10,11 @@
     #include "engine/render/vulkan/vk_types.h"
     #include "engine/render/vulkan/vk_renderer.h"
 #elif defined(RENDER_API_OPENGL)
-	#include <GL/glew.h>
+	#if defined(PLATFORM_LINUX)
+		#include <GL/glew.h>
+	#elif defined(PLATFORM_WINDOWS)
+		#include <glew.h>
+	#endif
 #endif
 
 #define STB_IMAGE_IMPLEMENTATION

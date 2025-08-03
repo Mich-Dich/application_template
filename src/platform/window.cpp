@@ -3,7 +3,6 @@
 
 #include <stb_image.h>
 
-#define GLFW_INCLUDE_VULKAN
 #include "GLFW/glfw3.h"
 
 #include "application.h"
@@ -228,7 +227,7 @@ namespace AT {
 	
 	void window::release_cursor() { glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL); }
 	
-	VkExtent2D window::get_extend() { return { static_cast<u32>(m_data.width), static_cast<u32>(m_data.height) }; }
+	glm::ivec2 window::get_extend() { return { static_cast<u32>(m_data.width), static_cast<u32>(m_data.height) }; }
 	
 	bool window::should_close() { return glfwWindowShouldClose(m_Window); }
 	
@@ -299,9 +298,11 @@ namespace AT {
 		}
 	}
 	
+#if defined(RENDER_API_VULKAN)
 	void window::create_vulkan_surface(VkInstance_T* instance, VkSurfaceKHR_T** get_surface) {
 	
 		ASSERT(glfwCreateWindowSurface(instance, m_Window, nullptr, get_surface) == VK_SUCCESS, "", "Failed to create a window surface");
 	}
+#endif
 
 }	

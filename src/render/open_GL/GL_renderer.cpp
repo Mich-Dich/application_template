@@ -1,6 +1,11 @@
 #include "util/pch.h"
 
-#include <GL/glew.h>
+#if defined(PLATFORM_LINUX)
+    #include <GL/glew.h>
+#elif defined(PLATFORM_WINDOWS)
+    #include <glew.h>
+#endif
+
 #include <GLFW/glfw3.h>
 #include <imgui.h>
 #include <imgui_internal.h>

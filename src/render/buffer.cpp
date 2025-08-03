@@ -1,7 +1,11 @@
 #include "util/pch.h"
 
 #if defined(RENDER_API_OPENGL)
-    #include <GL/glew.h>
+    #if defined(PLATFORM_LINUX)
+        #include <GL/glew.h>
+    #elif defined(PLATFORM_WINDOWS)
+        #include <glew.h>
+    #endif
 #elif defined(RENDER_API_VULKAN)
     #include "application.h"
     #include "engine/render/vulkan/vk_types.h"

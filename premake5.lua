@@ -99,6 +99,12 @@ group "core"
             "vendor/imgui/bin/" .. outputs .. "/imgui",
         }
 
+        filter "files:vendor/implot/**.cpp"
+            flags { "NoPCH" }
+        
+        filter "files:vendor/imgui/**.cpp"
+            flags { "NoPCH" }
+        
         filter "system:linux"
             systemversion "latest"
             defines "PLATFORM_LINUX"
@@ -153,9 +159,6 @@ group "core"
             systemversion "latest"
             defines "PLATFORM_WINDOWS"
 
-            pchheader "util/pch.h"
-            pchsource "src/util/pch.cpp"
-            
         filter "configurations:Debug"
             defines "DEBUG"
             runtime "Debug"

@@ -221,7 +221,7 @@ endlocal
                 "defines": defines,
                 "compilerPath": compiler_path,
                 "cStandard": "c11",
-                "cppStandard": "c++17",
+                "cppStandard": "c++20",
                 "intelliSenseMode": "windows-msvc-x64"
             }
         ]

@@ -232,7 +232,7 @@ echo "------ Done ------"
                 "defines": defines,
                 "compilerPath": "/usr/bin/gcc",
                 "cStandard": "c11",
-                "cppStandard": "c++17",
+                "cppStandard": "c++20",
                 "intelliSenseMode": "linux-gcc-x64"
             }
         ]
