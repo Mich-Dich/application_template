@@ -69,6 +69,8 @@ group "core"
 
             "vendor/implot/*.h",              -- directly bake implot into application
             "vendor/implot/*.cpp",
+		    "vendor/imgui/backends/imgui_impl_opengl3.h",
+		    "vendor/imgui/backends/imgui_impl_opengl3.cpp",
         }
 
         includedirs
