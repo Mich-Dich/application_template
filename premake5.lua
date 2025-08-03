@@ -153,7 +153,7 @@ group "core"
             systemversion "latest"
             defines "PLATFORM_WINDOWS"
 
-            pchheader "pch.h"
+            pchheader "util/pch.h"
             pchsource "src/util/pch.cpp"
             
         filter "configurations:Debug"
