@@ -91,10 +91,9 @@
     #include "util/linux_util.h"
     #include <cxxabi.h>
 #elif defined(PLATFORM_WINDOWS)
-    #include <Windows.h>
     #include "util/windows_util.h"
 #else
-	#error Unsupported OS detected (ONLY LINUX)
+	#error Unsupported OS detected
 #endif
 
 // ------------------------- independent files (single includes)-------------------------

@@ -56,3 +56,4 @@ scripts/windows/__pycache__/
 *.vcxproj.user
 vendor/premake/
 vendor/glew/
+Makefile
