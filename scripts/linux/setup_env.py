@@ -34,7 +34,6 @@ class env_configuration:
     @classmethod
     def validate(cls):
         """Check for required development packages on Linux systems"""
-        utils.print_u("\nCHECKING SYSTEM DEPENDENCIES")
         
         # Skip on Windows
         if platform.system() != "Linux":
@@ -45,12 +44,10 @@ class env_configuration:
         utils.print_c(f"Detected distro ID: {distro_id}", "blue")
         
         packages = cls.get_required_packages(distro_id)
-        
         if not packages:
             utils.print_c(f"Unsupported distro: {distro_id}", "yellow")
             utils.print_c("Please install dependencies manually", "yellow")
             return True
-            
         utils.print_c(f"Required packages: {', '.join(packages)}", "blue")
         
         # Check and install packages

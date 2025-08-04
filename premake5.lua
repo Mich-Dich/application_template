@@ -165,8 +165,8 @@ group "core"
 
             links
             {
-                "glfw3",
-                "glew32s",  -- Static GLEW library
+                "glfw",
+                "glew32s",
                 "opengl32",
                 "gdi32",
                 "user32",
@@ -176,6 +176,18 @@ group "core"
             {
                 "%{wks.location}/vendor/glfw/lib-vc2022",  -- Path to GLFW libraries
                 "%{vendor_path.glew}/lib/Release/x64",
+            }
+
+
+            prebuildcommands 
+            {
+                "{COPY} \"%{vendor_path.glew}/bin/Release/x64/glew32.dll\" \"%{cfg.targetdir}\""
+            }
+            
+            postbuildcommands
+            {            
+                '{COPYDIR} "%{wks.location}/assets" "%{wks.location}/bin/' .. outputs .. '/application_template/assets"',
+                '{COPYDIR} "%{wks.location}/vendor/glfw/bin/' .. outputs .. '/glfw" "%{wks.location}/bin/' .. outputs .. '/%{prj.name}"',       -- copy GLFW
             }
 
         filter "configurations:Debug"

@@ -41,10 +41,18 @@
 *.dwo
 
 
-
+# generated files
 .vscode/
+.vs/
 bin/
 bin-int/
-scripts/linux/__pycache__/
 scripts/__pycache__/
+scripts/linux/__pycache__/
+scripts/windows/__pycache__/
 *.make
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+vendor/premake/
+vendor/glew/

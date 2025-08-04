@@ -6,7 +6,6 @@ import time
 import sys
 import scripts.utils as utils
 
-
 def enable_ansi_support():
     if os.name == 'nt':
         # Enable ANSI escape sequences in Windows

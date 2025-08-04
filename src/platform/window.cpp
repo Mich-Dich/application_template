@@ -90,7 +90,9 @@ namespace AT {
 		m_data.width -= 8;
 		m_Window = glfwCreateWindow(static_cast<int>(m_data.width), static_cast<int>(m_data.height), m_data.title.c_str(), nullptr, nullptr);
 	
+	#if defined(RENDER_API_VULKAN)
 		ASSERT(glfwVulkanSupported(), "", "GLFW does not support Vulkan");
+	#endif
 		LOG(Trace, "Creating window [" << m_data.title << " width: " << m_data.width << "  height: " << m_data.height << "]");
 	
 		//glfwSetWindowPos(m_Window, 100, 100);

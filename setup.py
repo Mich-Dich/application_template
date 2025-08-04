@@ -12,6 +12,7 @@ if platform.system() == "Linux":
     from scripts.linux.setup_premake import premake_configuration
     import scripts.linux.IDE_setup as IDE_setup
 elif platform.system() == "Windows":
+    from scripts.windows.setup_env import env_configuration
     import scripts.windows.win_utils as win_util
     win_util.enable_ansi_support()
     from scripts.windows.setup_premake import premake_configuration
@@ -32,11 +33,11 @@ def main():
             sys.exit(1)
 
     try:
-        if platform.system() == "Linux":
-            if not env_configuration.validate():
-                utils.print_c("Missing required packages - setup aborted", "red")
-                sys.exit(1)
-
+        utils.print_u("\nCHECKING SYSTEM DEPENDENCIES")
+        if not env_configuration.validate():
+            utils.print_c("Missing required packages - setup aborted", "red")
+            sys.exit(1)
+        
         utils.print_u("\nCHECK PREMAKE-5 SETUP")
         premake_installed = premake_configuration.validate()
         if not premake_installed:

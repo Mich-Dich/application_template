@@ -10,9 +10,9 @@ vendor_path["stb_image"]     	= "%{wks.location}/vendor/stb_image"
 
 ------------ include ------------ 
 IncludeDir = {}
-IncludeDir["glew"]              = "%{wks.location}/%{vendor_path.glew}/include"
-IncludeDir["glfw"]              = "%{wks.location}/%{vendor_path.glfw}"
-IncludeDir["glm"]               = "%{wks.location}/%{vendor_path.glm}"
-IncludeDir["ImGui"]             = "%{wks.location}/%{vendor_path.ImGui}"
-IncludeDir["implot"]            = "%{wks.location}/%{vendor_path.implot}"
-IncludeDir["stb_image"]         = "%{wks.location}/%{vendor_path.stb_image}"
+IncludeDir["glew"]              = "%{vendor_path.glew}/include"
+IncludeDir["glfw"]              = "%{vendor_path.glfw}"
+IncludeDir["glm"]               = "%{vendor_path.glm}"
+IncludeDir["ImGui"]             = "%{vendor_path.ImGui}"
+IncludeDir["implot"]            = "%{vendor_path.implot}"
+IncludeDir["stb_image"]         = "%{vendor_path.stb_image}"
