@@ -122,7 +122,7 @@ def setup_vscode_configs(project_root, build_config):
     output_dir = f"{build_config}-{system}-{arch}"
     bin_dir = os.path.join(project_root, "bin", output_dir)
 
-    # create gluttony_build.sh
+    # create build.sh
     build_script_path = os.path.join(vscode_dir, "build.sh")
     build_script_content = f"""#!/usr/bin/env bash
 set -e

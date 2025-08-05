@@ -36,7 +36,7 @@ namespace AT {
 	
 		EventCallbackFn event_callback;
 	
-		window_attrib(const std::string title = "Gluttony", const u32 width = 1600, const  u32 height = 900, const  bool vsync = false, const EventCallbackFn& callback = nullptr)
+		window_attrib(const std::string title = "Application Template", const u32 width = 1600, const  u32 height = 900, const  bool vsync = false, const EventCallbackFn& callback = nullptr)
 			: title(title), width(width), height(height), vsync(vsync), event_callback(callback){}
 	};
 	

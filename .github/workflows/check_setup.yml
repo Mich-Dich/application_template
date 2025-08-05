@@ -17,14 +17,12 @@ jobs:
         # os: [ubuntu-latest, centos-stream-9]
         # os: [ubuntu-latest, rocky-linux-9]
         # os: [ubuntu-latest, archlinux]
-        # os: [ubuntu-latest, fedora-latest, archlinux]
-        os: [ubuntu-latest]                         # arch runner make trouble => disable for now
+        os: [ubuntu-latest, fedora-latest, archlinux]
+        # os: [ubuntu-latest]                         # arch runner make trouble => disable for now
         
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          submodules: recursive  # Important for premake installation
           
       - name: Show Linux version
         run: |
@@ -50,8 +48,14 @@ jobs:
           CI: "true"
           PYTHONPATH: ${{ github.workspace }}
 
-      - name: Build project
+      - name: Build project (Debug)
         run: gmake -j -k
+
+      - name: Build project (Release with Debug info)
+        run: gmake config=relwithdebinfo_x64 -j -k
+
+      # - name: Build project (Release)
+      #   run: gmake config=release_x64 -j -k
 
   windows-test:
     runs-on: windows-latest
@@ -59,7 +63,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          submodules: recursive  # Important for premake installation
+          submodules: recursive
           
       - name: Show Windows version
         run: |
@@ -80,6 +84,11 @@ jobs:
           CI: "true"
           PYTHONPATH: ${{ github.workspace }}
 
-      - name: Build project
-        run: |
-          msbuild application.sln /p:Configuration=Debug
+      - name: Build project (Debug)
+        run: msbuild application.sln /p:Configuration=Debug
+
+      - name: Build project (Release with Debug info)
+        run: msbuild application.sln /p:Configuration=RelWithDebInfo_x64 -j -k
+
+      # - name: Build project (Release)
+      #   run: msbuild application.sln /p:Configuration=Release_x64 -j -k

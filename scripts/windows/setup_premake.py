@@ -15,11 +15,11 @@ class premake_configuration:
     @classmethod
     def validate(cls):
         if cls.is_ci:
-            utils.print_c("CI environment detected - auto-installing premake", "blue")
-            return cls.install_premake_ci()
+            utils.print_c("CI environment detected - auto-downloading premake", "blue")
+            return cls.download_premake_ci()
             
         if not cls.check_premake():
-            utils.print_c("premake not installed correctly.", "red")
+            utils.print_c("premake not downloaded correctly.", "red")
             return False
             
         return True
@@ -32,14 +32,14 @@ class premake_configuration:
             return True
             
         if cls.is_ci:
-            return False  # Let install_premake_ci handle it
+            return False  # Let download_premake_ci handle it
             
-        utils.print_c("You don't have premake5 installed!", "orange")
-        return cls.install_premake_interactive()
+        utils.print_c("You don't have premake5 downloaded!", "orange")
+        return cls.download_premake_interactive()
 
     @classmethod
-    def install_premake_ci(cls):
-        """Automatically install premake in CI environments"""
+    def download_premake_ci(cls):
+        """Automatically download premake in CI environments"""
         # Create directory if needed
         os.makedirs(cls.premake_directory, exist_ok=True)
         
@@ -56,20 +56,20 @@ class premake_configuration:
         premake_license_path = os.path.join(cls.premake_directory, 'LICENSE.txt')
         utils.download_file(cls.premake_license_url, premake_license_path)
         
-        # Verify installation
+        # Verify downloadation
         if Path(f"{cls.premake_directory}/premake5.exe").exists():
-            utils.print_c("Premake installed successfully", "green")
+            utils.print_c("Premake downloaded successfully", "green")
             return True
             
-        utils.print_c("Premake installation failed", "red")
+        utils.print_c("Premake downloadation failed", "red")
         return False
 
     @classmethod
-    def install_premake_interactive(cls):
-        """Install premake with user prompts (for non-CI environments)"""
+    def download_premake_interactive(cls):
+        """download premake with user prompts (for non-CI environments)"""
         permission_granted = False
         while not permission_granted:
-            reply = str(input(f"Install premake {cls.premake_version}? [Y/N]: ")).lower().strip()[:1]
+            reply = str(input(f"download premake {cls.premake_version}? [Y/N]: ")).lower().strip()[:1]
             if reply == 'n':
                 return False
             permission_granted = (reply == 'y')
@@ -83,7 +83,7 @@ class premake_configuration:
         
         print("Extracting", premake_path)
         win_utils.unzip_file(premake_path, deleteZipFile=True)
-        print(f"Premake {cls.premake_version} installed to '{cls.premake_directory}'")
+        print(f"Premake {cls.premake_version} downloaded to '{cls.premake_directory}'")
 
         # Download license
         premake_license_path = os.path.join(cls.premake_directory, 'LICENSE.txt')

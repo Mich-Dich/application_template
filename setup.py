@@ -39,9 +39,8 @@ def main():
             sys.exit(1)
         
         utils.print_u("\nCHECK PREMAKE-5 SETUP")
-        premake_installed = premake_configuration.validate()
-        if not premake_installed:
-            utils.print_c("Premake5 installation failed - setup aborted", "red")
+        if not premake_configuration.validate():
+            utils.print_c("Premake5 download failed - setup aborted", "red")
             sys.exit(1)
     
         utils.print_u("\nINITIALIZING SUBMODULES")              # Initialize submodule configuration
