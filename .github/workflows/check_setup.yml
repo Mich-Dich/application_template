@@ -17,8 +17,8 @@ jobs:
         # os: [ubuntu-latest, centos-stream-9]
         # os: [ubuntu-latest, rocky-linux-9]
         # os: [ubuntu-latest, archlinux]
-        os: [ubuntu-latest, fedora-latest, archlinux]
-        # os: [ubuntu-latest]                         # arch runner make trouble => disable for now
+        # os: [ubuntu-latest, fedora-latest, archlinux]
+        os: [ubuntu-latest]                         # arch runner make trouble => disable for now
         
     steps:
       - name: Checkout code
@@ -87,8 +87,8 @@ jobs:
       - name: Build project (Debug)
         run: msbuild application.sln /p:Configuration=Debug
 
-      - name: Build project (Release with Debug info)
-        run: msbuild application.sln /p:Configuration=RelWithDebInfo_x64 -j -k
+      # - name: Build project (Release with Debug info)
+      #   run: msbuild application.sln /p:Configuration=RelWithDebInfo_x64 -j -k
 
       # - name: Build project (Release)
       #   run: msbuild application.sln /p:Configuration=Release_x64 -j -k

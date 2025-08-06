@@ -98,14 +98,14 @@ def prompt_ide_selection():
 
 
 
-def setup_vscode_configs(project_root, build_config):
+def setup_vscode_configs(project_root, build_config, application_name):
     vscode_dir = os.path.join(project_root, ".vscode")
     os.makedirs(vscode_dir, exist_ok=True)
     arch = "x86_64"
     system = "windows"
     output_dir = f"{build_config}-{system}-{arch}"
     bin_dir = os.path.join(project_root, "bin", output_dir)
-    exe_path = os.path.join(bin_dir, "application_template", "application_template.exe")
+    exe_path = os.path.join(bin_dir, "{application_name}", "{application_name}.exe")
 
     # Create build.bat script
     build_script_path = os.path.join(vscode_dir, "build.bat")
@@ -114,16 +114,16 @@ setlocal
 
 set build_config={build_config}
 set timestamp=%date:~-4%-%date:~7,2%-%date:~4,2%-%time:~0,2%-%time:~3,2%-%time:~6,2%
-set stage_name=application_template_%build_config%_%timestamp%
+set stage_name={application_name}_%build_config%_%timestamp%
 set STAGE_DIR={bin_dir}\\%stage_name%
 
 echo ------ Clearing previous artifacts (trash at: %STAGE_DIR%) ------
 mkdir "%STAGE_DIR%" 2>nul
 
-move "{bin_dir}\\application_template\\application_template.exe" "%STAGE_DIR%\\" 2>nul
-move "{bin_dir}\\application_template\\application_template.pdb" "%STAGE_DIR%\\" 2>nul
+move "{bin_dir}\\{application_name}\\{application_name}.exe" "%STAGE_DIR%\\" 2>nul
+move "{bin_dir}\\{application_name}\\{application_name}.pdb" "%STAGE_DIR%\\" 2>nul
 
-rd /s /q "{bin_dir}\\application_template" 2>nul
+rd /s /q "{bin_dir}\\{application_name}" 2>nul
 cd "{project_root}"
 del /f /q Makefile 2>nul
 del /f /q *.make 2>nul
@@ -169,13 +169,13 @@ endlocal
 
     # Create launch.json
     launch_json_path = os.path.join(vscode_dir, "launch.json")
-    cwd_path = os.path.join("${workspaceFolder}", "bin", output_dir, "application_template")
+    cwd_path = os.path.join("${workspaceFolder}", "bin", output_dir, "{application_name}")
 
     launch_data = {
         "version": "0.2.0",
         "configurations": [
             {
-                "name": f"Launch application_template ({build_config})",
+                "name": f"Launch {application_name} ({build_config})",
                 "type": "cppvsdbg",
                 "request": "launch",
                 "program": exe_path,

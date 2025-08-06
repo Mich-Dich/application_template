@@ -113,7 +113,7 @@ def prompt_build_config():
             print("Please enter a valid number.")
 
 
-def setup_vscode_configs(project_root, build_config):
+def setup_vscode_configs(project_root, build_config, application_name):
 
     vscode_dir = os.path.join(project_root, ".vscode")
     os.makedirs(vscode_dir, exist_ok=True)
@@ -129,14 +129,14 @@ set -e
 
 build_config="{build_config}"
 timestamp=$(date '+%Y-%m-%d-%H:%M:%S')
-stage_name="application_template_${{build_config}}_${{timestamp}}"
+stage_name="{application_name}_${{build_config}}_${{timestamp}}"
 STAGE_DIR="{bin_dir}/${{stage_name}}"
 
 echo "------ Clearing previous artifacts (trash at: $STAGE_DIR) ------"
 mkdir -p "$STAGE_DIR"
 
 # move all previous artifacts into staging (ignore missing)
-mv "{bin_dir}/application_template"             "$STAGE_DIR/" 2>/dev/null || true
+mv "{bin_dir}/{application_name}"             "$STAGE_DIR/" 2>/dev/null || true
 
 # trash the staging directory and Makefiles
 gio trash "$STAGE_DIR" --force || true
@@ -179,14 +179,14 @@ echo "------ Done ------"
 
     # create launch.json
     launch_json_path = os.path.join(vscode_dir, "launch.json")
-    program_path = os.path.join("${workspaceFolder}", "bin", output_dir, "application_template", "application_template")
+    program_path = os.path.join("${workspaceFolder}", "bin", output_dir, f"{application_name}", f"{application_name}")
     cwd_path = os.path.join("${workspaceFolder}", "bin", output_dir)
 
     launch_data = {
         "version": "0.2.0",
         "configurations": [
             {
-                "name": f"Launch application_template ({build_config})",
+                "name": f"Launch {application_name} ({build_config})",
                 "type": "cppdbg",
                 "request": "launch",
                 "program": program_path,
