@@ -172,6 +172,7 @@ namespace AT::config {
             {file::ui, "ui" },
             {file::imgui, "imgui"},
             {file::input, "input"},
+            {file::app_settings, "app_settings"},
         };
 
         auto it = typeStrings.find(type);

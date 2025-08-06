@@ -13,6 +13,7 @@ namespace AT::config {
 		ui,
 		imgui,
 		input,
+		app_settings,
 	};
 
     enum class operation : u8 {

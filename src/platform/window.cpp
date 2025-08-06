@@ -24,6 +24,7 @@
 #include "events/application_event.h"
 #include "events/mouse_event.h"
 #include "events/key_event.h"
+#include "util/io/serializer_yaml.h"
 
 #include "window.h"
 
@@ -34,6 +35,17 @@ namespace AT {
 		
 	static FORCEINLINE void GLFW_error_callback(int errorCode, const char* description) { LOG(Error, "[GLFW Error: " << errorCode << "]: " << description); }
 	
+    static GLFWimage load_icon(const std::string& filepath) {
+
+		GLFWimage icon = {};
+        int channels;
+        icon.pixels = stbi_load(filepath.c_str(), &icon.width, &icon.height, &channels, 4);			// Load image data
+        if (!icon.pixels)
+            LOG(Error, "Failed to load window icon: " << filepath);
+        
+        return icon;
+    }
+
 	// ================================================================================== setup ==================================================================================
 	
 	window::window(window_attrib attributes) :
@@ -82,18 +94,36 @@ namespace AT {
 	
 			LOG(Trace, "Monitor: " << x << " data: " << xpos << " / " << ypos << " / " << width << " / " << height);
 		}
+
+		// load data from [app_setting.yml]
+		std::filesystem::path logo_path{};
+		AT::serializer::yaml(config::get_filepath_from_configtype(util::get_executable_path(), config::file::app_settings), "general_settings", AT::serializer::option::load_from_file)
+			.entry("display_name", m_data.title)
+			.entry(KEY_VALUE(logo_path));
 	
 		// ensure window is never bigger than possible OR smaller then logical
 		m_data.height = math::clamp((int)m_data.height, 200, max_posible_height);
 		m_data.width = math::clamp((int)m_data.width, 300, max_posible_width);
-		m_data.height -= 35;
-		m_data.width -= 8;
+		LOG(Trace, "Creating window [" << m_data.title << " width: " << m_data.width << "  height: " << m_data.height << "]");
 		m_Window = glfwCreateWindow(static_cast<int>(m_data.width), static_cast<int>(m_data.height), m_data.title.c_str(), nullptr, nullptr);
 	
+		if (!logo_path.empty()) {
+
+        	const auto icon_full_path = util::get_executable_path() / logo_path;
+			if (std::filesystem::exists(icon_full_path)) {
+
+				GLFWimage icon = load_icon(icon_full_path.string());
+				if (icon.pixels) {
+					glfwSetWindowIcon(m_Window, 1, &icon);
+					stbi_image_free(icon.pixels);
+				}
+			} else
+				LOG(Error, "Icon file not found [" << icon_full_path << "]");
+		}
+
 	#if defined(RENDER_API_VULKAN)
 		ASSERT(glfwVulkanSupported(), "", "GLFW does not support Vulkan");
 	#endif
-		LOG(Trace, "Creating window [" << m_data.title << " width: " << m_data.width << "  height: " << m_data.height << "]");
 	
 		//glfwSetWindowPos(m_Window, 100, 100);
 		glfwSetWindowPos(m_Window, m_data.pos_x, m_data.pos_y);
