@@ -1,10 +1,34 @@
+import sys
+import subprocess
+
+# Check for required Python packages
+required_modules = {
+    'yaml': 'PyYAML'
+}
+
+for module, package in required_modules.items():
+    try:
+        __import__(module)
+    except ImportError:
+        # Check if pip is available
+        try:
+            subprocess.run([sys.executable, "-m", "pip", "--version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            print(f"Error: pip is not installed. Please install pip to proceed with installing {package}.")
+            sys.exit(1)
+
+        print(f"Installing required package: {package}")
+        try:
+            subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+        except subprocess.CalledProcessError:
+            print(f"Failed to install {package}. Please install it manually by running: pip install {package}")
+            sys.exit(1)
+
 import os
 import re
-import sys
 import yaml
 import socket
 import platform
-import subprocess
 import scripts.utils as utils
 import scripts.git_util as git_util
 IS_CI = os.getenv("CI") == "true"
