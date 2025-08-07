@@ -81,6 +81,13 @@ jobs:
           echo "========= GIT VERSION ========="
           git --version
 
+      - name: Show directory structure
+        run: |
+          echo "========= WORKSPACE CONTENTS ========="
+          ls -la ${{ github.workspace }}
+          echo "========= ROOT CONTENTS ========="
+          ls -la /
+          
       - name: Run setup.py
         run: |
           source venv/bin/activate
