@@ -14,11 +14,12 @@ def initialize_submodules():
         # Use HTTPS for submodules in CI
         utils.print_c("CI environment detected, using HTTPS for submodules", "blue")
         try:
-            with open('.gitmodules', 'r') as f:
+            gitmodules_path = os.path.join(workspace, '.gitmodules') if workspace else '.gitmodules'
+            with open(gitmodules_path, 'r') as f:
                 content = f.read()
             new_content = content.replace('git@github.com:', 'https://github.com/')
             new_content = new_content.replace('ssh://git@github.com/', 'https://github.com/')
-            with open('.gitmodules', 'w') as f:
+            with open(gitmodules_path, 'w') as f:
                 f.write(new_content)
             utils.print_c("Converted .gitmodules URLs to HTTPS", "green")
         except Exception as e:
@@ -45,7 +46,7 @@ def initialize_submodules():
         # Run Git command in the correct directory
         result = subprocess.run(
             git_command,
-            cwd=cwd_path,  # CRITICAL: Set working directory
+            cwd=cwd_path,
             capture_output=True,
             text=True,
             check=True
