@@ -32,10 +32,10 @@ jobs:
           PYTHONPATH: ${{ github.workspace }}
 
       - name: Build project (Debug)
-        run: gmake -j -k
+        run: make -j -k
 
       - name: Build project (Release with Debug info)
-        run: gmake config=relwithdebinfo_x64 -j -k
+        run: make config=relwithdebinfo_x64 -j -k
 
   arch-test:
     runs-on: ubuntu-latest
@@ -47,8 +47,7 @@ jobs:
       - name: Update system and install dependencies
         run: |
           pacman -Syu --noconfirm
-          pacman -S --noconfirm base-devel cmake git python python-pip
-          pip install PyYAML
+          pacman -S --noconfirm base-devel cmake git python
           
       - name: Show Linux version
         run: |
@@ -59,17 +58,25 @@ jobs:
           echo "========= PYTHON VERSION ========="
           python --version
 
+      - name: Create virtual environment
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+          pip install PyYAML
+
       - name: Run setup.py
-        run: python setup.py
+        run: |
+          source venv/bin/activate
+          python setup.py
         env:
           CI: "true"
           PYTHONPATH: ${{ github.workspace }}
 
       - name: Build project (Debug)
-        run: gmake -j -k
+        run: make -j -k
 
       - name: Build project (Release with Debug info)
-        run: gmake config=relwithdebinfo_x64 -j -k
+        run: make config=relwithdebinfo_x64 -j -k
 
   windows-test:
     runs-on: windows-latest
