@@ -51,7 +51,7 @@ jobs:
       - name: Update system and install dependencies
         run: |
           pacman -Syu --noconfirm
-          pacman -S --noconfirm base-devel cmake git python
+          pacman -S --noconfirm base-devel cmake git python ca-certificates
           
       - name: Show Linux version
         run: |
@@ -73,7 +73,14 @@ jobs:
           git config --global --add safe.directory $GITHUB_WORKSPACE
           git config --global user.email "ci@example.com"
           git config --global user.name "CI Runner"
-          
+      
+      - name: Show Git configuration
+        run: |
+          echo "========= GIT CONFIG ========="
+          git config --list --show-origin
+          echo "========= GIT VERSION ========="
+          git --version
+
       - name: Run setup.py
         run: |
           source venv/bin/activate
