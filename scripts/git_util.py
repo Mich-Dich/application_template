@@ -23,12 +23,17 @@ def initialize_submodules():
 
     # Initialize submodules
     try:
-        # Explicitly set git directory in CI environments
-        git_command = ["git", "submodule", "update", "--init", "--recursive"]
+        # Use a more robust approach in CI environments
         if is_ci:
-            git_command = ["git", "--git-dir", ".git", "submodule", "update", "--init", "--recursive"]
+            # First, ensure we're at the root of the repository
+            root_dir = os.getcwd()
             
-        subprocess.run(git_command, check=True)
+            # Initialize submodules with explicit paths
+            subprocess.run(["git", "-C", root_dir, "submodule", "update", "--init", "--recursive"], check=True)
+        else:
+            # Use standard command for non-CI
+            subprocess.run(["git", "submodule", "update", "--init", "--recursive"], check=True)
+            
         utils.print_c("Submodules initialized successfully.", "green")
         return True
     except subprocess.CalledProcessError as e:
