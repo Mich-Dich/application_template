@@ -4,7 +4,6 @@ import scripts.utils as utils
 
 def initialize_submodules():
     """Initialize and update all submodules with SSH/HTTPS fallback"""
-    
     # Check if we're in CI environment
     is_ci = os.getenv("CI") == "true"
     
@@ -24,7 +23,12 @@ def initialize_submodules():
 
     # Initialize submodules
     try:
-        subprocess.run(["git", "submodule", "update", "--init", "--recursive"], check=True)
+        # Explicitly set git directory in CI environments
+        git_command = ["git", "submodule", "update", "--init", "--recursive"]
+        if is_ci:
+            git_command = ["git", "--git-dir", ".git", "submodule", "update", "--init", "--recursive"]
+            
+        subprocess.run(git_command, check=True)
         utils.print_c("Submodules initialized successfully.", "green")
         return True
     except subprocess.CalledProcessError as e:

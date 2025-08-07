@@ -37,12 +37,17 @@ jobs:
       - name: Build project (Release with Debug info)
         run: make config=relwithdebinfo_x64 -j -k
 
+
   arch-test:
     runs-on: ubuntu-latest
     container: archlinux:latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          # Add these 2 lines to properly initialize the repo
+          fetch-depth: 0
+          path: ${{ github.workspace }}
           
       - name: Update system and install dependencies
         run: |
@@ -64,6 +69,13 @@ jobs:
           source venv/bin/activate
           pip install PyYAML
 
+      # Add this step to initialize the git config
+      - name: Setup Git environment
+        run: |
+          git config --global --add safe.directory $GITHUB_WORKSPACE
+          git config --global user.email "ci@example.com"
+          git config --global user.name "CI Runner"
+
       - name: Run setup.py
         run: |
           source venv/bin/activate
@@ -71,12 +83,15 @@ jobs:
         env:
           CI: "true"
           PYTHONPATH: ${{ github.workspace }}
+          # Add this environment variable
+          GITHUB_WORKSPACE: ${{ github.workspace }}
 
       - name: Build project (Debug)
         run: make -j -k
 
       - name: Build project (Release with Debug info)
         run: make config=relwithdebinfo_x64 -j -k
+
 
   windows-test:
     runs-on: windows-latest
