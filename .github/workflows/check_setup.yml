@@ -46,7 +46,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          # Remove path specification
           
       - name: Update system and install dependencies
         run: |
@@ -90,15 +89,17 @@ jobs:
           pwd
           echo "========= ROOT CONTENTS ========="
           ls -la /
-          
+
       - name: Run setup.py
         run: |
           source venv/bin/activate
           python setup.py
         env:
           CI: "true"
-          PYTHONPATH: "$GITHUB_WORKSPACE"
-          GITHUB_WORKSPACE: "$GITHUB_WORKSPACE"
+          PYTHONPATH: ${{ github.workspace }}
+          GITHUB_WORKSPACE: ${{ github.workspace }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_SHA: ${{ github.sha }}
 
 
   windows-test:

@@ -39,6 +39,40 @@ def initialize_submodules():
             check=True
         )
         utils.print_c(f"Added safe.directory: {cwd_path}", "green")
+        
+        # CRITICAL: Explicitly initialize repository
+        utils.print_c("Initializing Git repository...", "blue")
+        subprocess.run(
+            ["git", "init"],
+            cwd=cwd_path,
+            check=True
+        )
+        
+        # Add remote origin
+        utils.print_c("Configuring remote origin...", "blue")
+        repo_url = f"https://github.com/{os.getenv('GITHUB_REPOSITORY')}"
+        subprocess.run(
+            ["git", "remote", "add", "origin", repo_url],
+            cwd=cwd_path,
+            check=True
+        )
+        
+        # Fetch repository data
+        utils.print_c("Fetching repository data...", "blue")
+        subprocess.run(
+            ["git", "fetch", "origin"],
+            cwd=cwd_path,
+            check=True
+        )
+        
+        # Checkout the current SHA
+        utils.print_c("Checking out commit...", "blue")
+        commit_sha = os.getenv('GITHUB_SHA')
+        subprocess.run(
+            ["git", "checkout", commit_sha],
+            cwd=cwd_path,
+            check=True
+        )
 
         utils.print_c("Initializing submodules...", "blue")
         git_command = ["git", "submodule", "update", "--init", "--recursive"]
