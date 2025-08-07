@@ -48,7 +48,7 @@ else:
 
 
 
-def apply_settings(file_path="./scripts/app_settings.yml", premake_file_path="./premake5.lua"):
+def apply_settings(file_path="./config/app_settings.yml", premake_file_path="./premake5.lua"):
     try:
         with open(file_path, 'r') as stream:
             data = yaml.safe_load(stream)
@@ -80,7 +80,7 @@ def apply_settings(file_path="./scripts/app_settings.yml", premake_file_path="./
         utils.print_c(f"Error while applying settings: {str(e)}", "red")
         sys.exit(1)
 
-def get_application_name(file_path="./scripts/app_settings.yml"):
+def get_application_name(file_path="./config/app_settings.yml"):
     try:
         with open(file_path, 'r') as stream:
             data = yaml.safe_load(stream)
@@ -124,7 +124,7 @@ def main():
 
 
         utils.print_u("\nAPPLY SETTINGS")
-        utils.print_c("Settings are defined at [./scripts/app_settings.yml]. after changing the settings, it is recommended to reexecute the setup script", "blue")
+        utils.print_c("Settings are defined at [./config/app_settings.yml]. after changing the settings, it is recommended to reexecute the setup script", "blue")
         apply_settings()
         application_name = get_application_name()
         print(f"name: {application_name}")

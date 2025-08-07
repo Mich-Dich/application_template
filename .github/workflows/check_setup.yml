@@ -7,19 +7,8 @@ on:
     branches: [main]
 
 jobs:
-  linux-test:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        # os: [ubuntu-latest, fedora-latest]
-        # os: [ubuntu-latest, fedora-40]
-        # os: [ubuntu-latest, centos-stream-9]
-        # os: [ubuntu-latest, rocky-linux-9]
-        # os: [ubuntu-latest, archlinux]
-        # os: [ubuntu-latest, fedora-latest, archlinux]
-        os: [ubuntu-latest]                         # arch runner make trouble => disable for now
-        
+  ubuntu-test:
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -27,7 +16,7 @@ jobs:
       - name: Show Linux version
         run: |
           echo "========= OS VERSION ========="
-          cat /etc/os-release || true
+          cat /etc/os-release
           echo "========= KERNEL VERSION ========="
           uname -a
 
@@ -35,12 +24,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.x'
-          
-      - name: Install system dependencies
-        # Archlinux requires explicit package installation
-        if: matrix.os == 'archlinux'
-        run: |
-          sudo pacman -Syu --noconfirm base-devel cmake git
           
       - name: Run setup.py
         run: python setup.py
@@ -54,8 +37,39 @@ jobs:
       - name: Build project (Release with Debug info)
         run: gmake config=relwithdebinfo_x64 -j -k
 
-      # - name: Build project (Release)
-      #   run: gmake config=release_x64 -j -k
+  arch-test:
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+          
+      - name: Update system and install dependencies
+        run: |
+          pacman -Syu --noconfirm
+          pacman -S --noconfirm base-devel cmake git python python-pip
+          pip install PyYAML
+          
+      - name: Show Linux version
+        run: |
+          echo "========= OS VERSION ========="
+          cat /etc/os-release
+          echo "========= KERNEL VERSION ========="
+          uname -a
+          echo "========= PYTHON VERSION ========="
+          python --version
+
+      - name: Run setup.py
+        run: python setup.py
+        env:
+          CI: "true"
+          PYTHONPATH: ${{ github.workspace }}
+
+      - name: Build project (Debug)
+        run: gmake -j -k
+
+      - name: Build project (Release with Debug info)
+        run: gmake config=relwithdebinfo_x64 -j -k
 
   windows-test:
     runs-on: windows-latest
@@ -86,9 +100,3 @@ jobs:
 
       - name: Build project (Debug)
         run: msbuild application.sln /p:Configuration=Debug
-
-      # - name: Build project (Release with Debug info)
-      #   run: msbuild application.sln /p:Configuration=RelWithDebInfo_x64 -j -k
-
-      # - name: Build project (Release)
-      #   run: msbuild application.sln /p:Configuration=Release_x64 -j -k

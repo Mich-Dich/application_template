@@ -67,25 +67,26 @@ namespace AT::UI {
 		
 		LOG_INIT 
 		
+		IMGUI_CHECKVERSION();
+		m_context_imgui = ImGui::CreateContext();
+		m_context_implot = ImPlot::CreateContext();
+		application::get().get_renderer()->imgui_init();
+		
+
 		main_color = { .0f,	.4088f,	1.0f,	1.f };
 		window_border = false;
 		highlited_window_bg = LERP_GRAY(0.57f);
-		main_titlebar_color = LERP_MAIN_COLOR_DARK(.5f);
 		default_item_width = 200.f;
 
+		serialize(serializer::option::load_from_file);
+
+		main_titlebar_color = LERP_MAIN_COLOR_DARK(.5f);			// lerp after loading main color
 		action_color_00_faded = LERP_MAIN_COLOR_DARK(0.5f);
 		action_color_00_weak = LERP_MAIN_COLOR_DARK(0.6f);
 		action_color_00_default = LERP_MAIN_COLOR_DARK(0.7f);
 		action_color_00_hover = LERP_MAIN_COLOR_DARK(0.85f);
 		action_color_00_active = LERP_MAIN_COLOR_DARK(1.f);
 	
-		IMGUI_CHECKVERSION();
-		m_context_imgui = ImGui::CreateContext();
-		m_context_implot = ImPlot::CreateContext();
-		application::get().get_renderer()->imgui_init();
-		
-		serialize(serializer::option::load_from_file);
-
 		{	// Load fonts
 			std::filesystem::path base_path = AT::util::get_executable_path() / "assets" / "fonts";
 			std::filesystem::path OpenSans_path = base_path / "Open_Sans" / "static";
@@ -160,22 +161,10 @@ namespace AT::UI {
 			.entry(KEY_VALUE(main_color))
 			.entry(KEY_VALUE(main_titlebar_color))
 
-			// color heightlight
-			.entry(KEY_VALUE(action_color_00_faded))
-			.entry(KEY_VALUE(action_color_00_weak))
-			.entry(KEY_VALUE(action_color_00_default))
-			.entry(KEY_VALUE(action_color_00_hover))
-			.entry(KEY_VALUE(action_color_00_active))
-
 			// gray
 			.entry(KEY_VALUE(action_color_gray_default))
 			.entry(KEY_VALUE(action_color_gray_hover))
-			.entry(KEY_VALUE(action_color_gray_active))
-		
-			.sub_section("performance_display", [&](serializer::yaml& sub_section) {
-				sub_section.entry(KEY_VALUE(m_show_FPS_window))
-				.entry(KEY_VALUE(FPS_window_location));
-			});
+			.entry(KEY_VALUE(action_color_gray_active));
 	}
 
 	// --------------------------------------------------------------------------------------------------------------------------------------------
