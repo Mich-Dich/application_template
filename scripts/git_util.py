@@ -6,111 +6,31 @@ import scripts.utils as utils
 
 def initialize_submodules():
     """Initialize and update all submodules with SSH/HTTPS fallback"""
+    
     # Check if we're in CI environment
     is_ci = os.getenv("CI") == "true"
-    workspace = os.getenv("GITHUB_WORKSPACE")  # Get workspace from environment
     
     if is_ci:
         # Use HTTPS for submodules in CI
         utils.print_c("CI environment detected, using HTTPS for submodules", "blue")
         try:
-            gitmodules_path = os.path.join(workspace, '.gitmodules') if workspace else '.gitmodules'
-            with open(gitmodules_path, 'r') as f:
+            with open('.gitmodules', 'r') as f:
                 content = f.read()
             new_content = content.replace('git@github.com:', 'https://github.com/')
             new_content = new_content.replace('ssh://git@github.com/', 'https://github.com/')
-            with open(gitmodules_path, 'w') as f:
+            with open('.gitmodules', 'w') as f:
                 f.write(new_content)
-            utils.print_c("Converted .gitmodules URLs to HTTPS", "green")
         except Exception as e:
             utils.print_c(f"Failed to convert URLs: {str(e)}", "red")
             return False
 
     # Initialize submodules
     try:
-        utils.print_c("Configuring Git safe.directory", "blue")
-        
-        # Use workspace path if available
-        cwd_path = workspace if workspace else os.getcwd()
-        
-        # Add safe directory configuration
-        subprocess.run(
-            ["git", "config", "--global", "--add", "safe.directory", cwd_path],
-            check=True
-        )
-        utils.print_c(f"Added safe.directory: {cwd_path}", "green")
-        
-        # CRITICAL: Explicitly initialize repository
-        utils.print_c("Initializing Git repository...", "blue")
-        subprocess.run(
-            ["git", "init"],
-            cwd=cwd_path,
-            check=True
-        )
-        
-        # Add remote origin
-        utils.print_c("Configuring remote origin...", "blue")
-        repo_url = f"https://github.com/{os.getenv('GITHUB_REPOSITORY')}"
-        subprocess.run(
-            ["git", "remote", "add", "origin", repo_url],
-            cwd=cwd_path,
-            check=True
-        )
-        
-        # Fetch repository data
-        utils.print_c("Fetching repository data...", "blue")
-        subprocess.run(
-            ["git", "fetch", "origin"],
-            cwd=cwd_path,
-            check=True
-        )
-        
-        # Checkout the current SHA
-        utils.print_c("Checking out commit...", "blue")
-        commit_sha = os.getenv('GITHUB_SHA')
-        subprocess.run(
-            ["git", "checkout", commit_sha],
-            cwd=cwd_path,
-            check=True
-        )
-
-        utils.print_c("Initializing submodules...", "blue")
-        git_command = ["git", "submodule", "update", "--init", "--recursive"]
-        
-        # Run Git command in the correct directory
-        result = subprocess.run(
-            git_command,
-            cwd=cwd_path,
-            capture_output=True,
-            text=True,
-            check=True
-        )
-        
-        utils.print_c("Submodule initialization output:", "blue")
-        utils.print_c(result.stdout, "cyan")
-        
+        subprocess.run(["git", "submodule", "update", "--init", "--recursive"], check=True)
         utils.print_c("Submodules initialized successfully.", "green")
         return True
-        
     except subprocess.CalledProcessError as e:
-        utils.print_c(f"Submodule init failed with code {e.returncode}", "red")
-        utils.print_c("Possible causes:", "yellow")
-        utils.print_c("1. Repository corruption (try recloning)", "yellow")
-        utils.print_c("2. Network issues (check GitHub status)", "yellow")
-        utils.print_c("3. Permission issues (verify workspace ownership)", "yellow")
-        utils.print_c("4. Invalid submodule URLs (check .gitmodules)", "yellow")
-        utils.print_c("5. Safe directory misconfiguration", "yellow")
-        utils.print_c("6. Incorrect working directory", "yellow")
-        
-        utils.print_c("\nGit error output:", "red")
-        utils.print_c(e.stderr, "red")
-        
-        utils.print_c("\nGit command:", "red")
-        utils.print_c(" ".join(e.cmd), "red")
-        
-        utils.print_c(f"\nCurrent working directory: {os.getcwd()}", "red")
-        utils.print_c(f"Workspace path: {workspace}", "red")
-        
+        utils.print_c(f"Failed to initialize submodules: {e}", "red")
         return False
 
 
