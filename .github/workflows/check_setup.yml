@@ -38,7 +38,6 @@ jobs:
         run: make config=relwithdebinfo_x64 -j -k
 
 
-
   arch-test:
     runs-on: ubuntu-latest
     container: archlinux:latest
@@ -47,7 +46,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          submodules: recursive
           path: ${{ github.workspace }}
           
       - name: Update system and install dependencies
@@ -64,16 +62,6 @@ jobs:
           echo "========= PYTHON VERSION ========="
           python --version
 
-      - name: Debug Git environment
-        run: |
-          echo "Current directory: $(pwd)"
-          echo "Git status:"
-          git status || true
-          echo "Git remote:"
-          git remote -v || true
-          echo "Git config:"
-          git config --list || true
-
       - name: Create virtual environment
         run: |
           python -m venv venv
@@ -85,9 +73,7 @@ jobs:
           git config --global --add safe.directory $GITHUB_WORKSPACE
           git config --global user.email "ci@example.com"
           git config --global user.name "CI Runner"
-          # Add repository as safe explicitly
-          git config --global --add safe.directory /__w/application_template/application_template
-
+          
       - name: Run setup.py
         run: |
           source venv/bin/activate
@@ -95,6 +81,7 @@ jobs:
         env:
           CI: "true"
           PYTHONPATH: ${{ github.workspace }}
+          # Add this environment variable
           GITHUB_WORKSPACE: ${{ github.workspace }}
 
       - name: Build project (Debug)

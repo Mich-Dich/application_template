@@ -4,11 +4,9 @@ import scripts.utils as utils
 
 def initialize_submodules():
     """Initialize and update all submodules with SSH/HTTPS fallback"""
-    # Check if we're in CI environment
     is_ci = os.getenv("CI") == "true"
     
     if is_ci:
-        # Use HTTPS for submodules in CI
         utils.print_c("CI environment detected, using HTTPS for submodules", "blue")
         try:
             with open('.gitmodules', 'r') as f:
@@ -21,19 +19,10 @@ def initialize_submodules():
             utils.print_c(f"Failed to convert URLs: {str(e)}", "red")
             return False
 
-    # Initialize submodules
     try:
-        # Use a more robust approach in CI environments
-        if is_ci:
-            # First, ensure we're at the root of the repository
-            root_dir = os.getcwd()
-            
-            # Initialize submodules with explicit paths
-            subprocess.run(["git", "-C", root_dir, "submodule", "update", "--init", "--recursive"], check=True)
-        else:
-            # Use standard command for non-CI
-            subprocess.run(["git", "submodule", "update", "--init", "--recursive"], check=True)
-            
+        # Use -C instead of --git-dir for better compatibility
+        git_command = ["git", "-C", os.getcwd(), "submodule", "update", "--init", "--recursive"]
+        subprocess.run(git_command, check=True)
         utils.print_c("Submodules initialized successfully.", "green")
         return True
     except subprocess.CalledProcessError as e:
