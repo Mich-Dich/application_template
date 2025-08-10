@@ -62,6 +62,7 @@ name& operator=(name&&) = default;
 
 // ------------------------------------------- getters -------------------------------------------
 #define DEFAULT_GETTER(type, name)								type get_##name() { return m_##name;}
+#define DEFAULT_GETTER_S(type, name)							static type get_##name() { return s_##name;}
 #define DEFAULT_GETTER_REF(type, name)							type& get_##name##_ref() { return m_##name;}
 #define DEFAULT_GETTER_C(type, name)							type get_##name() const { return m_##name;}
 #define DEFAULT_GETTER_CC(type, name)							const type get_##name() const { return m_##name;}

@@ -24,12 +24,12 @@ namespace AT {
 
         DEFAULT_GETTER_C(f64,											    delta_time);
         DEFAULT_GETTER(ref<AT::render::renderer>,					        renderer);
-        DEFAULT_GETTER(static ref<window>,							        window);
+        DEFAULT_GETTER_S(ref<window>,							            window);
         DEFAULT_GETTER_REF(ref<UI::imgui_config>,                           imgui_config);
-        DEFAULT_GETTER(dashboard,                                           dashboard);
+        DEFAULT_GETTER(ref<dashboard>,                                      dashboard);
 
         FORCEINLINE static application& get()								{ return *s_instance; }
-        FORCEINLINE static void close_application()							{ m_running = false; }
+        FORCEINLINE static void close_application()							{ s_running = false; }
 
         bool update(f32 delta_time);
         bool draw(f32 delta_time);
@@ -59,10 +59,10 @@ namespace AT {
         void limit_fps();
 
         static application*			        s_instance;
-        static ref<window>		            m_window;
-        static bool					        m_running;
+        static ref<window>		            s_window;
+        static bool					        s_running;
 
-        dashboard                           m_dashboard;
+        ref<dashboard>                      m_dashboard;
         bool						        m_focus = true;
         bool                                m_is_titlebar_hovered = false;
         u32							        m_target_fps = 60;

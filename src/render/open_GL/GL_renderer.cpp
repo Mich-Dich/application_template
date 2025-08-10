@@ -79,7 +79,7 @@ namespace AT::render::open_GL {
             ImGui_ImplGlfw_NewFrame();
             ImGui::NewFrame();
 
-            application::get().get_dashboard().draw(delta_time);
+            application::get().get_dashboard()->draw(delta_time);
             
             ImGui::EndFrame();
             ImGui::Render();

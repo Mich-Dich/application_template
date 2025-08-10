@@ -24,8 +24,8 @@ namespace AT {
 
     
     application* application::s_instance = nullptr;
-    ref<window> application::m_window;
-    bool application::m_running;
+    ref<window> application::s_window;
+    bool application::s_running;
 
     application::application(int argc, char* argv[]) {
 
@@ -41,19 +41,19 @@ namespace AT {
         util::init_qt();
     #endif
         set_fps_settings(m_target_fps);
-        m_window = std::make_shared<window>();
-        m_window->set_event_callback(BIND_FUNCTION(application::on_event));
+        s_window = std::make_shared<window>();
+        s_window->set_event_callback(BIND_FUNCTION(application::on_event));
 
         // ----------- general subsystems -----------
     #if defined(RENDER_API_OPENGL)
-        m_renderer = create_ref<AT::render::open_GL::GL_renderer>(m_window);
+        m_renderer = create_ref<AT::render::open_GL::GL_renderer>(s_window);
     #elif defined(RENDER_API_VULKAN)
-        m_renderer = create_ref<AT::render::vulkan::VK_renderer>(m_window);
+        m_renderer = create_ref<AT::render::vulkan::VK_renderer>(s_window);
     #endif
 
         // ----------- user defined system -----------
         m_imgui_config = create_ref<UI::imgui_config>();
-        m_dashboard = dashboard();
+        m_dashboard = create_ref<dashboard>();
     }
 
     application::~application() {
@@ -62,7 +62,7 @@ namespace AT {
         
         m_renderer->resource_free();         // need to call free manually because some destructors need the applications access to the renderer (eg: image)
 		m_renderer.reset();
-        m_window.reset();
+        s_window.reset();
     #if defined(PLATFORM_LINUX)
         util::shutdown_qt();
     #endif
@@ -74,25 +74,25 @@ namespace AT {
     void application::run() {
     
         // ---------------------------------------- finished setup ----------------------------------------
-        m_dashboard.init();
+        m_dashboard->init();
 
         m_renderer->set_state(system_state::active);
-        m_running = true;
-        m_window->show_window(true);
-        m_window->poll_events();
+        s_running = true;
+        s_window->show_window(true);
+        s_window->poll_events();
         start_fps_measurement();
     
-        while (m_running) {
+        while (s_running) {
     
             // PROFILE_SCOPE("run")
-            m_window->poll_events();				// update internal state
-            m_dashboard.update(m_delta_time);
+            s_window->poll_events();				// update internal state
+            m_dashboard->update(m_delta_time);
             m_renderer->draw_frame(m_delta_time);
             limit_fps();
         }
     
         LOG(Trace, "Exiting main run loop")
-        m_dashboard.shutdown();
+        m_dashboard->shutdown();
     }
     
     // ==================================================================== PUBLIC ====================================================================
@@ -148,12 +148,12 @@ namespace AT {
         dispatcher.dispatch<window_focus_event>(BIND_FUNCTION(application::on_window_focus));
     
         // none application events
-        m_dashboard.on_event(event);
+        m_dashboard->on_event(event);
     }
     
     bool application::on_window_close(window_close_event& event) {
     
-        m_running = false;
+        s_running = false;
         return true;
     }
     
