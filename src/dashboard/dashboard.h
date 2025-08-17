@@ -19,6 +19,8 @@ namespace AT {
 
         void on_event(event& event);
 
+        void draw_init_UI(f32 delta_time);
+
     private:
 
 

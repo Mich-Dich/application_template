@@ -72,16 +72,46 @@ namespace AT {
 
     
     void application::run() {
-    
-        // ---------------------------------------- finished setup ----------------------------------------
-        m_dashboard->init();
 
-        m_renderer->set_state(system_state::active);
-        s_running = true;
-        s_window->show_window(true);
-        s_window->poll_events();
-        start_fps_measurement();
+        // ---------------------------------------- finished setup ----------------------------------------
+        bool long_startup_process = false;
+		AT::serializer::yaml(config::get_filepath_from_configtype(util::get_executable_path(), config::file::app_settings), "general_settings", AT::serializer::option::load_from_file)
+			.entry(KEY_VALUE(long_startup_process));
+
+        LOG(Info, "long_startup_process [" << util::to_string(long_startup_process) << "]")
+
+        if (long_startup_process) {
+
+            m_renderer->set_state(system_state::active);
+            s_window->show_window(true);
+            start_fps_measurement();
+
+            std::atomic<bool> running_init = true;
+            std::future<bool> init_future = std::async(std::launch::async, [this, &running_init]() {
+                bool result = m_dashboard->init();
+                running_init = false;
+                return result;
+            });
+
+            while (running_init) {
     
+                s_window->poll_events();				// update internal state
+                m_renderer->draw_startup_UI(m_delta_time);
+                limit_fps();
+            }
+            s_running = true;
+
+        } else {
+
+            m_dashboard->init();
+            m_renderer->set_state(system_state::active);
+            s_running = true;
+            s_window->show_window(true);
+            s_window->poll_events();
+            start_fps_measurement();
+        }
+    
+        // ---------------------------------------- main loop ----------------------------------------
         while (s_running) {
     
             // PROFILE_SCOPE("run")
@@ -95,7 +125,9 @@ namespace AT {
         m_dashboard->shutdown();
     }
     
-    // ==================================================================== PUBLIC ====================================================================
+    // -----------------------------------------------------------------------------------------------------------------
+    // PUBLIC
+    // -----------------------------------------------------------------------------------------------------------------
     
     void application::set_fps_settings(const bool set_for_engine_focused, const u32 new_limit) {
     
@@ -110,7 +142,9 @@ namespace AT {
 
     void application::set_fps_settings(u32 target_fps)              { target_duration = static_cast<f32>(1.0 / target_fps); }
 
-    // ==================================================================== PRIVATE ====================================================================
+    // -----------------------------------------------------------------------------------------------------------------
+    // PRIVATE
+    // -----------------------------------------------------------------------------------------------------------------
 
     void application::start_fps_measurement()                       { m_last_frame_time = static_cast<f32>(glfwGetTime()); }
     
@@ -135,8 +169,10 @@ namespace AT {
         m_last_frame_time = time;
         m_fps = static_cast<u32>(1.0 / (m_work_time + (m_sleep_time * 0.001)) + 0.5); // Round to nearest integer
     }
-    
-    // ==================================================================== event handling ====================================================================
+
+    // -----------------------------------------------------------------------------------------------------------------
+    // EVENT HANDLING
+    // -----------------------------------------------------------------------------------------------------------------
     
     void application::on_event(event& event) {
     
@@ -151,24 +187,28 @@ namespace AT {
         m_dashboard->on_event(event);
     }
     
+
     bool application::on_window_close(window_close_event& event) {
     
         s_running = false;
         return true;
     }
     
+
     bool application::on_window_resize(window_resize_event& event) {
     
         m_renderer->set_window_size(event.get_width(), event.get_height());
         return true;
     }
     
+
     bool application::on_window_refresh(window_refresh_event& event) {
     
         limit_fps();
         return true;
     }
     
+
     bool application::on_window_focus(window_focus_event& event) {
     
         m_focus = event.get_focus();

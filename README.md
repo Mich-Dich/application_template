@@ -2,27 +2,6 @@
 
 A simple, cross-platform C++ application template with a graphical user interface (GUI) powered by ImGui and GLFW.
 
-## Table of Contents
-
-1. [Overview](#overview)
-2. [Features](#features)
-3. [Prerequisites](#prerequisites)
-4. [Installation & Setup](#installation--setup)
-
-   * [Initialize Submodules](#initialize-submodules)
-   * [Run Setup Script](#run-setup-script)
-5. [Building the Application](#building-the-application)
-
-   * [Automatic Build (VSCode)](#automatic-build-vscode)
-   * [Manual Build](#manual-build)
-6. [Window Manager Integration](#window-manager-integration)
-7. [Usage](#usage)
-8. [Dashboard Module](#dashboard-module)
-9. [Contributing](#contributing)
-10. [License](#license)
-
----
-
 ## 1. Overview
 
 `application_template` provides a minimal but fully functional starting point for GUI-based C++ applications. It uses:
@@ -51,6 +30,13 @@ The template handles platform detection, dependency setup, and IDE integration o
 ## 4. Installation & Setup
 
 ### Run Setup Script
+
+After downloading the project (use template to create your own project).
+
+```bash
+git clone <your_project>
+cd <your_project>
+```
 
 Execute the Python setup script to verify and install missing dependencies, configure the environment, and generate IDE/project files:
 
@@ -111,7 +97,7 @@ This matches ImGui popup windows by their title prefix.
 
 Run the compiled binary directly or via IDE. The main window displays ImGui controls—customize widgets in `application.cpp`.
 
-## 8. Dashboard Module
+## Dashboard Module
 
 The dashboard files (`dashboard.h` / `dashboard.cpp`) are entry points for adding custom UI panels or runtime metrics. Extend this module by implementing:
 
@@ -151,6 +137,91 @@ The dashboard files (`dashboard.h` / `dashboard.cpp`) are entry points for addin
    * Clean up resources allocated in `initialize()` (free textures, buffers).
    * Called on application exit.
 
+
+### Long startup process (optional)
+
+The template supports a simple, opt-in flow for long initialization/startup work. When enabled, the application will run the dashboard initialization in a separate thread and display a minimal "Initializing..." screen while the work completes.
+
+**Enable it** by setting the following in `app_settings.yml` under the `general_settings` section:
+
+```yaml
+general_settings:
+  long_startup_process: true
+```
+
+If `long_startup_process` is `true` the application will run `dashboard::init()` in a background thread and display the simple initialization UI until `init()` returns. This is intended for operations that may take several seconds (loading large resources, network requests, heavy warm-up tasks, etc.).
+
+**Example `dashboard::init()`**
+
+(Replace the demonstration sleep with your real initialization logic.)
+
+```cpp
+// init will be called when every system is initialized
+bool dashboard::init() {
+
+    // =========== Demonstrate a long startup process (just replace with custom logic) ===========
+    bool long_startup_process = false;
+    AT::serializer::yaml(config::get_filepath_from_configtype(util::get_executable_path(), config::file::app_settings), "general_settings", AT::serializer::option::load_from_file)
+        .entry(KEY_VALUE(long_startup_process));
+
+    if (long_startup_process)
+        std::this_thread::sleep_for(std::chrono::milliseconds(10000));  // 10s
+    // ===========================================================================================
+
+    return true;
+}
+```
+
+**Initialization UI**
+
+The UI shown while `dashboard::init()` runs is intentionally minimal and scales the text to the viewport. Example implementation:
+
+```cpp
+void dashboard::draw_init_UI(f32 delta_time) {
+
+    ImGuiViewport* viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(viewport->Pos);
+    ImGui::SetNextWindowSize(viewport->Size);
+    
+    ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize |
+        ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+    
+    ImGui::Begin("Initialization", nullptr, window_flags);
+    {
+
+        const char* text = "Initializing...";
+        const float target_font_size = 50.0f;
+        ImVec2 base_text_size = ImGui::CalcTextSize(text);                                      // Calculate base text size at default font scale
+        float scale = (base_text_size.y > 0) ? target_font_size / base_text_size.y : 1.0f;      // Calculate required scale to reach target font size
+        ImVec2 available = ImGui::GetContentRegionAvail() * 0.9f;                               // Get available space with 10% margin
+        ImVec2 scaled_size = base_text_size * scale;                                            // Calculate scaled text size
+        
+        if (scaled_size.x > available.x || scaled_size.y > available.y) {                       // Adjust scale if needed to fit available space
+            float width_ratio = available.x / scaled_size.x;
+            float height_ratio = available.y / scaled_size.y;
+            scale *= (width_ratio < height_ratio) ? width_ratio : height_ratio;
+        }
+        
+        // Set font scale and calculate final position
+        ImGui::SetWindowFontScale(scale);
+        ImVec2 text_size = ImGui::CalcTextSize(text);
+        ImVec2 position = (ImGui::GetContentRegionAvail() - text_size) * 0.5f;
+        
+        ImGui::SetCursorPos(position);
+        ImGui::TextUnformatted(text);
+        ImGui::SetWindowFontScale(1.0f);
+    }
+    ImGui::End();
+}
+```
+
+**Thread-safety notes & best practices**
+
+* **Do not call ImGui functions from the background thread.** ImGui is not thread-safe — any UI calls must happen on the main/render thread. Use the background thread only for non-UI work (I/O, resource decoding, heavy computations).
+* Synchronize shared data between the background thread and the main thread safely (mutexes, atomics, or lock-free queues). Update UI-visible state on the main thread.
+* Keep the initialization UI simple — avoid complex widgets while the app is starting.
+* Ensure `dashboard::init()` returns in a reasonable time or provides progress/status through a thread-safe flag if you want to show progress.
+
 ### Extending the Dashboard
 
 * **Modular Panels**: Split different panels into private helper functions. Call them from `update()` and `draw()`:
@@ -171,7 +242,6 @@ The dashboard files (`dashboard.h` / `dashboard.cpp`) are entry points for addin
 
 * **Unit Testing**: Abstract data collection into testable components. Inject mock data sources to verify plotting and formatting.
 
-
 Example:
 
 ```cpp
@@ -183,7 +253,7 @@ void dashboard::draw() {
 }
 ```
 
-## 9. Contributing
+## Contributing
 
 Contributions welcome! Please fork the repo and submit pull requests against `main`. Ensure you:
 
@@ -191,6 +261,6 @@ Contributions welcome! Please fork the repo and submit pull requests against `ma
 * Update documentation when adding features
 * Test on Linux (other OS support TBD)
 
-## 10. License
+## License
 
 This project is licensed under the [MIT License](LICENSE).
