@@ -228,7 +228,92 @@ namespace AT::serializer {
 			return *this;
 		}
 
+		//
+		template<typename T, typename K>
+		yaml& unordered_map(const std::string& map_name, std::unordered_map<T, K>& map) {
 
+			if (m_option == serializer::option::save_to_file) {											// Serialize the map
+				m_file_content << util::add_spaces(m_level_of_indention) << map_name << ":\n";
+				for (const auto& [key, value] : map)
+					m_file_content << util::add_spaces(m_level_of_indention + 1) << util::to_string<T>(key) << ": " << util::to_string<K>(value) << "\n";
+				
+			} else {																					// Deserialize the map
+				
+				// Deserialize map from YAML
+				std::unordered_map<std::string, std::string> temp_map;
+				std::string line;
+				
+				// Read until we find the map section
+				while (std::getline(m_file_content, line)) {
+					if (line.find(map_name + ":") != std::string::npos && 
+						util::measure_indentation(line) == m_level_of_indention) {
+						break;
+					}
+				}
+
+				while (std::getline(m_file_content, line)) {							// Read key-value pairs
+					if (util::measure_indentation(line) <= m_level_of_indention)		// End of map section
+						break;
+					
+					std::string key, value;
+					extract_key_value(key, value, line);
+					temp_map.emplace(std::move(key), std::move(value));
+				}
+
+				// Convert strings to actual types
+				for (const auto& [key_str, value_str] : temp_map) {
+					T key;
+					K value;
+					util::convert_from_string(key_str, key);
+					util::convert_from_string(value_str, value);
+					map.emplace(std::move(key), std::move(value));
+				}
+			}
+			return *this;
+		}
+
+		// 
+		template<typename T>
+		yaml& unordered_set(const std::string& set_name, std::unordered_set<T>& set) {
+
+			if (m_option == option::save_to_file) {
+				// Serialize the set as a YAML sequence
+				m_file_content << util::add_spaces(m_level_of_indention) << set_name << ":\n";
+				for (const auto& element : set) {
+					std::string buffer;
+					util::convert_to_string<T>(element, buffer);
+					m_file_content << util::add_spaces(m_level_of_indention + 1) << "- " << buffer << "\n";
+				}
+			} else {																	// Deserialize the set from YAML
+
+				std::unordered_set<T> temp_set;
+				std::string line;
+				while (std::getline(m_file_content, line)) {							// Read until we find the set section
+					if (line.find(set_name + ":") != std::string::npos && 
+						util::measure_indentation(line) == m_level_of_indention) {
+						break;
+					}
+				}
+
+				while (std::getline(m_file_content, line)) {							// Read sequence elements
+					if (util::measure_indentation(line) <= m_level_of_indention) 		// End of set section
+						break;
+					
+					if (line.find("- ") != std::string::npos) {							// Extract element value
+
+						size_t dash_pos = line.find("- ");
+						std::string element_str = line.substr(dash_pos + 2);
+						T element;
+						util::convert_from_string(element_str, element);
+						temp_set.insert(element);
+					}
+				}
+				set = std::move(temp_set);
+			}
+			return *this;
+		}
+
+		
 	private:
 
 		void serialize();

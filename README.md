@@ -31,12 +31,14 @@ The template handles platform detection, dependency setup, and IDE integration o
 
 ### Run Setup Script
 
-After downloading the project (use template to create your own project).
+Use this template to create your own project, and clone it.
 
 ```bash
 git clone <your_project>
 cd <your_project>
 ```
+
+It is recommended to change the `name` of your project in the `config/app_settings.yml`. This can ofcourse be change at any time, as long as the setup script is run afterwards
 
 Execute the Python setup script to verify and install missing dependencies, configure the environment, and generate IDE/project files:
 
@@ -44,7 +46,7 @@ Execute the Python setup script to verify and install missing dependencies, conf
 python3 setup.py
 ```
 
-* The script detects your OS (Linux only) and ensures all libraries and tools are available.
+* The script detects your OS (Linux/Windows) and ensures all libraries and tools are available.
 * Select your IDE when prompted (currently VSCode is supported).
 
 ## 5. Building the Application

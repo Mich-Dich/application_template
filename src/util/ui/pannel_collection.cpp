@@ -15,6 +15,14 @@
 
 namespace AT::UI {
 
+
+	#define GRAY(value)		IM_COL32(value, value, value, 255);
+
+
+	// ============================================================================================================
+	// INTERACTION
+	// ============================================================================================================
+
 	bool is_holvering_window() {
 
 		const ImVec2 mouse_pos = ImGui::GetMousePos();
@@ -23,12 +31,14 @@ namespace AT::UI {
 		return (mouse_pos.x >= popup_pos.x && mouse_pos.x <= popup_pos.x + popup_size.x && mouse_pos.y >= popup_pos.y && mouse_pos.y <= popup_pos.y + popup_size.y);
 	}
 	
+
 	bool is_item_double_clicked() {
 
 		const ImVec2 item_pos = ImGui::GetItemRectMin();
 		const ImVec2 item_max = item_pos + ImGui::GetItemRectSize();
 		return ImGui::IsMouseHoveringRect(item_pos, item_max) && ImGui::IsMouseDoubleClicked(0);
 	}
+
 
 	void set_mouse_interaction_state(const ImGuiMouseButton_ mouse_button, mouse_interation& state, bool& is_button_down) {
 
@@ -57,6 +67,7 @@ namespace AT::UI {
 			state = static_cast<mouse_interation>(static_cast<u8>(mouse_interation::left_released) + offset);
 		}
 	}
+
 
 	mouse_interation get_mouse_interation_on_item(const bool block_input) {
 
@@ -94,6 +105,7 @@ namespace AT::UI {
 		return state;
 	}
 
+
 	mouse_interation get_mouse_interation_on_window() {
 
 		static bool is_middle_button_down = false;
@@ -127,10 +139,272 @@ namespace AT::UI {
 		return state;
 	}
 
+	// ============================================================================================================
+	// WINDOW
+	// ============================================================================================================
+
+	void set_next_window_pos(const window_pos location, const f32 padding) {
+
+		if (location == window_pos::center)
+			ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+
+		else if (static_cast<u32>(location) >= 2) {
+
+			const f32 title_bar_height = 0.f;
+			const ImGuiViewport* viewport = ImGui::GetMainViewport();
+			ImVec2 work_pos = { viewport->WorkPos.x , viewport->WorkPos.y + title_bar_height }; // Use work area to avoid menu-bar/task-bar, if any!
+			ImVec2 work_size = viewport->WorkSize;
+			ImVec2 window_pos, window_pos_pivot;
+
+			window_pos.x = (location == window_pos::top_right || location == window_pos::bottom_right) ? (work_pos.x + work_size.x - padding) : (work_pos.x + padding);
+			window_pos.y = (location == window_pos::bottom_right || location == window_pos::bottom_left) ? (work_pos.y + work_size.y - padding - title_bar_height) : (work_pos.y + padding);
+			window_pos_pivot.x = (location == window_pos::top_right || location == window_pos::bottom_right) ? 1.0f : 0.0f;
+			window_pos_pivot.y = (location == window_pos::bottom_right || location == window_pos::bottom_left) ? 1.0f : 0.0f;
+			ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always, window_pos_pivot);
+			ImGui::SetNextWindowViewport(viewport->ID);
+		}
+	}
+
+
+	void set_next_window_pos_in_window(const window_pos location, const f32 padding) {
+
+		ImVec2 pos = ImGui::GetWindowPos();
+		ImVec2 size = ImGui::GetWindowSize();
+
+		if (location == window_pos::center)
+			ImGui::SetNextWindowPos(ImVec2(pos.x + (size.x / 2), pos.y + (size.y / 2)), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+
+		else if (static_cast<u32>(location) >= 2) {
+
+			bool has_tab_bar = !(GImGui->CurrentWindow->Flags & ImGuiWindowFlags_NoTitleBar);
+
+			const ImGuiViewport* viewport = ImGui::GetWindowViewport();
+			ImVec2 window_pos, window_pos_pivot;
+
+			window_pos.x = (location == window_pos::top_right || location == window_pos::bottom_right) ? (pos.x + size.x - padding) : (pos.x + padding);
+			window_pos.y = (location == window_pos::bottom_right || location == window_pos::bottom_left) ? (pos.y + size.y - padding) : (pos.y + padding + (has_tab_bar ? ImGui::GetFrameHeight() : 0.f));
+			window_pos_pivot.x = (location == window_pos::top_right || location == window_pos::bottom_right) ? 1.0f : 0.0f;
+			window_pos_pivot.y = (location == window_pos::bottom_right || location == window_pos::bottom_left) ? 1.0f : 0.0f;
+			ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always, window_pos_pivot);
+			ImGui::SetNextWindowViewport(viewport->ID);
+		}
+	}
+
+
+	void next_window_position_selector(window_pos& position, bool& show_window) {
+
+		if (ImGui::MenuItem("custom", NULL, position == window_pos::custom))
+			position = window_pos::custom;
+
+		if (ImGui::MenuItem("center", NULL, position == window_pos::center))
+			position = window_pos::center;
+
+		if (ImGui::MenuItem("top-left", NULL, position == window_pos::top_left))
+			position = window_pos::top_left;
+
+		if (ImGui::MenuItem("top-right", NULL, position == window_pos::top_right))
+			position = window_pos::top_right;
+
+		if (ImGui::MenuItem("bottom-left", NULL, position == window_pos::bottom_left))
+			position = window_pos::bottom_left;
+
+		if (ImGui::MenuItem("bottom-right", NULL, position == window_pos::bottom_right))
+			position = window_pos::bottom_right;
+
+		if (show_window && ImGui::MenuItem("close"))
+			show_window = false;
+	}
 	
+
+	void next_window_position_selector_popup(window_pos& position, bool& show_window) {
+
+		if (ImGui::BeginPopupContextWindow()) {
+
+			next_window_position_selector(position, show_window);
+
+			ImGui::EndPopup();
+		}
+	}
+
+	
+	void adjust_popup_to_window_bounds(const ImVec2 expected_popup_size) {
+
+		ImVec2 popup_pos = ImGui::GetMousePos();
+		// ImVec2 mouse_pos = ImGui::GetMousePos();
+		// ImVec2 expected_size = ImVec2(20, 50);							// TODO: Adjust based on content
+
+		// if (file_currupted) 
+		// 	switch (loc_file_curruption_source) {					// sprocimate size bycorruption type
+		// 		default:
+		// 		case file_curruption_source::unknown:				expected_size = ImVec2(280, 250); break;	// should display everything to help user
+		// 		case file_curruption_source::header_incorrect:		expected_size = ImVec2(280, 250); break;	// should display header
+		// 		case file_curruption_source::empty_file:			expected_size = ImVec2(180, 150); break;	// dosnt need to display anything other than size
+		// 	}
+		
+		// popup_pos = mouse_pos;
+		ImVec2 window_pos = ImGui::GetWindowPos();
+		ImVec2 window_size = ImGui::GetWindowSize();
+		
+		if ((popup_pos.x + expected_popup_size.x) > (window_pos.x + window_size.x))				// Check if popup would go out of bounds horizontally
+			popup_pos.x = window_pos.x + window_size.x - expected_popup_size.x;
+		
+		if ((popup_pos.y + expected_popup_size.y) > (window_pos.y + window_size.y))				// Check vertical bounds
+			popup_pos.y = window_pos.y + window_size.y - expected_popup_size.y;
+		
+		ImGui::SetNextWindowPos(popup_pos, ImGuiCond_Appearing);
+	}
+	
+	// ============================================================================================================
+	// BUTTON
+	// ============================================================================================================
+
+	bool gray_button(const char* lable, const ImVec2& size) {
+
+		ImGui::PushStyleColor(ImGuiCol_Button, UI::get_default_gray_ref());
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, UI::get_action_color_gray_hover_ref());
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, UI::get_action_color_gray_active_ref());
+
+		const bool result = ImGui::Button(lable, size);
+
+		ImGui::PopStyleColor(3);
+		return result;
+	}
+
+
+	bool toggle_button(const char* lable, bool& bool_var, const ImVec2& size) {
+
+		// show weaker color if toggle_bool is false
+		if (!bool_var) {
+
+			ImGui::PushStyleColor(ImGuiCol_Button, UI::get_action_color_00_faded_ref());
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, UI::get_action_color_00_weak_ref());
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, UI::get_action_color_00_default_ref());
+		}
+
+		const bool result = ImGui::Button("show Markdown", ImVec2(100, 21));
+
+		if (!bool_var)
+			ImGui::PopStyleColor(3);
+
+		return result;
+	}
+
+	// ============================================================================================================
+	// LOAD INDICATOR
+	// ============================================================================================================
+
+	void spinner(const char* label, f32 radius, int thickness, const ImU32& color) {
+
+		ImGuiWindow* window = ImGui::GetCurrentWindow();
+		if (window->SkipItems)
+			return;
+		
+		const ImGuiContext& g = *GImGui;
+		const ImGuiStyle& style = g.Style;
+		const ImGuiID id = window->GetID(label);
+		const ImVec2 pos = window->DC.CursorPos;
+		const ImVec2 size((radius) * 2, (radius + style.FramePadding.y) * 2);
+		const ImRect bb(pos, ImVec2(pos.x + size.x, pos.y + size.y));
+		ImGui::ItemSize(bb, style.FramePadding.y);
+		if (!ImGui::ItemAdd(bb, id))
+			return;
+		
+		window->DrawList->PathClear();		// Render
+		
+		const int num_segments = 60;
+		const int start = abs(ImSin(g.Time * 1.8f) * (num_segments - 5));
+		const f32 a_min = IM_PI * 2.f * ((f32)start) / (f32)num_segments;
+		const f32 a_max = IM_PI * 2.f * ((f32)num_segments-3) / (f32)num_segments;
+		const ImVec2 centre = ImVec2(pos.x + radius, pos.y + radius + style.FramePadding.y);
+		for (int i = 0; i < num_segments; i++) {
+
+			const f32 a = a_min + ((f32)i / (f32)num_segments) * (a_max - a_min);
+			window->DrawList->PathLineTo(ImVec2(centre.x + ImCos(a + g.Time*8) * radius, centre.y + ImSin(a + g.Time*8) * radius));
+		}
+
+		window->DrawList->PathStroke(color, false, static_cast<f32>(thickness));
+    }
+
+
+	void loading_indicator_circle(const char* label, const f32 indicator_radius, const int circle_count, const f32 speed, const ImVec4& main_color, const ImVec4& backdrop_color) {
+
+		ImGuiWindow* window = ImGui::GetCurrentWindow();
+		if (window->SkipItems)
+			return;
+
+		ImGuiContext& g = *GImGui;
+		const ImGuiID id = window->GetID(label);
+
+		const ImVec2 pos = window->DC.CursorPos;
+		const f32 circle_radius = indicator_radius / 15.0f;
+		const f32 updated_indicator_radius = indicator_radius - 4.0f * circle_radius;
+		const ImRect bb(pos, ImVec2(pos.x + indicator_radius * 2.0f, pos.y + indicator_radius * 2.0f));
+		ImGui::ItemSize(bb);
+		if (!ImGui::ItemAdd(bb, id)) {
+			return;
+		}
+		const f32 t = g.Time;
+		const auto degree_offset = 2.0f * IM_PI / circle_count;
+		for (int i = 0; i < circle_count; ++i) {
+			const auto x = updated_indicator_radius * std::sin(degree_offset * i);
+			const auto y = updated_indicator_radius * std::cos(degree_offset * i);
+			const auto growth = std::max(0.0f, std::sin(t * speed - i * degree_offset));
+			ImVec4 color;
+			color.x = main_color.x * growth + backdrop_color.x * (1.0f - growth);
+			color.y = main_color.y * growth + backdrop_color.y * (1.0f - growth);
+			color.z = main_color.z * growth + backdrop_color.z * (1.0f - growth);
+			color.w = 1.0f;
+			window->DrawList->AddCircleFilled(ImVec2(pos.x + indicator_radius + x, pos.y + indicator_radius - y),
+				circle_radius + growth * circle_radius, ImGui::GetColorU32(color));
+		}
+	}
+
+	// ============================================================================================================
+	// TEXT
+	// ============================================================================================================
+
+	void big_text(const char* text, bool wrapped) {
+
+		ImGui::PushFont(application::get().get_imgui_config_ref()->get_font("regular_big"));
+
+		if (wrapped)
+			ImGui::TextWrapped("%s", text);
+		else
+			ImGui::Text("%s", text);
+
+		ImGui::PopFont();
+	}
+
+
+	void text_bold(const char* text, bool wrapped) {
+
+		ImGui::PushFont(application::get().get_imgui_config_ref()->get_font("bold"));
+
+		if (wrapped)
+			ImGui::TextWrapped("%s", text);
+		else
+			ImGui::Text("%s", text);
+
+		ImGui::PopFont();
+	}
+
+
+	void text_italic(const char* text, bool wrapped) {
+
+		ImGui::PushFont(application::get().get_imgui_config_ref()->get_font("italic"));
+
+		if (wrapped)
+			ImGui::TextWrapped("%s", text);
+		else
+			ImGui::Text("%s", text);
+
+		ImGui::PopFont();
+	}
+
+
 	FORCEINLINE bool is_delim_char(char c) { return c==' '||c=='_'||c=='-'||c=='/'||c=='\\'||c=='.'; }
 
-
+	
 	void wrap_text(std::string& string, f32 wrap_width, int max_lines) {
 
 		size_t orig = string.size();
@@ -236,239 +510,6 @@ namespace AT::UI {
 		return wrapped_text;
 	}
 
-
-	void set_next_window_pos(const window_pos location, const f32 padding) {
-
-		if (location == window_pos::center)
-			ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
-
-		else if (static_cast<u32>(location) >= 2) {
-
-			const f32 title_bar_height = 0.f;
-			const ImGuiViewport* viewport = ImGui::GetMainViewport();
-			ImVec2 work_pos = { viewport->WorkPos.x , viewport->WorkPos.y + title_bar_height }; // Use work area to avoid menu-bar/task-bar, if any!
-			ImVec2 work_size = viewport->WorkSize;
-			ImVec2 window_pos, window_pos_pivot;
-
-			window_pos.x = (location == window_pos::top_right || location == window_pos::bottom_right) ? (work_pos.x + work_size.x - padding) : (work_pos.x + padding);
-			window_pos.y = (location == window_pos::bottom_right || location == window_pos::bottom_left) ? (work_pos.y + work_size.y - padding - title_bar_height) : (work_pos.y + padding);
-			window_pos_pivot.x = (location == window_pos::top_right || location == window_pos::bottom_right) ? 1.0f : 0.0f;
-			window_pos_pivot.y = (location == window_pos::bottom_right || location == window_pos::bottom_left) ? 1.0f : 0.0f;
-			ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always, window_pos_pivot);
-			ImGui::SetNextWindowViewport(viewport->ID);
-		}
-	}
-
-
-	void set_next_window_pos_in_window(const window_pos location, const f32 padding) {
-
-		ImVec2 pos = ImGui::GetWindowPos();
-		ImVec2 size = ImGui::GetWindowSize();
-
-		if (location == window_pos::center)
-			ImGui::SetNextWindowPos(ImVec2(pos.x + (size.x / 2), pos.y + (size.y / 2)), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
-
-		else if (static_cast<u32>(location) >= 2) {
-
-			bool has_tab_bar = !(GImGui->CurrentWindow->Flags & ImGuiWindowFlags_NoTitleBar);
-
-			const ImGuiViewport* viewport = ImGui::GetWindowViewport();
-			ImVec2 window_pos, window_pos_pivot;
-
-			window_pos.x = (location == window_pos::top_right || location == window_pos::bottom_right) ? (pos.x + size.x - padding) : (pos.x + padding);
-			window_pos.y = (location == window_pos::bottom_right || location == window_pos::bottom_left) ? (pos.y + size.y - padding) : (pos.y + padding + (has_tab_bar ? ImGui::GetFrameHeight() : 0.f));
-			window_pos_pivot.x = (location == window_pos::top_right || location == window_pos::bottom_right) ? 1.0f : 0.0f;
-			window_pos_pivot.y = (location == window_pos::bottom_right || location == window_pos::bottom_left) ? 1.0f : 0.0f;
-			ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always, window_pos_pivot);
-			ImGui::SetNextWindowViewport(viewport->ID);
-		}
-	}
-
-
-	void next_window_position_selector(window_pos& position, bool& show_window) {
-
-		if (ImGui::MenuItem("custom", NULL, position == window_pos::custom))
-			position = window_pos::custom;
-
-		if (ImGui::MenuItem("center", NULL, position == window_pos::center))
-			position = window_pos::center;
-
-		if (ImGui::MenuItem("top-left", NULL, position == window_pos::top_left))
-			position = window_pos::top_left;
-
-		if (ImGui::MenuItem("top-right", NULL, position == window_pos::top_right))
-			position = window_pos::top_right;
-
-		if (ImGui::MenuItem("bottom-left", NULL, position == window_pos::bottom_left))
-			position = window_pos::bottom_left;
-
-		if (ImGui::MenuItem("bottom-right", NULL, position == window_pos::bottom_right))
-			position = window_pos::bottom_right;
-
-		if (show_window && ImGui::MenuItem("close"))
-			show_window = false;
-	}
-	
-	void next_window_position_selector_popup(window_pos& position, bool& show_window) {
-
-		if (ImGui::BeginPopupContextWindow()) {
-
-			next_window_position_selector(position, show_window);
-
-			ImGui::EndPopup();
-		}
-	}
-
-	
-	void adjust_popup_to_window_bounds(const ImVec2 expected_popup_size) {
-
-		ImVec2 popup_pos = ImGui::GetMousePos();
-		// ImVec2 mouse_pos = ImGui::GetMousePos();
-		// ImVec2 expected_size = ImVec2(20, 50);							// TODO: Adjust based on content
-
-		// if (file_currupted) 
-		// 	switch (loc_file_curruption_source) {					// sprocimate size bycorruption type
-		// 		default:
-		// 		case file_curruption_source::unknown:				expected_size = ImVec2(280, 250); break;	// should display everything to help user
-		// 		case file_curruption_source::header_incorrect:		expected_size = ImVec2(280, 250); break;	// should display header
-		// 		case file_curruption_source::empty_file:			expected_size = ImVec2(180, 150); break;	// dosnt need to display anything other than size
-		// 	}
-		
-		// popup_pos = mouse_pos;
-		ImVec2 window_pos = ImGui::GetWindowPos();
-		ImVec2 window_size = ImGui::GetWindowSize();
-		
-		if ((popup_pos.x + expected_popup_size.x) > (window_pos.x + window_size.x))				// Check if popup would go out of bounds horizontally
-			popup_pos.x = window_pos.x + window_size.x - expected_popup_size.x;
-		
-		if ((popup_pos.y + expected_popup_size.y) > (window_pos.y + window_size.y))				// Check vertical bounds
-			popup_pos.y = window_pos.y + window_size.y - expected_popup_size.y;
-		
-		ImGui::SetNextWindowPos(popup_pos, ImGuiCond_Appearing);
-	}
-	
-    
-	void show_directory_tree(const std::filesystem::path& dir_path, const std::string_view extention, const bool default_open, const std::function<void(const std::filesystem::path&)>& on_shader_select) {
-			
-		if (!std::filesystem::is_directory(dir_path)) {
-            if (!extention.empty() && dir_path.extension() != extention)
-                return;
-
-            std::string filename = dir_path.filename().string();
-            ImGui::PushID(filename.c_str());
-            ImGuiTreeNodeFlags leaf_flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-            ImGui::TreeNodeEx(filename.c_str(), leaf_flags);
-
-            if (ImGui::IsItemClicked())
-                on_shader_select(dir_path);
-
-            ImGui::PopID();
-			return;
-		}
-
-		// Sort sub-entries alphabetically
-		std::vector<std::filesystem::directory_entry> entries;
-		for (auto const& e : std::filesystem::directory_iterator(dir_path))
-			entries.push_back(e);
-
-		std::sort(entries.begin(), entries.end(),
-			[](auto const& a, auto const& b) {
-				return a.path().filename().string() < b.path().filename().string();
-			});
-
-		// Render directory node
-		std::string label = dir_path.has_filename()
-			? dir_path.filename().string()
-			: dir_path.string();
-
-		const auto flags = (default_open) ? ImGuiTreeNodeFlags_DefaultOpen : 0;
-		if (ImGui::TreeNodeEx(label.c_str(), flags)) {
-			for (auto const& entry : entries)
-				show_directory_tree(entry.path(), extention, false, on_shader_select);
-			ImGui::TreePop();
-		}
-	}
-
-
-	void seperation_vertical() {
-
-		ImGui::SameLine();
-		shift_cursor_pos(5, 0);
-		ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
-
-		ImGui::SameLine();
-		shift_cursor_pos(5, 0);
-	}
-
-
-	bool gray_button(const char* lable, const ImVec2& size) {
-
-		ImGui::PushStyleColor(ImGuiCol_Button, UI::get_default_gray_ref());
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, UI::get_action_color_gray_hover_ref());
-		ImGui::PushStyleColor(ImGuiCol_ButtonActive, UI::get_action_color_gray_active_ref());
-
-		const bool result = ImGui::Button(lable, size);
-
-		ImGui::PopStyleColor(3);
-		return result;
-	}
-
-	bool toggle_button(const char* lable, bool& bool_var, const ImVec2& size) {
-
-		// show weaker color if toggle_bool is false
-		if (!bool_var) {
-
-			ImGui::PushStyleColor(ImGuiCol_Button, UI::get_action_color_00_faded_ref());
-			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, UI::get_action_color_00_weak_ref());
-			ImGui::PushStyleColor(ImGuiCol_ButtonActive, UI::get_action_color_00_default_ref());
-		}
-
-		const bool result = ImGui::Button("show Markdown", ImVec2(100, 21));
-
-		if (!bool_var)
-			ImGui::PopStyleColor(3);
-
-		return result;
-	}
-
-	void big_text(const char* text, bool wrapped) {
-
-		ImGui::PushFont(application::get().get_imgui_config_ref()->get_font("regular_big"));
-
-		if (wrapped)
-			ImGui::TextWrapped("%s", text);
-		else
-			ImGui::Text("%s", text);
-
-		ImGui::PopFont();
-	}
-
-
-	void text_bold(const char* text, bool wrapped) {
-
-		ImGui::PushFont(application::get().get_imgui_config_ref()->get_font("bold"));
-
-		if (wrapped)
-			ImGui::TextWrapped("%s", text);
-		else
-			ImGui::Text("%s", text);
-
-		ImGui::PopFont();
-	}
-
-
-	void text_italic(const char* text, bool wrapped) {
-
-		ImGui::PushFont(application::get().get_imgui_config_ref()->get_font("italic"));
-
-		if (wrapped)
-			ImGui::TextWrapped("%s", text);
-		else
-			ImGui::Text("%s", text);
-
-		ImGui::PopFont();
-	}
-
 	// ================================================================================================================================================================================================
 	// ANCI escape code parsing
 	// ================================================================================================================================================================================================
@@ -489,6 +530,7 @@ namespace AT::UI {
 		return ImVec4(0.0f, 0.0f, 0.0f, 0.0f);      // Transparent default
 	}
 
+
 	inline ImVec4 get_background_16_color(int index) {
 		const static ImVec4 colors[] = {
 			ImVec4(0.5f, 0.5f, 0.5f, 1.0f),        // 100: Bright Black (Gray)
@@ -504,6 +546,7 @@ namespace AT::UI {
 			return colors[index];
 		return ImVec4(0.0f, 0.0f, 0.0f, 0.0f);      // Transparent default
 	}
+
 
 	inline ImVec4 get_8_color(int index) {
 		const static ImVec4 colors[] = {
@@ -521,6 +564,7 @@ namespace AT::UI {
 		return ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
 	}
 
+
 	inline ImVec4 get_16_color(int index) {
 		const static ImVec4 colors[] = {
 			ImVec4(0.5f, 0.5f, 0.5f, 1.0f),         // 8: Bright Black (Gray)
@@ -536,6 +580,7 @@ namespace AT::UI {
 			return colors[index - 8];
 		return ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
 	}
+
 
 	inline ImVec4 get_256_color(int index) {
 
@@ -561,6 +606,7 @@ namespace AT::UI {
 		}
 	}
 
+
 	void render_text_segment(const char* text, int length, ImVec4 fg_color, ImVec4 bg_color) {
 
 		ImVec2 pos = ImGui::GetCursorScreenPos();
@@ -572,6 +618,7 @@ namespace AT::UI {
 		ImGui::TextColored(fg_color, "%.*s", length, text);
 		ImGui::SameLine(0, 0);
 	}
+
 
 	void anci_text(std::string_view text) {
 
@@ -686,9 +733,22 @@ namespace AT::UI {
 		ImGui::NewLine();
 	}
 
-	// ================================================================================================================================================================================================
-	// ANCI escape code parsing
-	// ================================================================================================================================================================================================
+	// ============================================================================================================
+	// UTIL
+	// ============================================================================================================
+
+	void help_marker(const char* desc) {
+
+		ImGui::TextDisabled(" ? ");
+		if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort)) {
+			ImGui::BeginTooltip();
+			ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+			ImGui::TextUnformatted(desc);
+			ImGui::PopTextWrapPos();
+			ImGui::EndTooltip();
+		}
+	}
+
 
 	void shift_cursor_pos(const f32 shift_x, const f32 shift_y) {
 
@@ -696,11 +756,13 @@ namespace AT::UI {
 		ImGui::SetCursorPos({ current_pos.x + shift_x, current_pos.y + shift_y });
 	}
 
+
 	void shift_cursor_pos(const ImVec2 shift) {
 
 		auto current_pos = ImGui::GetCursorPos();
 		ImGui::SetCursorPos({ current_pos.x + shift.x, current_pos.y + shift.y });
 	}
+
 
 	void progressbar_with_text(const char* lable, const char* progress_bar_text, f32 percent, f32 lable_size, f32 progressbar_size_x, f32 progressbar_size_y) {
 
@@ -730,48 +792,9 @@ namespace AT::UI {
 		ImGui::Text("%s", progress_bar_text);
 	}
 
-	void help_marker(const char* desc) {
-
-		ImGui::TextDisabled(" ? ");
-		if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort)) {
-			ImGui::BeginTooltip();
-			ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-			ImGui::TextUnformatted(desc);
-			ImGui::PopTextWrapPos();
-			ImGui::EndTooltip();
-		}
-	}
-
-
-
-	bool begin_table(std::string_view lable, bool display_name, ImVec2 size, f32 inner_width, bool set_columns_width, f32 columns_width_percentage) {
-
-		if (display_name)
-			ImGui::Text("%s:", lable.data());
-
-		ImGuiTableFlags flags = ImGuiTableFlags_Resizable;
-		if (ImGui::BeginTable(lable.data(), 2, flags, size, inner_width)) {
-
-			// setup table and columns
-			if (size.x > 0.0f && set_columns_width) {
-
-				float column_width = size.x * columns_width_percentage;
-				ImGui::TableSetupColumn("##one", ImGuiTableColumnFlags_NoHeaderLabel | ImGuiTableColumnFlags_WidthFixed, column_width);
-				ImGui::TableSetupColumn("##two", ImGuiTableColumnFlags_NoHeaderLabel | ImGuiTableColumnFlags_WidthStretch);
-			} else {
-
-				ImGui::TableSetupColumn("##one", ImGuiTableColumnFlags_NoHeaderLabel);
-				ImGui::TableSetupColumn("##two", ImGuiTableColumnFlags_NoHeaderLabel | ImGuiTableColumnFlags_NoResize);
-			}
-
-			return true;
-		}
-		return false;
-	}
-
-#define GRAY(value)		IM_COL32(value, value, value, 255);
-
-	void end_table() { ImGui::EndTable(); }
+	// ============================================================================================================
+	// FRAME
+	// ============================================================================================================
 
 	void custom_frame(const f32 width_left_side, std::function<void()> left_side, std::function<void()> right_side) {
 
@@ -815,6 +838,7 @@ namespace AT::UI {
 		}
 	}
 	
+
 	void custom_frame_NEW(const f32 width_left_side, const bool can_resize, const ImU32 color_left_side, std::function<void()> left_side, std::function<void()> right_side) {
 
 		static ImGuiChildFlags child_flags = ImGuiChildFlags_Border | ImGuiChildFlags_AlwaysUseWindowPadding;
@@ -856,6 +880,10 @@ namespace AT::UI {
 		ImGui::EndChild();
 	}
 
+	// ============================================================================================================
+	// MISC
+	// ============================================================================================================
+
 	bool serach_input(const char* lable, std::string& search_text) {
 
 		std::string buffer = search_text;
@@ -884,6 +912,177 @@ namespace AT::UI {
 
 		return false;
 	}
+
+
+	void color_picker(ImVec4& color) {
+		
+		// static bool backup_color_init = false;
+		static ImVec4 backup_color;
+		static bool saved_palette_init = true;
+		static ImVec4 saved_palette[35] = {};
+		if (saved_palette_init) {
+			for (u64 n = 0; n < ARRAY_SIZE(saved_palette); n++) {
+				ImGui::ColorConvertHSVtoRGB((n / 34.f), .8f, .8f,
+					saved_palette[n].x, saved_palette[n].y, saved_palette[n].z);
+				saved_palette[n].w = 1.0f; // Alpha
+			}
+			saved_palette_init = false;
+		}
+
+		ImGui::ColorPicker4("##picker", &color.x, ImGuiColorEditFlags_NoSidePreview | ImGuiColorEditFlags_NoSmallPreview);
+
+		ImGui::SameLine();
+		ImGui::BeginGroup();
+		{
+			ImGui::BeginGroup();
+			{
+				ImGui::Text("Current");
+				ImGui::ColorButton("##current", UI::get_main_color_ref(), ImGuiColorEditFlags_NoPicker | ImGuiColorEditFlags_AlphaPreviewHalf, ImVec2(60, 40));
+			}
+			ImGui::EndGroup();
+
+			ImGui::SameLine();
+			{
+				ImGui::BeginGroup();
+				ImGui::Text("Previous");
+				if (ImGui::ColorButton("##previous", backup_color, ImGuiColorEditFlags_NoPicker | ImGuiColorEditFlags_AlphaPreviewHalf, ImVec2(60, 40)))
+					UI::update_UI_colors(backup_color);
+			}
+			ImGui::EndGroup();
+
+			ImGui::Separator();
+			ImGui::Text("Palette");
+			for (u64 n = 0; n < ARRAY_SIZE(saved_palette); n++) {
+				ImGui::PushID(n);
+				if ((n % 5) != 0)
+					ImGui::SameLine(0.0f, ImGui::GetStyle().ItemSpacing.y);
+
+				ImGuiColorEditFlags palette_button_flags = ImGuiColorEditFlags_NoAlpha | ImGuiColorEditFlags_NoPicker | ImGuiColorEditFlags_NoTooltip;
+				if (ImGui::ColorButton("##palette", saved_palette[n], palette_button_flags, ImVec2(21, 21)))
+					UI::update_UI_colors(ImVec4(saved_palette[n].x, saved_palette[n].y, saved_palette[n].z, UI::get_main_color_ref().w));
+
+				// Allow user to drop colors into each palette entry. Note that ColorButton() is already a
+				// drag source by default, unless specifying the ImGuiColorEditFlags_NoDragDrop flag.
+				if (ImGui::BeginDragDropTarget()) {
+					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(IMGUI_PAYLOAD_TYPE_COLOR_3F))
+						memcpy((float*)&saved_palette[n], payload->Data, sizeof(float) * 3);
+					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(IMGUI_PAYLOAD_TYPE_COLOR_4F))
+						memcpy((float*)&saved_palette[n], payload->Data, sizeof(float) * 4);
+					ImGui::EndDragDropTarget();
+				}
+
+				ImGui::PopID();
+			}
+		}
+		ImGui::EndGroup();
+
+	}
+
+
+	void show_directory_tree(const std::filesystem::path& dir_path, const std::string_view extention, const bool default_open, const std::function<void(const std::filesystem::path&)>& on_shader_select) {
+			
+		if (!std::filesystem::is_directory(dir_path)) {
+            if (!extention.empty() && dir_path.extension() != extention)
+                return;
+
+            std::string filename = dir_path.filename().string();
+            ImGui::PushID(filename.c_str());
+            ImGuiTreeNodeFlags leaf_flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+            ImGui::TreeNodeEx(filename.c_str(), leaf_flags);
+
+            if (ImGui::IsItemClicked())
+                on_shader_select(dir_path);
+
+            ImGui::PopID();
+			return;
+		}
+
+		// Sort sub-entries alphabetically
+		std::vector<std::filesystem::directory_entry> entries;
+		for (auto const& e : std::filesystem::directory_iterator(dir_path))
+			entries.push_back(e);
+
+		std::sort(entries.begin(), entries.end(),
+			[](auto const& a, auto const& b) {
+				return a.path().filename().string() < b.path().filename().string();
+			});
+
+		// Render directory node
+		std::string label = dir_path.has_filename()
+			? dir_path.filename().string()
+			: dir_path.string();
+
+		const auto flags = (default_open) ? ImGuiTreeNodeFlags_DefaultOpen : 0;
+		if (ImGui::TreeNodeEx(label.c_str(), flags)) {
+			for (auto const& entry : entries)
+				show_directory_tree(entry.path(), extention, false, on_shader_select);
+			ImGui::TreePop();
+		}
+	}
+
+
+	void seperation_vertical() {
+
+		ImGui::SameLine();
+		shift_cursor_pos(5, 0);
+		ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
+
+		ImGui::SameLine();
+		shift_cursor_pos(5, 0);
+	}
+
+	// ============================================================================================================
+	// COLLABSING HEADER
+	// ============================================================================================================
+
+	bool begin_collapsing_header_section(const char* lable) {
+
+		ImGui::Indent();
+		bool buffer = ImGui::CollapsingHeader(lable, ImGuiTreeNodeFlags_DefaultOpen);
+
+		if (!buffer)
+			ImGui::Unindent();
+
+		return buffer;
+	}
+
+
+	void end_collapsing_header_section() {
+		ImGui::Unindent();
+	}
+
+	// ============================================================================================================
+	// TABLE
+	// ============================================================================================================
+
+	bool begin_table(std::string_view lable, bool display_name, ImVec2 size, f32 inner_width, bool set_columns_width, f32 columns_width_percentage) {
+
+		if (display_name)
+			ImGui::Text("%s:", lable.data());
+
+		ImGuiTableFlags flags = ImGuiTableFlags_Resizable;
+		if (ImGui::BeginTable(lable.data(), 2, flags, size, inner_width)) {
+
+			// setup table and columns
+			if (size.x > 0.0f && set_columns_width) {
+
+				float column_width = size.x * columns_width_percentage;
+				ImGui::TableSetupColumn("##one", ImGuiTableColumnFlags_NoHeaderLabel | ImGuiTableColumnFlags_WidthFixed, column_width);
+				ImGui::TableSetupColumn("##two", ImGuiTableColumnFlags_NoHeaderLabel | ImGuiTableColumnFlags_WidthStretch);
+			} else {
+
+				ImGui::TableSetupColumn("##one", ImGuiTableColumnFlags_NoHeaderLabel);
+				ImGui::TableSetupColumn("##two", ImGuiTableColumnFlags_NoHeaderLabel | ImGuiTableColumnFlags_NoResize);
+			}
+
+			return true;
+		}
+		return false;
+	}
+
+
+	void end_table() { ImGui::EndTable(); }
+
 
 	bool table_row_slider_int(std::string_view label, int& value, int min_value, int max_value, ImGuiInputTextFlags flags) {
 
@@ -958,71 +1157,6 @@ namespace AT::UI {
 	}
 
 
-	void color_picker(ImVec4& color) {
-		
-		// static bool backup_color_init = false;
-		static ImVec4 backup_color;
-		static bool saved_palette_init = true;
-		static ImVec4 saved_palette[35] = {};
-		if (saved_palette_init) {
-			for (u64 n = 0; n < ARRAY_SIZE(saved_palette); n++) {
-				ImGui::ColorConvertHSVtoRGB((n / 34.f), .8f, .8f,
-					saved_palette[n].x, saved_palette[n].y, saved_palette[n].z);
-				saved_palette[n].w = 1.0f; // Alpha
-			}
-			saved_palette_init = false;
-		}
-
-		ImGui::ColorPicker4("##picker", &color.x, ImGuiColorEditFlags_NoSidePreview | ImGuiColorEditFlags_NoSmallPreview);
-
-		ImGui::SameLine();
-		ImGui::BeginGroup();
-		{
-			ImGui::BeginGroup();
-			{
-				ImGui::Text("Current");
-				ImGui::ColorButton("##current", UI::get_main_color_ref(), ImGuiColorEditFlags_NoPicker | ImGuiColorEditFlags_AlphaPreviewHalf, ImVec2(60, 40));
-			}
-			ImGui::EndGroup();
-
-			ImGui::SameLine();
-			{
-				ImGui::BeginGroup();
-				ImGui::Text("Previous");
-				if (ImGui::ColorButton("##previous", backup_color, ImGuiColorEditFlags_NoPicker | ImGuiColorEditFlags_AlphaPreviewHalf, ImVec2(60, 40)))
-					UI::update_UI_colors(backup_color);
-			}
-			ImGui::EndGroup();
-
-			ImGui::Separator();
-			ImGui::Text("Palette");
-			for (u64 n = 0; n < ARRAY_SIZE(saved_palette); n++) {
-				ImGui::PushID(n);
-				if ((n % 5) != 0)
-					ImGui::SameLine(0.0f, ImGui::GetStyle().ItemSpacing.y);
-
-				ImGuiColorEditFlags palette_button_flags = ImGuiColorEditFlags_NoAlpha | ImGuiColorEditFlags_NoPicker | ImGuiColorEditFlags_NoTooltip;
-				if (ImGui::ColorButton("##palette", saved_palette[n], palette_button_flags, ImVec2(21, 21)))
-					UI::update_UI_colors(ImVec4(saved_palette[n].x, saved_palette[n].y, saved_palette[n].z, UI::get_main_color_ref().w));
-
-				// Allow user to drop colors into each palette entry. Note that ColorButton() is already a
-				// drag source by default, unless specifying the ImGuiColorEditFlags_NoDragDrop flag.
-				if (ImGui::BeginDragDropTarget()) {
-					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(IMGUI_PAYLOAD_TYPE_COLOR_3F))
-						memcpy((float*)&saved_palette[n], payload->Data, sizeof(float) * 3);
-					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(IMGUI_PAYLOAD_TYPE_COLOR_4F))
-						memcpy((float*)&saved_palette[n], payload->Data, sizeof(float) * 4);
-					ImGui::EndDragDropTarget();
-				}
-
-				ImGui::PopID();
-			}
-		}
-		ImGui::EndGroup();
-
-	}
-
-
 	void table_row(std::function<void()> first_colum, std::function<void()> second_colum) {
 
 		ImGui::TableNextRow();
@@ -1031,6 +1165,7 @@ namespace AT::UI {
 		ImGui::TableSetColumnIndex(1);
 		second_colum();
 	}
+
 
 	void table_row(std::string_view label, std::string& text, bool& enable_input) {
 
@@ -1084,6 +1219,7 @@ namespace AT::UI {
 		va_end(args);
 	}
 
+
 	void table_row(std::string_view label, bool& value) {
 
 		ImGui::TableNextRow();
@@ -1096,6 +1232,7 @@ namespace AT::UI {
 		//ImGui::Text("%s", value.data());
 	}
 
+
 	void table_row(std::string_view label, std::string_view value) {
 
 		ImGui::TableNextRow();
@@ -1106,6 +1243,7 @@ namespace AT::UI {
 
 		ImGui::Text("%s", value.data());
 	}
+
 
 	bool table_row(std::string_view label, glm::mat4& value, const bool display_in_degree) {
 		
@@ -1130,6 +1268,7 @@ namespace AT::UI {
 		return changed_0 || changed_1 || changed_2;
 	}
 
+
 	void table_row_progressbar(std::string_view label, const char* progress_bar_text, const f32 percent, const bool auto_resize, const f32 progressbar_size_x, const f32 progressbar_size_y) {
 
 
@@ -1145,21 +1284,6 @@ namespace AT::UI {
 				column_width = table->Columns[1].WidthGiven;
 		
 		UI::progressbar_with_text("", progress_bar_text, percent, 0.0f, column_width, progressbar_size_y);
-	}
-
-	bool begin_collapsing_header_section(const char* lable) {
-
-		ImGui::Indent();
-		bool buffer = ImGui::CollapsingHeader(lable, ImGuiTreeNodeFlags_DefaultOpen);
-
-		if (!buffer)
-			ImGui::Unindent();
-
-		return buffer;
-	}
-
-	void end_collapsing_header_section() {
-		ImGui::Unindent();
 	}
 
 }

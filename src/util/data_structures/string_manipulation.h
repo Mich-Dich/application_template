@@ -1,6 +1,7 @@
 #pragma once
 
-#include <imgui.h>
+struct ImVec2;
+struct ImVec4;
 
 #include "util/data_structures/UUID.h"
 

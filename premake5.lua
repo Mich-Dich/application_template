@@ -1,5 +1,25 @@
 
-include "dependencies.lua"
+------------------ dependencies ------------------
+
+------------ path ------------
+vendor_path = {}
+vendor_path["glew"]				= "%{wks.location}/vendor/glew"
+vendor_path["glfw"]          	= "%{wks.location}/vendor/glfw"
+vendor_path["glm"]           	= "%{wks.location}/vendor/glm"
+vendor_path["ImGui"]         	= "%{wks.location}/vendor/imgui"
+vendor_path["implot"]         	= "%{wks.location}/vendor/implot"
+vendor_path["stb_image"]     	= "%{wks.location}/vendor/stb_image"
+vendor_path["catch2"]           = "%{wks.location}/vendor/Catch2"
+
+------------ include ------------ 
+IncludeDir = {}
+IncludeDir["glew"]              = "%{vendor_path.glew}/include"
+IncludeDir["glfw"]              = "%{vendor_path.glfw}"
+IncludeDir["glm"]               = "%{vendor_path.glm}"
+IncludeDir["ImGui"]             = "%{vendor_path.ImGui}"
+IncludeDir["implot"]            = "%{vendor_path.implot}"
+IncludeDir["stb_image"]         = "%{vendor_path.stb_image}"
+IncludeDir["catch2"]            = "%{vendor_path.catch2}/src"
 
 workspace "application"
 	platforms "x64"
@@ -25,12 +45,13 @@ workspace "application"
 		"OUTPUTS=\"" .. outputs .. "\"",
 	}
 
-	if os.target() == "linux" then
-		print("---------- target platform is linux => manually compile GLFW ----------")
-		os.execute("cmake -S ./vendor/glfw -B ./vendor/glfw/build")								-- manuel compilation
-		os.execute("cmake --build ./vendor/glfw/build")											-- manuel compilation
-		print("---------- Done compiling GLFW ----------")
-	end
+    ---------- DISABLED FOR DEV ----------
+	-- if os.target() == "linux" then
+	-- 	print("---------- target platform is linux => manually compile GLFW ----------")
+	-- 	os.execute("cmake -S ./vendor/glfw -B ./vendor/glfw/build")								-- manuel compilation
+	-- 	os.execute("cmake --build ./vendor/glfw/build")											-- manuel compilation
+	-- 	print("---------- Done compiling GLFW ----------")
+	-- end
 
 group "dependencies"
 	include "vendor/imgui"
@@ -210,4 +231,82 @@ group "core"
             symbols "off"
             optimize "on"
 
+group ""
+
+
+group "tests"
+    project "tests"
+        kind "ConsoleApp"
+        language "C++"
+        cppdialect "C++20"
+        staticruntime "on"
+
+        targetdir ("%{wks.location}/bin/" .. outputs .. "/%{prj.name}")
+        objdir ("%{wks.location}/bin-int/" .. outputs .. "/%{prj.name}")
+
+        files
+        {
+            "test/**.h",
+            "test/**.cpp",
+            "src/util/math/random.cpp",             -- Add this line
+            "src/util/math/math.cpp",               -- Add if you have math.cpp and need it
+        }
+
+        includedirs
+        {
+            "src",
+            "%{IncludeDir.catch2}",
+            "%{IncludeDir.glm}",
+            "%{vendor_path.catch2}/build/generated-includes",
+        }
+
+        libdirs 
+        {
+            "%{vendor_path.catch2}/build/src",
+        }
+
+        links
+        {
+            "Catch2Main",  -- Provides the main function
+            "Catch2"       -- Provides the Catch2 framework itself
+        }
+
+        prebuildcommands {
+            "cmake -S ./vendor/Catch2 -B ./vendor/Catch2/build -DCMAKE_BUILD_TYPE=%{cfg.buildcfg}",
+            "cmake --build ./vendor/Catch2/build --config %{cfg.buildcfg}"
+        }
+
+        filter "system:linux"
+            systemversion "latest"
+            defines "PLATFORM_LINUX"
+            links { "pthread" }  -- Catch2 requires pthread on Linux
+
+            buildoptions
+            {
+                "-msse4.1",
+                "-fPIC",
+                "-Wall",
+                "-Wno-dangling-else"
+            }
+
+        filter "system:windows"
+            systemversion "latest"
+            defines "PLATFORM_WINDOWS"
+
+        filter "configurations:Debug"
+            defines "DEBUG"
+            runtime "Debug"
+            symbols "on"
+
+        filter "configurations:RelWithDebInfo"
+            defines "RELEASE_WITH_DEBUG_INFO"
+            runtime "Release"
+            symbols "on"
+            optimize "on"
+
+        filter "configurations:Release"
+            defines "RELEASE"
+            runtime "Release"
+            symbols "off"
+            optimize "on"
 group ""

@@ -7,9 +7,6 @@
 
 namespace AT::util {
     
-    // glm::vec3 MY_rand_vec3() { return glm::linearRand(glm::vec3(0.0f), glm::vec3(1.0f)); }
-
-
     // @brief A class that provides methods for generating random numbers of various types.
     //        It utilizes the Mersenne Twister pseudo-random number generator for high-quality randomness.
     //        The class can generate floating-point numbers and unsigned integers within specified ranges.
@@ -19,6 +16,7 @@ namespace AT::util {
         random(u32 seed = std::random_device{}())
             : engine(seed) {}
 
+            
         template<typename T>
         T get(T min, T max) {
 
