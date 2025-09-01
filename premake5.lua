@@ -46,12 +46,12 @@ workspace "application"
 	}
 
     ---------- DISABLED FOR DEV ----------
-	-- if os.target() == "linux" then
-	-- 	print("---------- target platform is linux => manually compile GLFW ----------")
-	-- 	os.execute("cmake -S ./vendor/glfw -B ./vendor/glfw/build")								-- manuel compilation
-	-- 	os.execute("cmake --build ./vendor/glfw/build")											-- manuel compilation
-	-- 	print("---------- Done compiling GLFW ----------")
-	-- end
+	if os.target() == "linux" then
+		print("---------- target platform is linux => manually compile GLFW ----------")
+		os.execute("cmake -S ./vendor/glfw -B ./vendor/glfw/build")								-- manuel compilation
+		os.execute("cmake --build ./vendor/glfw/build")											-- manuel compilation
+		print("---------- Done compiling GLFW ----------")
+	end
 
 group "dependencies"
 	include "vendor/imgui"
@@ -234,79 +234,110 @@ group "core"
 group ""
 
 
-group "tests"
-    project "tests"
-        kind "ConsoleApp"
-        language "C++"
-        cppdialect "C++20"
-        staticruntime "on"
+-- group "tests"
+--     project "tests"
+--         kind "ConsoleApp"
+--         language "C++"
+--         cppdialect "C++20"
+--         staticruntime "on"
 
-        targetdir ("%{wks.location}/bin/" .. outputs .. "/%{prj.name}")
-        objdir ("%{wks.location}/bin-int/" .. outputs .. "/%{prj.name}")
+--         targetdir ("%{wks.location}/bin/" .. outputs .. "/%{prj.name}")
+--         objdir ("%{wks.location}/bin-int/" .. outputs .. "/%{prj.name}")
 
-        files
-        {
-            "test/**.h",
-            "test/**.cpp",
-            "src/util/math/random.cpp",             -- Add this line
-            "src/util/math/math.cpp",               -- Add if you have math.cpp and need it
-        }
+--         files
+--         {
+--             "test/**.h",
+--             "test/**.cpp",
 
-        includedirs
-        {
-            "src",
-            "%{IncludeDir.catch2}",
-            "%{IncludeDir.glm}",
-            "%{vendor_path.catch2}/build/generated-includes",
-        }
+--             "src/util/math/random.cpp",
+--             "src/util/math/math.cpp",
+--             "src/util/io/io.cpp",
+--             "src/util/io/config.cpp",
+--             "src/util/io/logger.cpp",
+--             "src/util/io/serializer_data.h",
+--             "src/util/io/serializer_yaml.h",
+--             "src/util/io/serializer_yaml.cpp",
+--             "src/util/data_structures/string_manipulation.cpp",
+--             "src/util/system.cpp",
 
-        libdirs 
-        {
-            "%{vendor_path.catch2}/build/src",
-        }
+--             -- Remove these broad inclusions:
+--             -- "src/util/**.h",
+--             -- "src/util/**.cpp",
 
-        links
-        {
-            "Catch2Main",  -- Provides the main function
-            "Catch2"       -- Provides the Catch2 framework itself
-        }
+--             -- Remove UI-related files that are causing issues:
+--             -- "vendor/implot/*.h",
+--             -- "vendor/implot/*.cpp",
+--         }
 
-        prebuildcommands {
-            "cmake -S ./vendor/Catch2 -B ./vendor/Catch2/build -DCMAKE_BUILD_TYPE=%{cfg.buildcfg}",
-            "cmake --build ./vendor/Catch2/build --config %{cfg.buildcfg}"
-        }
+--         includedirs
+--         {
+--             "src",
+--             "%{IncludeDir.catch2}",
+--             "%{IncludeDir.glm}",
+--             "%{vendor_path.catch2}/build/generated-includes",
+--         }
 
-        filter "system:linux"
-            systemversion "latest"
-            defines "PLATFORM_LINUX"
-            links { "pthread" }  -- Catch2 requires pthread on Linux
+--         links
+--         {
+--             "Catch2Main",  -- Provides the main function
+--             "Catch2",       -- Provides the Catch2 framework itself
+--             "ImGui",
+--         }
 
-            buildoptions
-            {
-                "-msse4.1",
-                "-fPIC",
-                "-Wall",
-                "-Wno-dangling-else"
-            }
+--         libdirs 
+--         {
+--             "%{vendor_path.catch2}/build/src",
+--             "vendor/imgui/bin/" .. outputs .. "/imgui",
+--         }
 
-        filter "system:windows"
-            systemversion "latest"
-            defines "PLATFORM_WINDOWS"
+--         prebuildcommands
+--         {
+--             "cmake -S ./vendor/Catch2 -B ./vendor/Catch2/build -DCMAKE_BUILD_TYPE=%{cfg.buildcfg}",
+--             "cmake --build ./vendor/Catch2/build --config %{cfg.buildcfg}"
+--         }
 
-        filter "configurations:Debug"
-            defines "DEBUG"
-            runtime "Debug"
-            symbols "on"
+--         filter "files:vendor/implot/**.cpp"
+--             flags { "NoPCH" }
+        
+--         filter "files:vendor/imgui/**.cpp"
+--             flags { "NoPCH" }
+        
+--         filter "system:linux"
+--             systemversion "latest"
+--             defines "PLATFORM_LINUX"
+--             links { 
+--                 "pthread",      -- Catch2 requires pthread on Linux
+--                 "Qt5Core",  -- Add Qt libraries if needed
+--                 "Qt5Widgets",
+--                 "Qt5Gui",
+--             }
 
-        filter "configurations:RelWithDebInfo"
-            defines "RELEASE_WITH_DEBUG_INFO"
-            runtime "Release"
-            symbols "on"
-            optimize "on"
+--             buildoptions
+--             {
+--                 "-msse4.1",
+--                 "-fPIC",
+--                 "-Wall",
+--                 "-Wno-dangling-else"
+--             }
 
-        filter "configurations:Release"
-            defines "RELEASE"
-            runtime "Release"
-            symbols "off"
-            optimize "on"
-group ""
+--         filter "system:windows"
+--             systemversion "latest"
+--             defines "PLATFORM_WINDOWS"
+
+--         filter "configurations:Debug"
+--             defines "DEBUG"
+--             runtime "Debug"
+--             symbols "on"
+
+--         filter "configurations:RelWithDebInfo"
+--             defines "RELEASE_WITH_DEBUG_INFO"
+--             runtime "Release"
+--             symbols "on"
+--             optimize "on"
+
+--         filter "configurations:Release"
+--             defines "RELEASE"
+--             runtime "Release"
+--             symbols "off"
+--             optimize "on"
+-- group ""

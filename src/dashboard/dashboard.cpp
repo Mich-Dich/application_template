@@ -47,6 +47,13 @@ namespace AT {
     }
 
 
+    void dashboard::on_crash() {
+        
+        LOG(Error, "Crash occurred")
+    }
+
+
+
     void dashboard::update(f32 delta_time) {}
 
 

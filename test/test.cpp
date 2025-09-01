@@ -5,6 +5,8 @@
 #include "util/pch.h"
 #include "util/math/math.h"
 #include "util/math/random.h" 
+#include "util/io/serializer_data.h"
+#include "util/io/serializer_yaml.h"
 
 
 
@@ -402,6 +404,38 @@ TEST_CASE("Math functions work correctly", "[math]") {
     }
 }
 
+TEST_CASE("YAML Serializer - Basic Types", "[serializer][yaml]") {
+    std::filesystem::path test_file = "test_basic.yml";
+    
+    // Test data
+    int             test_int = 42,          loaded_int;
+    float           test_float = 3.14f,     loaded_float;
+    std::string     test_string = "hello",  loaded_string;
+    bool            test_bool = true,       loaded_bool;
+
+    // Serialize
+    {
+        AT::serializer::yaml(test_file, "basic_data", AT::serializer::option::save_to_file)
+            .entry("test_int", test_int)
+            .entry("test_float", test_float)
+            .entry("test_string", test_string)
+            .entry("test_bool", test_bool);
+    }
+    
+    // Deserialize and verify
+    {
+        AT::serializer::yaml(test_file, "basic_data", AT::serializer::option::load_from_file)
+            .entry("test_int", loaded_int)
+            .entry("test_float", loaded_float)
+            .entry("test_string", loaded_string)
+            .entry("test_bool", loaded_bool);
+    }
+
+    REQUIRE(loaded_int == test_int);
+    REQUIRE(loaded_float == Catch::Approx(test_float));
+    REQUIRE(loaded_string == test_string);
+    REQUIRE(loaded_bool == test_bool);
+}
 
 
 /* compile and run test:
