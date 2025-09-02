@@ -45,31 +45,56 @@ namespace AT::UI {
 	GETTER_REF_FUNC(ImVec4, action_color_gray_hover);
 	GETTER_REF_FUNC(ImVec4, action_color_gray_active);
 
-	void set_UI_theme_selection(theme_selection theme_selection);
-	void enable_window_border(bool enable);
-	void update_UI_theme();
-	void update_UI_colors(ImVec4 new_color);
+    // Sets the current UI theme selection.
+    // @param theme_selection The new theme to apply (dark or light).
+    void set_UI_theme_selection(theme_selection theme_selection);
+
+    // Enables or disables window borders globally.
+    // @param enable True to enable window borders, false to disable them.
+    void enable_window_border(bool enable);
+
+    // Updates the UI theme based on the current theme selection.
+    // This function applies colors, paddings, and styles accordingly.
+    void update_UI_theme();
+
+    // Updates the main UI color and applies the change to the entire theme.
+    // @param new_color The new base color to be used in the UI.
+    void update_UI_colors(ImVec4 new_color);
+
 
 	class imgui_config {
 	public:
 
-		imgui_config();
-		~imgui_config();
+        // Constructs the ImGui configuration object.
+        // Initializes ImGui, ImPlot, fonts, themes, and loads saved settings.
+        imgui_config();
+
+        // Destructor for the ImGui configuration object.
+        // Properly saves UI state and releases ImGui and ImPlot resources.
+        ~imgui_config();
 
 		DEFAULT_GETTER(ImGuiContext*, 		context_imgui)
 		DEFAULT_GETTER(ImPlotContext*, 		context_implot)
 		DEFAULT_GETTER_SETTER_ALL(bool, 	show_FPS_window);
 
-		void serialize(AT::serializer::option option);
-		ImFont* get_font(const std::string& name = "default");
-		ImGuiID m_viewport_ID{};
+        // Serializes or deserializes ImGui configuration data.
+        // @param option Defines whether to save or load configuration.
+        void serialize(AT::serializer::option option);
+
+        // Retrieves a font by its name from the internal font registry.
+        // @param name The name of the font. Defaults to "default".
+        // @return A pointer to the ImFont if found, otherwise nullptr.
+        ImFont* get_font(const std::string& name = "default");
+
+
+        ImGuiID m_viewport_ID{};	// Stores the viewport ID for ImGui window management.
 
 	private:
 
 		// ------------------------- general -------------------------
-		ImGuiContext* 								m_context_imgui{};
-		ImPlotContext* 								m_context_implot{};
-		std::unordered_map<std::string, ImFont*> 	m_fonts{};
+        ImGuiContext*                               m_context_imgui{};      // ImGui context handle
+        ImPlotContext*                              m_context_implot{};     // ImPlot context handle
+        std::unordered_map<std::string, ImFont*>    m_fonts{};              // Registry of loaded fonts
 
 		// ------------------------- performance display -------------------------
 		bool										m_show_FPS_window = true;

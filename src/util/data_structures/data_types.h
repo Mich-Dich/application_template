@@ -26,31 +26,6 @@ typedef long double f128;   						// 128-bit floating point (platform dependent)
 typedef unsigned long long handle;  				// Generic handle type for OS resources
 
 
-// Extension for asset files
-#define AT_ASSET_EXTENTION			".gltasset"
-
-// Extension for project files
-#define PROJECT_EXTENTION    		".gltproj"
-
-// Configuration file extensions
-#define FILE_EXTENSION_CONFIG   	".yml"        	// Extension for YAML config files
-#define FILE_EXTENSION_INI      	".ini"          // Extension for INI config files
-
-// Temporary directory for DLL builds
-#define PROJECT_TEMP_DLL_PATH 		"build_DLL"
-
-// Directory structure macros
-#define METADATA_DIR            	"metadata"      // Directory for metadata files
-#define CONFIG_DIR              	"config"        // Directory for configuration files
-#define CONTENT_DIR             	"content"       // Directory for content files
-#define SOURCE_DIR              	"src"           // Directory for source code
-
-#define PROJECT_PATH				application::get().get_project_path()
-#define PROJECT_NAME				application::get().get_project_data().name
-
-#define ASSET_PATH					util::get_executable_path() / "assets"
-
-
 namespace AT {
 
 	// =============================================
@@ -142,19 +117,13 @@ namespace AT {
 		}
 	
 		// “newer than”
-		bool operator>(const system_time& other) const {
-			return other < *this;
-		}
+		bool operator>(const system_time& other) 	const { return other < *this; }
 	
 		// “not newer than” (i.e. older or equal)
-		bool operator<=(const system_time& other) const {
-			return !(*this > other);
-		}
+		bool operator<=(const system_time& other) 	const { return !(*this > other); }
 	
 		// “not older than” (i.e. newer or equal)
-		bool operator>=(const system_time& other) const {
-			return !(*this < other);
-		}
+		bool operator>=(const system_time& other) 	const { return !(*this < other); }
 	
 		// equality
 		bool operator==(const system_time& other) const {
@@ -163,9 +132,7 @@ namespace AT {
 		}
 
 		// inequality
-		bool operator!=(const system_time& other) const {
-			return !(*this == other);
-		}
+		bool operator!=(const system_time& other) 	const { return !(*this == other); }
 	
 		// @brief Converts system_time to human-readable string
 		std::string to_str() const { return std::format("{}-{:02}-{:02} ({}) {:02}:{:02}:{:02}.{:03}", year, month, day, day_of_week, hour, minute, secund, millisecend); }
@@ -180,28 +147,13 @@ namespace AT {
 
 			// Calculate difference in seconds
 			int64 diff_seconds = 0;
-			
-			// Calculate year difference
 			diff_seconds += (other.year - year) * 365 * 24 * 60 * 60;
-			
-			// Calculate month difference (approximate)
 			diff_seconds += (other.month - month) * 30 * 24 * 60 * 60;
-			
-			// Calculate day difference
 			diff_seconds += (other.day - day) * 24 * 60 * 60;
-			
-			// Calculate hour difference
 			diff_seconds += (other.hour - hour) * 60 * 60;
-			
-			// Calculate minute difference
 			diff_seconds += (other.minute - minute) * 60;
-			
-			// Calculate second difference
 			diff_seconds += (other.secund - secund);
-			
-			// Account for milliseconds
-			f64 total_diff = static_cast<f64>(diff_seconds) + 
-							(static_cast<f64>(other.millisecend) - static_cast<f64>(millisecend)) / 1000.0;
+			f64 total_diff = static_cast<f64>(diff_seconds) + (static_cast<f64>(other.millisecend) - static_cast<f64>(millisecend)) / 1000.0;
 
 			return total_diff >= seconds;
 		}
