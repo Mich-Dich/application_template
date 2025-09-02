@@ -8,18 +8,18 @@
 // @brief Primitive type definitions for consistent sizing across platforms
 // =============================================
 
-typedef uint8_t  u8;    							// 8-bit unsigned integer
-typedef uint16_t u16;   							// 16-bit unsigned integer
-typedef uint32_t u32;   							// 32-bit unsigned integer
-typedef uint64_t u64;   							// 64-bit unsigned integer
+typedef uint8_t  	u8;    							// 8-bit unsigned integer
+typedef uint16_t 	u16;   							// 16-bit unsigned integer
+typedef uint32_t 	u32;   							// 32-bit unsigned integer
+typedef uint64_t 	u64;   							// 64-bit unsigned integer
 
-typedef int8_t  int8;   							// 8-bit signed integer
-typedef int16_t int16;  							// 16-bit signed integer
-typedef int32_t int32;  							// 32-bit signed integer
-typedef int64_t int64;  							// 64-bit signed integer
+typedef int8_t  	int8;   						// 8-bit signed integer
+typedef int16_t 	int16;  						// 16-bit signed integer
+typedef int32_t 	int32;  						// 32-bit signed integer
+typedef int64_t 	int64;  						// 64-bit signed integer
 
-typedef float f32;          						// 32-bit floating point
-typedef double f64;         						// 64-bit floating point
+typedef float 		f32;          					// 32-bit floating point
+typedef double 		f64;         					// 64-bit floating point
 typedef long double f128;   						// 128-bit floating point (platform dependent)
 
 // Platform-specific types				
@@ -169,6 +169,48 @@ namespace AT {
 	
 		// @brief Converts system_time to human-readable string
 		std::string to_str() const { return std::format("{}-{:02}-{:02} ({}) {:02}:{:02}:{:02}.{:03}", year, month, day, day_of_week, hour, minute, secund, millisecend); }
+		
+		// @brief Check if this time is older than another time by at least the specified duration
+		// @param other The time to compare against
+		// @param seconds The minimum number of seconds that must have passed
+		// @return true if this time is older than the other time by at least the specified seconds
+		bool is_older_than(const system_time& other, u32 seconds) const {
+			// First check if this time is actually older using existing operator
+			if (*this >= other) return false;
+
+			// Calculate difference in seconds
+			int64 diff_seconds = 0;
+			
+			// Calculate year difference
+			diff_seconds += (other.year - year) * 365 * 24 * 60 * 60;
+			
+			// Calculate month difference (approximate)
+			diff_seconds += (other.month - month) * 30 * 24 * 60 * 60;
+			
+			// Calculate day difference
+			diff_seconds += (other.day - day) * 24 * 60 * 60;
+			
+			// Calculate hour difference
+			diff_seconds += (other.hour - hour) * 60 * 60;
+			
+			// Calculate minute difference
+			diff_seconds += (other.minute - minute) * 60;
+			
+			// Calculate second difference
+			diff_seconds += (other.secund - secund);
+			
+			// Account for milliseconds
+			f64 total_diff = static_cast<f64>(diff_seconds) + 
+							(static_cast<f64>(other.millisecend) - static_cast<f64>(millisecend)) / 1000.0;
+
+			return total_diff >= seconds;
+		}
+
+		// @brief Check if this time is older than another time by at least the specified duration
+		// This version allows specifying minutes instead of seconds
+		bool is_older_than_minutes(const system_time& other, u32 minutes) const {
+			return is_older_than(other, minutes * 60);
+		}
 	};
 	
 	// =============================================
