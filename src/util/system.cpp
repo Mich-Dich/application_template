@@ -267,15 +267,22 @@ namespace AT::util {
 
     void high_precision_sleep(f32 duration_in_milliseconds) {
 
-        static const f32 estimated_deviation = 10.0f;
+        PROFILE_APPLICATION_FUNCTION();
+
+        static const f32 estimated_deviation = 2.0f;
         auto loc_duration_in_milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::duration<f32>(duration_in_milliseconds)).count();
         auto target_time = std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(static_cast<int>(loc_duration_in_milliseconds));
 
         std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>(loc_duration_in_milliseconds - estimated_deviation)));
 
         // Busy wait for the remaining time
-        while (std::chrono::high_resolution_clock::now() < target_time)
-            ;
+        {
+            PROFILE_APPLICATION_SCOPE("busy wait");
+
+            while (std::chrono::high_resolution_clock::now() < target_time)
+                ;
+            
+        }
 
         //auto actual_sleep_time = std::chrono::duration_cast<std::chrono::milliseconds>( std::chrono::high_resolution_clock::now() - target_time + std::chrono::milliseconds(static_cast<int>(duration_in_milliseconds)) ).count();
         //LOG(Debug, "left over time: " << actual_sleep_time << " ms");
@@ -350,14 +357,16 @@ namespace AT::util {
     
     void init_qt() {
             
-        LOG(Trace, "Initiating QT");
-    
+        PROFILE_APPLICATION_FUNCTION();
+            
         qInstallMessageHandler(qt_message_handler);
         
         if (!qt_app) {
             QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
             qt_app = std::make_unique<QApplication>(qt_argc, qt_argv);
         }
+
+        LOG_INIT
     }
     
     void shutdown_qt() { 

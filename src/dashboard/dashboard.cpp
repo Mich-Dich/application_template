@@ -28,21 +28,26 @@ namespace AT {
     // init will be called when every system is initalized
     bool dashboard::init() {
 
+        PROFILE_APPLICATION_FUNCTION();
+
         // =========== Demonstrate a long startup process (just replace with custom logic) ===========
         bool long_startup_process = false;
 		AT::serializer::yaml(config::get_filepath_from_configtype(util::get_executable_path(), config::file::app_settings), "general_settings", AT::serializer::option::load_from_file)
 			.entry(KEY_VALUE(long_startup_process));
 
         if (long_startup_process)
-            std::this_thread::sleep_for(std::chrono::milliseconds(10000));  // 10s
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));  // 10s
         // ===========================================================================================
 
+        LOG_INIT
         return true;
     }
 
     // shutdown will be called bevor any system is deinitalized
     bool dashboard::shutdown() {
 
+        PROFILE_APPLICATION_FUNCTION();
+        LOG_SHUTDOWN
         return true;
     }
 
@@ -54,10 +59,15 @@ namespace AT {
 
 
 
-    void dashboard::update(f32 delta_time) {}
+    void dashboard::update(f32 delta_time) {
+
+        PROFILE_APPLICATION_FUNCTION();
+    }
 
 
     void dashboard::draw(f32 delta_time) {
+        
+        PROFILE_APPLICATION_FUNCTION();
         
         // create a full-window dockspace
         {

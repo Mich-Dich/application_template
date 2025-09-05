@@ -51,7 +51,7 @@ namespace AT {
 	window::window(window_attrib attributes) :
 		m_data(attributes) {
 	
-		LOG_INIT
+        PROFILE_APPLICATION_FUNCTION();
 	
 		// serialize_window_atributes(&m_data, serializer::option::load_from_file);
 		
@@ -142,10 +142,14 @@ namespace AT {
 			glfwMaximizeWindow(m_Window);
 	
 		bind_event_callbacks();
+		
+		LOG_INIT
 	}
 	
 	window::~window() {
 	
+        PROFILE_APPLICATION_FUNCTION();
+		
 		const bool is_maximized = this->is_maximized();
 		int titlebar_vertical_offset = is_maximized ? 12 : 6;
 	
@@ -157,6 +161,7 @@ namespace AT {
 	
 		glfwDestroyWindow(m_Window);
 		glfwTerminate();
+
 		LOG_SHUTDOWN
 	}
 	

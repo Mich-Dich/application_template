@@ -3,6 +3,7 @@
 
 #include <GLFW/glfw3.h>
 
+#include "util/timing/instrumentor.h"
 #include "util/crash_handler.h"
 #include "util/util.h"
 #include "platform/window.h"
@@ -29,7 +30,9 @@ namespace AT {
     bool application::s_running;
 
     application::application(int argc, char* argv[]) {
-        
+
+        PROFILE_APPLICATION_FUNCTION();
+
         ASSERT(!s_instance, "", "Application already exists");
         LOG_INIT
         s_instance = this;
@@ -53,9 +56,12 @@ namespace AT {
         m_imgui_config = create_ref<UI::imgui_config>();
         m_dashboard = create_ref<dashboard>();
         m_crash_subscription = AT::crash_handler::subscribe([this]() { m_dashboard->on_crash(); });
+
     }
 
     application::~application() {
+
+        PROFILE_APPLICATION_FUNCTION();
 
         m_dashboard.reset();
         AT::crash_handler::unsubscribe(m_crash_subscription);
@@ -68,11 +74,12 @@ namespace AT {
         util::shutdown_qt();
     #endif
         LOG_SHUTDOWN
-        logger::shutdown();
     }
 
     
     void application::run() {
+
+        PROFILE_APPLICATION_FUNCTION();     // <= THIS HERE
 
         // ---------------------------------------- finished setup ----------------------------------------
         bool long_startup_process = false;
@@ -82,6 +89,8 @@ namespace AT {
         LOG(Info, "long_startup_process [" << util::to_string(long_startup_process) << "]")
 
         if (long_startup_process) {
+
+            PROFILE_APPLICATION_SCOPE("long startup process(different thread)");
 
             m_renderer->set_state(system_state::active);
             s_window->show_window(true);
@@ -104,6 +113,8 @@ namespace AT {
 
         } else {
 
+            PROFILE_APPLICATION_SCOPE("startup process(main thread)");
+
             m_dashboard->init();
             m_renderer->set_state(system_state::active);
             s_running = true;
@@ -115,6 +126,8 @@ namespace AT {
         // ---------------------------------------- main loop ----------------------------------------
         while (s_running) {
     
+            PROFILE_APPLICATION_SCOPE("main loop");
+
             // PROFILE_SCOPE("run")
             s_window->poll_events();				// update internal state
             m_dashboard->update(m_delta_time);
@@ -122,8 +135,12 @@ namespace AT {
             limit_fps();
         }
     
-        LOG(Trace, "Exiting main run loop")
-        m_dashboard->shutdown();
+        {
+            PROFILE_APPLICATION_SCOPE("Exiting main loop");
+            LOG(Trace, "Exiting main run loop")
+            m_dashboard->shutdown();
+        }
+
     }
     
     // -----------------------------------------------------------------------------------------------------------------
@@ -155,6 +172,8 @@ namespace AT {
 
     void application::limit_fps() {
     
+        PROFILE_APPLICATION_FUNCTION();
+        
         m_work_time = static_cast<f32>(glfwGetTime()) - m_last_frame_time;
         if (m_work_time < target_duration) {
     

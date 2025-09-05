@@ -16,7 +16,7 @@
                                                 [](char c) { return c == '\r' || c == '\n' || c == '\t'; }),                                \
                                                 line.end());
 
-#define BUILD_CONFIG_PATH(x)	CONFIG_DIR + config::file_type_to_string(x) + FILE_EXTENSION_CONFIG
+#define BUILD_CONFIG_PATH(x)	CONFIG_DIR + config::file_type_to_string(x) + CONFIG_FILE_EXTENSION
 
 
 namespace AT::config {
@@ -30,7 +30,7 @@ namespace AT::config {
         LOG(Trace, "Checking Engine config files at: " << dir / CONFIG_DIR);
         for (int i = 0; i <= static_cast<int>(file::input); ++i) {
 
-            std::filesystem::path file_path = dir / CONFIG_DIR / (config::file_type_to_string(static_cast<file>(i)) + FILE_EXTENSION_CONFIG);
+            std::filesystem::path file_path = dir / CONFIG_DIR / (config::file_type_to_string(static_cast<file>(i)) + CONFIG_FILE_EXTENSION);
             std::ofstream config_file(file_path, std::ios::app);
             if (!config_file.is_open()) {
 
@@ -48,7 +48,7 @@ namespace AT::config {
         LOG(Trace, "Checking project config files at: " << project_dir / CONFIG_DIR);
         for (int i = 0; i <= static_cast<int>(file::input); ++i) {
 
-            std::filesystem::path file_path = project_dir / CONFIG_DIR / (config::file_type_to_string(static_cast<file>(i)) + FILE_EXTENSION_CONFIG);
+            std::filesystem::path file_path = project_dir / CONFIG_DIR / (config::file_type_to_string(static_cast<file>(i)) + CONFIG_FILE_EXTENSION);
             std::ofstream config_file(file_path, std::ios::app);
             if (!config_file.is_open()) {
 
@@ -161,9 +161,9 @@ namespace AT::config {
 
     // ----------------------------------------------- file path resolution ----------------------------------------------- 
 
-    std::filesystem::path get_filepath_from_configtype(std::filesystem::path root, file type) { return root / CONFIG_DIR / (config::file_type_to_string(type) + FILE_EXTENSION_CONFIG); }
+    std::filesystem::path get_filepath_from_configtype(std::filesystem::path root, file type) { return root / CONFIG_DIR / (config::file_type_to_string(type) + CONFIG_FILE_EXTENSION); }
 
-    std::filesystem::path get_filepath_from_configtype_ini(std::filesystem::path root, file type) { return root / CONFIG_DIR / (config::file_type_to_string(type) + FILE_EXTENSION_INI); }
+    std::filesystem::path get_filepath_from_configtype_ini(std::filesystem::path root, file type) { return root / CONFIG_DIR / (config::file_type_to_string(type) + INI_FILE_EXTENSION); }
 
     //
     std::string file_type_to_string(file type) {

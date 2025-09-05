@@ -30,6 +30,8 @@ namespace AT::render::open_GL {
     GL_renderer::GL_renderer(ref<window> window)
         : renderer(window) {
         
+        PROFILE_APPLICATION_FUNCTION();
+
         glfwMakeContextCurrent(m_window->get_window());
         
         glewExperimental = GL_TRUE;
@@ -51,9 +53,7 @@ namespace AT::render::open_GL {
         
         glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 
-        // #ifdef DEBUG
-        //     glGenQueries(1, &m_total_render_time);
-        // #endif
+        LOG_INIT
     }
     
     GL_renderer::~GL_renderer() {
@@ -66,6 +66,8 @@ namespace AT::render::open_GL {
 
     void GL_renderer::draw_frame(float delta_time) {
             
+        PROFILE_APPLICATION_FUNCTION();
+        
         if (m_state != system_state::active)
             return;
 

@@ -65,7 +65,7 @@ namespace AT::UI {
 
 	imgui_config::imgui_config() { 
 		
-		LOG_INIT 
+        PROFILE_APPLICATION_FUNCTION();
 		
 		IMGUI_CHECKVERSION();
 		m_context_imgui = ImGui::CreateContext();
@@ -119,18 +119,20 @@ namespace AT::UI {
 		}
 
 		update_UI_theme();
+		LOG_INIT 
 	}
 
 
 	imgui_config::~imgui_config() { 
 
-		LOG_SHUTDOWN
+        PROFILE_APPLICATION_FUNCTION();
 				
 		application::get().get_renderer()->imgui_shutdown();
 		ImGui::DestroyContext(m_context_imgui);
 		ImPlot::DestroyContext(m_context_implot);
 
 		serialize(serializer::option::save_to_file);
+		LOG_SHUTDOWN
 	}
 
 
