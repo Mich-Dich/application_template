@@ -404,6 +404,209 @@ TEST_CASE("Math functions", "[math]") {
     }
 }
 
+
+TEST_CASE("Logger Basic Functionality", "[logger]") {
+    // Create a temporary directory for test logs
+    std::filesystem::path test_dir = std::filesystem::temp_directory_path() / "logger_test";
+    std::filesystem::create_directories(test_dir);
+    
+    SECTION("Initialization and Shutdown") {
+        REQUIRE(AT::logger::init("[$T] $L: $C", false, test_dir, "test_basic.log"));
+        REQUIRE_NOTHROW(AT::logger::shutdown());
+    }
+    
+    SECTION("Basic Logging") {
+        REQUIRE(AT::logger::init("$L: $C", false, test_dir, "test_basic.log"));
+        
+        LOG_Info("Test info message");
+        LOG_Warn("Test warning message");
+        LOG_Error("Test error message");
+        
+        REQUIRE_NOTHROW(AT::logger::shutdown());
+        
+        // Verify log file content
+        std::ifstream log_file(test_dir / "test_basic.log");
+        std::stringstream buffer;
+        buffer << log_file.rdbuf();
+        std::string content = buffer.str();
+        
+        REQUIRE(content.find("INFO: Test info message") != std::string::npos);
+        REQUIRE(content.find("WARN: Test warning message") != std::string::npos);
+        REQUIRE(content.find("ERROR: Test error message") != std::string::npos);
+    }
+    
+    SECTION("Format Changes") {
+        REQUIRE(AT::logger::init("$L: $C", false, test_dir, "test_format.log"));
+        
+        LOG_Info("Message with initial format");
+        
+        AT::logger::set_format("$T $L: $C");
+        LOG_Info("Message with new format");
+        
+        AT::logger::use_previous_format();
+        LOG_Info("Message with previous format");
+        
+        REQUIRE_NOTHROW(AT::logger::shutdown());
+    }
+    
+    SECTION("Thread Label Registration") {
+        REQUIRE(AT::logger::init("[$Q] $L: $C", false, test_dir, "test_thread_labels.log"));
+        
+        AT::logger::register_label_for_thread("MainThread");
+        LOG_Info("Message from labeled thread");
+        
+        AT::logger::unregister_label_for_thread();
+        LOG_Info("Message after unregistering");
+        
+        REQUIRE_NOTHROW(AT::logger::shutdown());
+    }
+    
+    // Clean up
+    std::filesystem::remove_all(test_dir);
+}
+
+
+TEST_CASE("Logger Multi-threading", "[logger][multithreading]") {
+    std::filesystem::path test_dir = std::filesystem::temp_directory_path() / "logger_mt_test";
+    std::filesystem::create_directories(test_dir);
+    
+    REQUIRE(AT::logger::init("[$T] [$Q] $L: $C", false, test_dir, "test_multithread.log"));
+    
+    const int num_threads = 10;
+    const int messages_per_thread = 50;
+    std::vector<std::thread> threads;
+    std::atomic<int> messages_logged(0);
+    
+    SECTION("Concurrent Logging") {
+        for (int i = 0; i < num_threads; i++) {
+            threads.emplace_back([i, &messages_logged]() {
+                std::string thread_name = "Thread" + std::to_string(i);
+                AT::logger::register_label_for_thread(thread_name);
+                
+                for (int j = 0; j < messages_per_thread; j++) {
+                    LOG_Info("Message " + std::to_string(j) + " from " + thread_name);
+                    messages_logged++;
+                }
+                
+                AT::logger::unregister_label_for_thread();
+            });
+        }
+        
+        for (auto& thread : threads) {
+            thread.join();
+        }
+        
+        REQUIRE(messages_logged == num_threads * messages_per_thread);
+    }
+    
+    REQUIRE_NOTHROW(AT::logger::shutdown());
+    
+    // Verify all messages were logged
+    std::ifstream log_file(test_dir / "test_multithread.log");
+    std::stringstream buffer;
+    buffer << log_file.rdbuf();
+    std::string content = buffer.str();
+    
+    for (int i = 0; i < num_threads; i++) {
+        std::string thread_name = "Thread" + std::to_string(i);
+        REQUIRE(content.find(thread_name) != std::string::npos);
+    }
+    
+    // Clean up
+    std::filesystem::remove_all(test_dir);
+}
+
+
+TEST_CASE("Logger Stress Test", "[logger][stress]") {
+    std::filesystem::path test_dir = std::filesystem::temp_directory_path() / "logger_stress_test";
+    std::filesystem::create_directories(test_dir);
+    
+    // Use a smaller buffer to test buffer flushing
+    REQUIRE(AT::logger::init("$L: $C", false, test_dir, "test_stress.log"));
+    AT::logger::set_buffer_size(1024); // 1KB buffer
+    AT::logger::set_buffer_threshold(AT::logger::severity::Warn); // Only buffer up to Warn
+    
+    const int num_threads = 8;
+    const int messages_per_thread = 1000; // 8000 total messages
+    std::vector<std::thread> threads;
+    std::atomic<int> messages_logged(0);
+    
+    SECTION("High Volume Logging") {
+        for (int i = 0; i < num_threads; i++) {
+            threads.emplace_back([i, &messages_logged]() {
+                for (int j = 0; j < messages_per_thread; j++) {
+                    // Mix different log levels
+                    if (j % 10 == 0) {
+                        LOG_Error("Error message " + std::to_string(j));
+                    } else if (j % 5 == 0) {
+                        LOG_Warn("Warning message " + std::to_string(j));
+                    } else if (j % 3 == 0) {
+                        LOG_Info("Info message " + std::to_string(j));
+                    } else {
+                        LOG_Debug("Debug message " + std::to_string(j));
+                    }
+                    messages_logged++;
+                }
+            });
+        }
+        
+        for (auto& thread : threads) {
+            thread.join();
+        }
+        
+        REQUIRE(messages_logged == num_threads * messages_per_thread);
+    }
+    
+    REQUIRE_NOTHROW(AT::logger::shutdown());
+    
+    // Verify log file exists and has content
+    std::ifstream log_file(test_dir / "test_stress.log");
+    REQUIRE(log_file.good());
+    
+    std::stringstream buffer;
+    buffer << log_file.rdbuf();
+    std::string content = buffer.str();
+    
+    // Should contain messages from all levels
+    REQUIRE(content.find("ERROR:") != std::string::npos);
+    REQUIRE(content.find("WARN:") != std::string::npos);
+    REQUIRE(content.find("INFO:") != std::string::npos);
+    REQUIRE(content.find("DEBUG:") != std::string::npos);
+    
+    std::filesystem::remove_all(test_dir);                          // Clean up
+}
+
+
+TEST_CASE("Logger Exception Handling", "[logger][exception]") {
+    std::filesystem::path test_dir = std::filesystem::temp_directory_path() / "logger_exception_test";
+    std::filesystem::create_directories(test_dir);
+    
+    REQUIRE(AT::logger::init("$L: $C", false, test_dir, "test_exception.log"));
+    
+    SECTION("Logged Exception") {
+        try {
+            throw AT::logger::logged_exception(__FILE__, __FUNCTION__, __LINE__, std::this_thread::get_id(), "Test exception message");
+            REQUIRE(false);                                         // Should not reach here
+        } catch (const AT::logger::logged_exception& e) {
+            REQUIRE(std::string(e.what()) == "Test exception message");
+        }
+    }
+    
+    REQUIRE_NOTHROW(AT::logger::shutdown());
+    
+    // Verify exception was logged
+    std::ifstream log_file(test_dir / "test_exception.log");
+    std::stringstream buffer;
+    buffer << log_file.rdbuf();
+    std::string content = buffer.str();
+    
+    REQUIRE(content.find("Test exception message") != std::string::npos);
+    REQUIRE(content.find("ERROR:") != std::string::npos);
+    
+    std::filesystem::remove_all(test_dir);                          // Clean up
+}
+
+
 TEST_CASE("YAML Serializer - Basic Types", "[serializer][yaml]") {
     
     // use temporary directory for generated file
@@ -441,6 +644,160 @@ TEST_CASE("YAML Serializer - Basic Types", "[serializer][yaml]") {
     REQUIRE(loaded_float == Catch::Approx(test_float));
     REQUIRE(loaded_string == test_string);
     REQUIRE(loaded_bool == test_bool);
+}
+
+
+TEST_CASE("YAML Serializer - Complex Nested Structures", "[serializer][yaml]") {
+    
+    std::filesystem::path test_file = std::filesystem::temp_directory_path() / "test_complex.yml";
+    if (std::filesystem::exists(test_file))
+        std::filesystem::remove(test_file);
+
+    struct nested_config {
+        struct sub_section {
+            int value = 42;
+            std::string name = "test";
+        } subsection;
+        
+        std::vector<std::string> items = {"a", "b", "c"};
+        std::unordered_map<std::string, int> mapping = {{"x", 1}, {"y", 2}};
+    } test_config, loaded_config;
+
+    {
+        AT::serializer::yaml(test_file, "complex_data", AT::serializer::option::save_to_file)
+            .sub_section("nested", [&](AT::serializer::yaml& yaml) {
+                yaml.sub_section("subsection", [&](AT::serializer::yaml& yaml2) {
+                    yaml2.entry("value", test_config.subsection.value)
+                          .entry("name", test_config.subsection.name);
+                })
+                .entry("items", test_config.items)
+                .unordered_map("mapping", test_config.mapping);
+            });
+    }
+
+    {
+        AT::serializer::yaml(test_file, "complex_data", AT::serializer::option::load_from_file)
+            .sub_section("nested", [&](AT::serializer::yaml& yaml) {
+                yaml.sub_section("subsection", [&](AT::serializer::yaml& yaml2) {
+                    yaml2.entry("value", loaded_config.subsection.value)
+                          .entry("name", loaded_config.subsection.name);
+                })
+                .entry("items", loaded_config.items)
+                .unordered_map("mapping", loaded_config.mapping);
+            });
+    }
+
+    REQUIRE(loaded_config.subsection.value == test_config.subsection.value);
+    REQUIRE(loaded_config.subsection.name == test_config.subsection.name);
+    REQUIRE(loaded_config.items == test_config.items);
+    REQUIRE(loaded_config.mapping == test_config.mapping);
+}
+
+
+TEST_CASE("YAML Serializer - Multiple Sections", "[serializer][yaml]") {
+    std::filesystem::path test_file = std::filesystem::temp_directory_path() / "test_multisection.yml";
+    
+    if (std::filesystem::exists(test_file))
+        std::filesystem::remove(test_file);
+
+    int section1_value = 10, section2_value = 20;
+    int loaded_section1_value = 0, loaded_section2_value = 0;
+
+    {
+        AT::serializer::yaml(test_file, "section1", AT::serializer::option::save_to_file)
+            .entry("value", section1_value);
+    }
+
+    {
+        AT::serializer::yaml(test_file, "section2", AT::serializer::option::save_to_file)
+            .entry("value", section2_value);
+    }
+
+    {
+        AT::serializer::yaml(test_file, "section1", AT::serializer::option::load_from_file)
+            .entry("value", loaded_section1_value);
+    }
+
+    {
+        AT::serializer::yaml(test_file, "section2", AT::serializer::option::load_from_file)
+            .entry("value", loaded_section2_value);
+    }
+
+    REQUIRE(loaded_section1_value == section1_value);
+    REQUIRE(loaded_section2_value == section2_value);
+}
+
+
+TEST_CASE("YAML Serializer - Special Characters", "[serializer][yaml]") {
+    std::filesystem::path test_file = std::filesystem::temp_directory_path() / "test_special_chars.yml";
+    
+    if (std::filesystem::exists(test_file))
+        std::filesystem::remove(test_file);
+
+    std::string test_string = "Line\nBreak\tTab\\Backslash\"Quote", loaded_string;
+
+    {
+        AT::serializer::yaml(test_file, "special_data", AT::serializer::option::save_to_file)
+            .entry("special_string", test_string);
+    }
+
+    {
+        AT::serializer::yaml(test_file, "special_data", AT::serializer::option::load_from_file)
+            .entry("special_string", loaded_string);
+    }
+
+    REQUIRE(loaded_string == test_string);
+}
+
+
+TEST_CASE("YAML Serializer - Large Data", "[serializer][yaml]") {
+    std::filesystem::path test_file = std::filesystem::temp_directory_path() / "test_large.yml";
+    
+    if (std::filesystem::exists(test_file))
+        std::filesystem::remove(test_file);
+
+    const int NUM_ITEMS = 1000;
+    std::vector<int> large_vector(NUM_ITEMS);
+    std::iota(large_vector.begin(), large_vector.end(), 0); // Fill with 0..999
+    
+    std::vector<int> loaded_vector;
+
+    {
+        AT::serializer::yaml(test_file, "large_data", AT::serializer::option::save_to_file)
+            .entry("large_array", large_vector);
+    }
+
+    {
+        AT::serializer::yaml(test_file, "large_data", AT::serializer::option::load_from_file)
+            .entry("large_array", loaded_vector);
+    }
+
+    REQUIRE(loaded_vector == large_vector);
+}
+
+
+TEST_CASE("YAML Serializer - Non-Existing Keys", "[serializer][yaml]") {
+    std::filesystem::path test_file = std::filesystem::temp_directory_path() / "test_missing.yml";
+    
+    if (std::filesystem::exists(test_file))
+        std::filesystem::remove(test_file);
+
+    int existing_value = 42;
+    int loaded_existing = 0, loaded_missing = 100;
+
+    {
+        AT::serializer::yaml(test_file, "missing_data", AT::serializer::option::save_to_file)
+            .entry("existing_key", existing_value);
+    }
+
+    {
+        AT::serializer::yaml(test_file, "missing_data", AT::serializer::option::load_from_file)
+            .entry("existing_key", loaded_existing)
+            .entry("missing_key", loaded_missing);  // Should not change loaded_missing
+    }
+
+    REQUIRE(loaded_existing == existing_value);
+    REQUIRE(loaded_missing == 100); // Should remain unchanged
 }
 
 

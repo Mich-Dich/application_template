@@ -278,8 +278,6 @@ group "tests"
 
         links
         {
-            "Catch2Main",  -- Provides the main function
-            "Catch2",       -- Provides the Catch2 framework itself
             "ImGui",
         }
 
@@ -289,9 +287,18 @@ group "tests"
             "vendor/imgui/bin/" .. outputs .. "/imgui",
         }
 
+        filter "configurations:Debug"
+            links { "Catch2Maind", "Catch2d" }
+
+        filter "configurations:RelWithDebInfo"
+            links { "Catch2Main", "Catch2" }
+
+        filter "configurations:Release"
+            links { "Catch2Main", "Catch2" }
+
         prebuildcommands
         {
-            "cmake -S ./vendor/Catch2 -B ./vendor/Catch2/Build -DCMAKE_BUILD_TYPE=%{cfg.buildcfg}",
+            "cmake -S ./vendor/Catch2 -B ./vendor/Catch2/Build -DCMAKE_BUILD_TYPE=%{cfg.buildcfg} -DCATCH_INSTALL_DOCS=OFF -DCATCH_INSTALL_EXTRAS=OFF",
             "cmake --build ./vendor/Catch2/Build --config %{cfg.buildcfg}"
         }
 
@@ -306,7 +313,7 @@ group "tests"
             defines "PLATFORM_LINUX"
             links { 
                 "pthread",      -- Catch2 requires pthread on Linux
-                "Qt5Core",  -- Add Qt libraries if needed
+                "Qt5Core",      -- Add Qt libraries if needed
                 "Qt5Widgets",
                 "Qt5Gui",
             }

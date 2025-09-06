@@ -46,7 +46,7 @@ namespace AT::serializer {
 					m_file_content << util::add_spaces(m_level_of_indention) << m_prefix << key_name << ":\n";
 					for (auto interation : value) {
 
-						util::convert_to_string<T::value_type>(interation, buffer);
+        				util::convert_to_string<typename T::value_type>(interation, buffer); 
 						m_file_content << util::add_spaces(m_level_of_indention + 1) << "- " << buffer << "\n";
 					}
 
@@ -60,28 +60,26 @@ namespace AT::serializer {
 
 				if constexpr (is_vector<T>::value) {			// value is a vector
 
-					// deserialize content of subsections				
-					T buffer{};
-					u32 section_indentation = 0;
+					// deserialize content of subsections
+					typename T::value_type buffer{};
 					bool found_section = false;
 					std::string line;
 					while (std::getline(m_file_content, line)) {
 
-						// skip empty lines or comments
-						if (line.empty() || line.front() == '#')
+						if (line.empty() || line.front() == '#')		// skip empty lines or comments
 							continue;
 
 						// if line contains desired section enter inner-loop
-						//   has correct indentaion                                 has correct section_name                      ends with double-point
+						//   has correct indentation                                 has correct section_name                      ends with double-point
 						if ((util::measure_indentation(line) == 0) && (line.find(key_name) != std::string::npos) && (line.back() == ':')) {
 
 							found_section = true;
-							//LOG(Debug, "sub_section() found section => line: [" << line << "]");
+							value.clear();				// clear previous data when section found
 
-							//     not end of content                     has correct indentaion                                 doesn't end in double-points              
+							//     not end of content                     has correct indentation	         		doesn't end in double-points
 							while (std::getline(m_file_content, line) && (util::measure_indentation(line) == 1) && (line.back() != ':')) {
 
-								// remove indentation                       remove "- " (array element marker)
+								// 				   remove indentation		 remove "- " (array element marker)
 								line = line.substr(NUM_OF_INDENTING_SPACES + 2);
 								util::convert_from_string(line, buffer);
 								value.emplace_back(buffer);
@@ -90,8 +88,7 @@ namespace AT::serializer {
 							//LOG(Debug, "END OF SUB-SECTION");
 						}
 
-						// skip rest of content if section found
-						if (found_section)
+						if (found_section)				// skip rest of content if section found
 							break;
 					}
 

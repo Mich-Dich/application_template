@@ -241,7 +241,7 @@ namespace AT::logger {
     }
 
 
-    void set_s_buffer_size(const size_t new_size) {
+    void set_buffer_size(const size_t new_size) {
 
         std::lock_guard<std::mutex> lock(s_queue_mutex);
         s_log_queue.emplace(severity::Trace, "", LOGGER_CHANGE_BUFFER_SIZE, static_cast<int>(new_size), std::thread::id(), "[LOGGER] Changed buffer size to [" + std::to_string(new_size) + "]");
@@ -358,7 +358,6 @@ namespace AT::logger {
 
         if (static_cast<u8>(msg_sev) >= static_cast<u8>(s_severity_level_buffering_threshold) || s_log_queue.size() >= QUEUE_MAX_SIZE)           // check if thread should be notified
             s_cv.notify_all();
-
     }
 
 
