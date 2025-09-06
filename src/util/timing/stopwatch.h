@@ -1,5 +1,7 @@
 #pragma once
 
+#include "util/macros.h"
+
 namespace AT::util {
 
     // @brief This is a lightest stopwatch that is automatically started when creating an instance.
@@ -14,7 +16,7 @@ namespace AT::util {
 
         ~stopwatch() { stop(); }
 
-        DEFAULT_GETTER_C(f32, result);
+        GETTER_C(f32, result, *m_result_pointer);
 
         // @brief Stops the stopwatch and calculates the elapsed time.
         //        If a result pointer was provided, it will be updated with the elapsed time.

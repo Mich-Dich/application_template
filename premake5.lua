@@ -247,6 +247,15 @@ group "tests"
             "testing/**.h",
             "testing/**.cpp",
 
+            "src/util/timing/**.h",
+            "src/util/timing/**.cpp",
+            
+            "src/util/data_structures/data_types.h",
+            "src/util/data_structures/deletion_queue.h",
+            "src/util/data_structures/deletion_queue.cpp",
+            "src/util/data_structures/type_deletion_queue.h",
+            "src/util/data_structures/type_deletion_queue.cpp",
+
             "src/util/math/random.cpp",
             "src/util/math/math.cpp",
             "src/util/io/io.cpp",
@@ -255,14 +264,18 @@ group "tests"
             "src/util/io/serializer_data.h",
             "src/util/io/serializer_yaml.h",
             "src/util/io/serializer_yaml.cpp",
+            "src/util/io/serializer_binary.h",
+            "src/util/io/serializer_binary.cpp",
+
+
             "src/util/data_structures/string_manipulation.cpp",
             "src/util/system.cpp",
-            
         }
 
         includedirs
         {
             "src",
+            "testing",
             "%{IncludeDir.catch2}",
             "%{IncludeDir.glm}",
             "%{vendor_path.catch2}/Build/generated-includes",

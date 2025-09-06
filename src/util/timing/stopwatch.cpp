@@ -7,38 +7,6 @@
 
 namespace AT::util {
 
-// #ifdef DEBUG
-//
-//     namespace Profiling {
-//
-//         bool simple_profiler::add_value() {
-//
-//             if (single_duration == -1.f)
-//                 return true;
-//
-//             if (m_number_of_values >= m_num_of_tests)
-//                 return false;
-//
-//             m_durations += single_duration;
-//             m_number_of_values++;
-//             if (m_number_of_values >= m_num_of_tests) {
-//
-//                 std::string precision_string;
-//                 switch (m_precision) {
-//                     case duration_precision::microseconds:     precision_string = " microseconds"; break;
-//                     case duration_precision::seconds:          precision_string = " seconds"; break;
-//                     default:
-//                     case duration_precision::milliseconds:     precision_string = " milliseconds"; break;
-//                 }
-//                 LOG(Info, m_message << " => sample count: " << m_number_of_values << " average duration: " << (m_durations / (f64)m_number_of_values) << precision_string);
-//             }
-//             return true;
-//         }
-//     }
-//
-// #endif
-
-
     f32 stopwatch::stop() {
 
         std::chrono::system_clock::time_point end_point = std::chrono::system_clock::now();

@@ -97,21 +97,30 @@ namespace AT::serializer {
 		// @return A reference to *this to allow chaining.
 		template<typename T>
 		binary& entry(std::vector<T>& vector) {
-
 			if (m_option == option::save_to_file) {
-
 				size_t size = vector.size();
 				m_ostream.write(reinterpret_cast<const char*>(&size), sizeof(size_t));
-				m_ostream.write(reinterpret_cast<const char*>(vector.data()), sizeof(T) * size);
+				
+				if constexpr (std::is_trivially_copyable_v<T>) 			// For trivially copyable types, write raw bytes
+					m_ostream.write(reinterpret_cast<const char*>(vector.data()), sizeof(T) * size);
 
+				else {													// For non-trivially copyable types, serialize each element individually
+					for (auto& element : vector)
+						entry(element);
+				}
 			} else {
-
 				size_t vector_size = 0;
 				m_istream.read(reinterpret_cast<char*>(&vector_size), sizeof(size_t));
 				vector.resize(vector_size);
-				m_istream.read(reinterpret_cast<char*>(vector.data()), sizeof(T) * vector_size);
+				
+				if constexpr (std::is_trivially_copyable_v<T>) 			// For trivially copyable types, read raw bytes
+					m_istream.read(reinterpret_cast<char*>(vector.data()), sizeof(T) * vector_size);
+				
+				else {													// For non-trivially copyable types, deserialize each element individually
+					for (auto& element : vector)
+						entry(element);
+				}
 			}
-
 			return *this;
 		}
 

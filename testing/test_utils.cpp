@@ -3,13 +3,21 @@
 
 
 #include "util/pch.h"
+#include "util/data_structures/data_types.h"
+#include "util/data_structures/deletion_queue.h"
+#include "util/data_structures/type_deletion_queue.h"
 #include "util/math/math.h"
 #include "util/math/random.h" 
 #include "util/io/serializer_data.h"
 #include "util/io/serializer_yaml.h"
+#include "util/io/serializer_binary.h"
+#include "util/timing/stopwatch.h"
 
 
 
+// ==============================================================================================================================
+// RANDOM
+// ==============================================================================================================================
 
 TEST_CASE("Random number generation", "[random]") {
 
@@ -151,6 +159,10 @@ TEST_CASE("Random number generation", "[random]") {
     }
 }
 
+
+// ==============================================================================================================================
+// MATH
+// ==============================================================================================================================
 
 TEST_CASE("Math functions", "[math]") {
     
@@ -404,6 +416,9 @@ TEST_CASE("Math functions", "[math]") {
     }
 }
 
+// ==============================================================================================================================
+// LOGGER
+// ==============================================================================================================================
 
 TEST_CASE("Logger Basic Functionality", "[logger]") {
     // Create a temporary directory for test logs
@@ -606,6 +621,9 @@ TEST_CASE("Logger Exception Handling", "[logger][exception]") {
     std::filesystem::remove_all(test_dir);                          // Clean up
 }
 
+// ==============================================================================================================================
+// YAML SERIALIZER
+// ==============================================================================================================================
 
 TEST_CASE("YAML Serializer - Basic Types", "[serializer][yaml]") {
     
@@ -799,6 +817,573 @@ TEST_CASE("YAML Serializer - Non-Existing Keys", "[serializer][yaml]") {
     REQUIRE(loaded_existing == existing_value);
     REQUIRE(loaded_missing == 100); // Should remain unchanged
 }
+
+// ==============================================================================================================================
+// BINARY SERIALIZER
+// ==============================================================================================================================
+
+TEST_CASE("Binary Serializer - Basic Types", "[serializer][binary]") {
+    std::filesystem::path test_file = std::filesystem::temp_directory_path() / "test_basic.bin";
+    
+    if (std::filesystem::exists(test_file))
+        std::filesystem::remove(test_file);
+
+    // Test data
+    int test_int = 42, loaded_int = 0;
+    float test_float = 3.14f, loaded_float = 0.f;
+    bool test_bool = true, loaded_bool = false;
+    double test_double = 2.71828, loaded_double = 0.0;
+
+    // Serialize
+    {
+        AT::serializer::binary(test_file, "basic_data", AT::serializer::option::save_to_file)
+            .entry(test_int)
+            .entry(test_float)
+            .entry(test_bool)
+            .entry(test_double);
+    }
+
+    // Deserialize and verify
+    {
+        AT::serializer::binary(test_file, "basic_data", AT::serializer::option::load_from_file)
+            .entry(loaded_int)
+            .entry(loaded_float)
+            .entry(loaded_bool)
+            .entry(loaded_double);
+    }
+
+    REQUIRE(loaded_int == test_int);
+    REQUIRE(loaded_float == Catch::Approx(test_float));
+    REQUIRE(loaded_bool == test_bool);
+    REQUIRE(loaded_double == Catch::Approx(test_double));
+}
+
+
+TEST_CASE("Binary Serializer - Strings", "[serializer][binary]") {
+    std::filesystem::path test_file = std::filesystem::temp_directory_path() / "test_strings.bin";
+    
+    if (std::filesystem::exists(test_file))
+        std::filesystem::remove(test_file);
+
+    std::string test_string = "Hello, World!", loaded_string;
+    std::string test_empty_string = "", loaded_empty_string;
+    std::string test_long_string(1000, 'A'), loaded_long_string;
+
+    // Serialize
+    {
+        AT::serializer::binary(test_file, "string_data", AT::serializer::option::save_to_file)
+            .entry(test_string)
+            .entry(test_empty_string)
+            .entry(test_long_string);
+    }
+
+    // Deserialize and verify
+    {
+        AT::serializer::binary(test_file, "string_data", AT::serializer::option::load_from_file)
+            .entry(loaded_string)
+            .entry(loaded_empty_string)
+            .entry(loaded_long_string);
+    }
+
+    REQUIRE(loaded_string == test_string);
+    REQUIRE(loaded_empty_string == test_empty_string);
+    REQUIRE(loaded_long_string == test_long_string);
+}
+
+
+TEST_CASE("Binary Serializer - File Paths", "[serializer][binary]") {
+    std::filesystem::path test_file = std::filesystem::temp_directory_path() / "test_paths.bin";
+    
+    if (std::filesystem::exists(test_file))
+        std::filesystem::remove(test_file);
+
+    std::filesystem::path test_path = "/some/test/path/file.txt";
+    std::filesystem::path test_relative_path = "relative/path";
+    std::filesystem::path loaded_path, loaded_relative_path;
+
+    // Serialize
+    {
+        AT::serializer::binary(test_file, "path_data", AT::serializer::option::save_to_file)
+            .entry(test_path)
+            .entry(test_relative_path);
+    }
+
+    // Deserialize and verify
+    {
+        AT::serializer::binary(test_file, "path_data", AT::serializer::option::load_from_file)
+            .entry(loaded_path)
+            .entry(loaded_relative_path);
+    }
+
+    REQUIRE(loaded_path == test_path);
+    REQUIRE(loaded_relative_path == test_relative_path);
+}
+
+
+TEST_CASE("Binary Serializer - Vectors", "[serializer][binary]") {
+    std::filesystem::path test_file = std::filesystem::temp_directory_path() / "test_vectors.bin";
+    
+    if (std::filesystem::exists(test_file))
+        std::filesystem::remove(test_file);
+
+    std::vector<int> test_int_vec = {1, 2, 3, 4, 5};
+    std::vector<float> test_float_vec = {1.1f, 2.2f, 3.3f};
+    std::vector<std::string> test_string_vec = {"one", "two", "three"};
+    
+    std::vector<int> loaded_int_vec;
+    std::vector<float> loaded_float_vec;
+    std::vector<std::string> loaded_string_vec;
+
+    // Serialize
+    {
+        AT::serializer::binary(test_file, "vector_data", AT::serializer::option::save_to_file)
+            .entry(test_int_vec)
+            .entry(test_float_vec)
+            .entry(test_string_vec);
+    }
+
+    // Deserialize and verify
+    {
+        AT::serializer::binary(test_file, "vector_data", AT::serializer::option::load_from_file)
+            .entry(loaded_int_vec)
+            .entry(loaded_float_vec)
+            .entry(loaded_string_vec);
+    }
+
+    REQUIRE(loaded_int_vec == test_int_vec);
+    REQUIRE(loaded_float_vec == test_float_vec);
+    REQUIRE(loaded_string_vec == test_string_vec);
+}
+
+
+TEST_CASE("Binary Serializer - Arrays", "[serializer][binary]") {
+    std::filesystem::path test_file = std::filesystem::temp_directory_path() / "test_arrays.bin";
+    
+    if (std::filesystem::exists(test_file))
+        std::filesystem::remove(test_file);
+
+    const size_t array_size = 5;
+    int* test_array = (int*)malloc(array_size * sizeof(int));
+    for (size_t i = 0; i < array_size; i++) {
+        test_array[i] = static_cast<int>(i * 10);
+    }
+
+    int* loaded_array = nullptr;
+
+    // Serialize
+    {
+        AT::serializer::binary(test_file, "array_data", AT::serializer::option::save_to_file)
+            .array(test_array, array_size);
+    }
+
+    // Deserialize and verify
+    {
+        AT::serializer::binary(test_file, "array_data", AT::serializer::option::load_from_file)
+            .array(loaded_array, array_size);
+    }
+
+    for (size_t i = 0; i < array_size; i++) {
+        REQUIRE(loaded_array[i] == test_array[i]);
+    }
+
+    // Clean up
+    free(test_array);
+    free(loaded_array);
+}
+
+
+TEST_CASE("Binary Serializer - Option Getter", "[serializer][binary]") {
+    std::filesystem::path test_file = std::filesystem::temp_directory_path() / "test_option.bin";
+    
+    if (std::filesystem::exists(test_file))
+        std::filesystem::remove(test_file);
+
+    // Test save option
+    AT::serializer::binary saver(test_file, "option_test", AT::serializer::option::save_to_file);
+    REQUIRE(saver.get_option() == AT::serializer::option::save_to_file);
+
+    // Test load option
+    AT::serializer::binary loader(test_file, "option_test", AT::serializer::option::load_from_file);
+    REQUIRE(loader.get_option() == AT::serializer::option::load_from_file);
+}
+
+
+TEST_CASE("Binary Serializer - Large Data", "[serializer][binary]") {
+    std::filesystem::path test_file = std::filesystem::temp_directory_path() / "test_large.bin";
+    
+    if (std::filesystem::exists(test_file))
+        std::filesystem::remove(test_file);
+
+    const size_t large_size = 10000;
+    std::vector<int> large_vector(large_size);
+    for (size_t i = 0; i < large_size; i++) {
+        large_vector[i] = static_cast<int>(i);
+    }
+
+    std::vector<int> loaded_vector;
+
+    // Serialize
+    {
+        AT::serializer::binary(test_file, "large_data", AT::serializer::option::save_to_file)
+            .entry(large_vector);
+    }
+
+    // Deserialize and verify
+    {
+        AT::serializer::binary(test_file, "large_data", AT::serializer::option::load_from_file)
+            .entry(loaded_vector);
+    }
+
+    REQUIRE(loaded_vector.size() == large_size);
+    for (size_t i = 0; i < large_size; i++) {
+        REQUIRE(loaded_vector[i] == large_vector[i]);
+    }
+}
+
+
+TEST_CASE("Binary Serializer - Mixed Data", "[serializer][binary]") {
+    std::filesystem::path test_file = std::filesystem::temp_directory_path() / "test_mixed.bin";
+    
+    if (std::filesystem::exists(test_file))
+        std::filesystem::remove(test_file);
+
+    int test_int = 42;
+    float test_float = 3.14f;
+    std::string test_string = "test";
+    std::vector<int> test_vector = {1, 2, 3};
+    std::filesystem::path test_path = "/some/path";
+
+    int loaded_int = 0;
+    float loaded_float = 0.f;
+    std::string loaded_string;
+    std::vector<int> loaded_vector;
+    std::filesystem::path loaded_path;
+
+    // Serialize
+    {
+        AT::serializer::binary(test_file, "mixed_data", AT::serializer::option::save_to_file)
+            .entry(test_int)
+            .entry(test_float)
+            .entry(test_string)
+            .entry(test_vector)
+            .entry(test_path);
+    }
+
+    // Deserialize and verify
+    {
+        AT::serializer::binary(test_file, "mixed_data", AT::serializer::option::load_from_file)
+            .entry(loaded_int)
+            .entry(loaded_float)
+            .entry(loaded_string)
+            .entry(loaded_vector)
+            .entry(loaded_path);
+    }
+
+    REQUIRE(loaded_int == test_int);
+    REQUIRE(loaded_float == Catch::Approx(test_float));
+    REQUIRE(loaded_string == test_string);
+    REQUIRE(loaded_vector == test_vector);
+    REQUIRE(loaded_path == test_path);
+}
+
+// ==============================================================================================================================
+// STOPWATCH
+// ==============================================================================================================================
+
+TEST_CASE("Stopwatch functionality", "[stopwatch][timing]") {
+
+    SECTION("Basic timing functionality") {
+        f32 elapsed_time = 0.0f;
+        
+        {
+            AT::util::stopwatch sw(&elapsed_time);
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        } // Stopwatch stops automatically when going out of scope
+        
+        REQUIRE(elapsed_time > 0.0f);
+        REQUIRE(elapsed_time >= 100.0f); // Should be at least 100ms
+    }
+    
+    SECTION("Manual stop and restart") {
+        f32 elapsed_time = 0.0f;
+        AT::util::stopwatch sw(&elapsed_time);
+        
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        f32 first_measurement = sw.stop();
+        
+        REQUIRE(first_measurement > 0.0f);
+        REQUIRE(first_measurement == elapsed_time);
+        
+        sw.restart();
+        std::this_thread::sleep_for(std::chrono::milliseconds(30));
+        f32 second_measurement = sw.stop();
+        
+        REQUIRE(second_measurement > 0.0f);
+        REQUIRE(second_measurement < first_measurement); // Should be shorter than first
+    }
+    
+    SECTION("Different precision modes") {
+        f32 ms_time = 0.0f;
+        f32 us_time = 0.0f;
+        f32 s_time = 0.0f;
+        
+        {
+            AT::util::stopwatch ms_sw(&ms_time, AT::duration_precision::milliseconds);
+            AT::util::stopwatch us_sw(&us_time, AT::duration_precision::microseconds);
+            AT::util::stopwatch s_sw(&s_time, AT::duration_precision::seconds);
+            
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+        
+        REQUIRE(ms_time > 0.0f);
+        REQUIRE(us_time > 0.0f);
+        REQUIRE(s_time > 0.0f);
+        
+        // Verify relative scale of different precisions
+        REQUIRE(us_time > ms_time); // Microseconds should be a larger number than milliseconds
+        REQUIRE(s_time < 1.0f);     // 100ms should be 0.1 seconds
+    }
+    
+    SECTION("Result getter") {
+        f32 elapsed_time = 0.0f;
+        AT::util::stopwatch sw(&elapsed_time);
+        
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        sw.stop();
+        
+        REQUIRE(sw.get_result() == elapsed_time);
+        REQUIRE(sw.get_result() > 0.0f);
+    }
+    
+    SECTION("Multiple consecutive measurements") {
+        f32 times[3] = {0.0f, 0.0f, 0.0f};
+        
+        for (int i = 0; i < 3; i++) {
+            AT::util::stopwatch sw(&times[i]);
+            std::this_thread::sleep_for(std::chrono::milliseconds(20 * (i + 1)));
+        }
+        
+        // Each measurement should be longer than the previous
+        REQUIRE(times[0] > 0.0f);
+        REQUIRE(times[1] > times[0]);
+        REQUIRE(times[2] > times[1]);
+    }
+    
+    SECTION("Very short measurements") {
+        f32 short_time = 0.0f;
+        
+        {
+            AT::util::stopwatch sw(&short_time);
+            // Intentionally empty - measure the overhead of creating the stopwatch
+        }
+        
+        // Even an empty block should register some time (though very small)
+        REQUIRE(short_time >= 0.0f);
+    }
+}
+
+// ==============================================================================================================================
+// DELETION QUEUE
+// ==============================================================================================================================
+
+TEST_CASE("DeletionQueue - Basic Functionality", "[deletion_queue]") {
+    
+    AT::util::deletion_queue dq;
+    
+    SECTION("Empty queue flush") {
+        REQUIRE_NOTHROW(dq.flush()); // Should not throw on empty queue
+    }
+    
+    SECTION("Single function execution") {
+        bool executed = false;
+        dq.push_func([&]() { executed = true; });
+        
+        REQUIRE_FALSE(executed); // Should not execute before flush
+        dq.flush();
+        REQUIRE(executed); // Should execute after flush
+    }
+    
+    SECTION("Multiple functions execution order") {
+        std::vector<int> execution_order;
+        
+        dq.push_func([&]() { execution_order.push_back(1); });
+        dq.push_func([&]() { execution_order.push_back(2); });
+        dq.push_func([&]() { execution_order.push_back(3); });
+        
+        REQUIRE(execution_order.empty()); // Should not execute before flush
+        dq.flush();
+        
+        // Functions should execute in reverse order (LIFO)
+        REQUIRE(execution_order.size() == 3);
+        REQUIRE(execution_order[0] == 3);
+        REQUIRE(execution_order[1] == 2);
+        REQUIRE(execution_order[2] == 1);
+    }
+}
+
+
+TEST_CASE("DeletionQueue - Queue Clearing", "[deletion_queue]") {
+    
+    AT::util::deletion_queue dq;
+    
+    SECTION("Queue is cleared after flush") {
+        int execution_count = 0;
+        dq.push_func([&]() { execution_count++; });
+        
+        dq.flush();
+        REQUIRE(execution_count == 1);
+        
+        // Second flush should not execute anything
+        execution_count = 0;
+        dq.flush();
+        REQUIRE(execution_count == 0);
+    }
+    
+    SECTION("Multiple flushes with new functions") {
+        int total_executions = 0;
+        
+        // First set of functions
+        dq.push_func([&]() { total_executions += 1; });
+        dq.push_func([&]() { total_executions += 2; });
+        dq.flush();
+        REQUIRE(total_executions == 3);
+        
+        // Second set of functions
+        dq.push_func([&]() { total_executions += 4; });
+        dq.flush();
+        REQUIRE(total_executions == 7);
+    }
+}
+
+
+TEST_CASE("DeletionQueue - Exception Handling", "[deletion_queue]") {
+    
+    AT::util::deletion_queue dq;
+    
+    SECTION("Exception in one function doesn't stop others") {
+        std::vector<int> executed_functions;
+        
+        dq.push_func([&]() { executed_functions.push_back(1); });
+        dq.push_func([&]() { throw std::runtime_error("Test exception"); });
+        dq.push_func([&]() { executed_functions.push_back(3); });
+        
+        // Should execute all functions even if one throws
+        REQUIRE_THROWS_AS(dq.flush(), std::runtime_error);
+        REQUIRE(executed_functions.size() == 2);
+        REQUIRE(executed_functions[0] == 3); // Reverse order
+        REQUIRE(executed_functions[1] == 1);
+    }
+    
+    SECTION("Multiple exceptions") {
+        dq.push_func([&]() { throw std::runtime_error("First exception"); });
+        dq.push_func([&]() { throw std::logic_error("Second exception"); });
+        
+        // Should throw the first exception encountered (in reverse order)
+        REQUIRE_THROWS_AS(dq.flush(), std::logic_error);
+    }
+}
+
+
+TEST_CASE("DeletionQueue - Resource Management", "[deletion_queue]") {
+    
+    SECTION("Memory deallocation") {
+        auto* ptr = new int(42);
+        AT::util::deletion_queue dq;
+        
+        dq.push_func([ptr]() { delete ptr; });
+        REQUIRE_NOTHROW(dq.flush());
+        // ptr is now deleted - further access would be undefined behavior
+    }
+    
+    SECTION("File handle cleanup") {
+        std::ofstream test_file("test_temp.txt");
+        test_file << "test content";
+        test_file.close();
+        
+        AT::util::deletion_queue dq;
+        bool file_deleted = false;
+        
+        dq.push_func([&]() {
+            if (std::filesystem::exists("test_temp.txt")) {
+                std::filesystem::remove("test_temp.txt");
+                file_deleted = true;
+            }
+        });
+        
+        REQUIRE(std::filesystem::exists("test_temp.txt"));
+        dq.flush();
+        REQUIRE(file_deleted);
+        REQUIRE_FALSE(std::filesystem::exists("test_temp.txt"));
+    }
+}
+
+
+TEST_CASE("DeletionQueue - Complex Scenarios", "[deletion_queue]") {
+    
+    SECTION("Nested deletion queues") {
+        AT::util::deletion_queue outer_dq;
+        AT::util::deletion_queue inner_dq;
+        std::vector<int> execution_order;
+        
+        inner_dq.push_func([&]() { execution_order.push_back(1); });
+        outer_dq.push_func([&]() {
+            execution_order.push_back(2);
+            inner_dq.flush();
+        });
+        outer_dq.push_func([&]() { execution_order.push_back(3); });
+        
+        outer_dq.flush();
+        
+        // Execution order should be: 3, 2, then 1 (from inner_dq)
+        REQUIRE(execution_order.size() == 3);
+        REQUIRE(execution_order[0] == 3);
+        REQUIRE(execution_order[1] == 2);
+        REQUIRE(execution_order[2] == 1);
+    }
+    
+    SECTION("Large number of functions") {
+        AT::util::deletion_queue dq;
+        const int NUM_FUNCTIONS = 1000;
+        std::atomic<int> counter = 0;
+        
+        for (int i = 0; i < NUM_FUNCTIONS; i++) {
+            dq.push_func([&]() { counter++; });
+        }
+        
+        REQUIRE(counter == 0);
+        dq.flush();
+        REQUIRE(counter == NUM_FUNCTIONS);
+    }
+}
+
+
+TEST_CASE("DeletionQueue - Thread Safety", "[deletion_queue][thread]") {
+
+    SECTION("Concurrent push from multiple threads") {
+        AT::util::deletion_queue dq;
+        const int NUM_THREADS = 10;
+        const int FUNCTIONS_PER_THREAD = 100;
+        std::atomic<int> total_executions = 0;
+        
+        std::vector<std::thread> threads;
+        for (int i = 0; i < NUM_THREADS; i++) {
+            threads.emplace_back([&]() {
+                for (int j = 0; j < FUNCTIONS_PER_THREAD; j++) {
+                    dq.push_func([&]() { total_executions++; });
+                }
+            });
+        }
+        
+        for (auto& thread : threads) {
+            thread.join();
+        }
+        
+        dq.flush();
+        REQUIRE(total_executions == NUM_THREADS * FUNCTIONS_PER_THREAD);
+    }
+}
+
+
 
 
 /*

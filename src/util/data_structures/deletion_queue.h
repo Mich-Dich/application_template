@@ -1,5 +1,8 @@
 #pragma once
 
+#include "util/pch.h"
+
+
 namespace AT::util {
 
     // @brief A class that manages a queue of functions for deferred execution. 
@@ -8,10 +11,15 @@ namespace AT::util {
     class deletion_queue {
     public:
 
+        deletion_queue() = default;
+        ~deletion_queue() = default;
+        
+        DELETE_COPY_MOVE_CONSTRUCTOR(deletion_queue);
+
         // @brief Adds a function to the deletion queue.
-       // @param [function] A function object (std::function<void()>) to be added to the queue.
-       //                   The function is stored and executed later when flush() is called.
-        void push_func(std::function<void()>&& function) { m_functions.push_back(function); }
+        // @param [function] A function object (std::function<void()>) to be added to the queue.
+        //                   The function is stored and executed later when flush() is called.
+        void push_func(std::function<void()>&& function);
 
         // @brief Executes all the functions in the queue and clears the queue.
         //        Each function in the queue is called in the order it was added.
@@ -19,7 +27,7 @@ namespace AT::util {
         void flush();
 
     private:
-        std::vector<std::function<void()>>		m_functions{};
+        std::vector<std::function<void()>>  m_functions{};
+        std::mutex                          m_mutex; // For thread safety
     };
-
 }

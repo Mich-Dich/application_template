@@ -58,7 +58,7 @@ namespace AT::serializer {
 
 			} else {				// load from file
 
-				if constexpr (is_vector<T>::value) {			// value is a vector
+				if constexpr (is_vector<T>::value) {					// value is a vector
 
 					// deserialize content of subsections
 					typename T::value_type buffer{};
@@ -74,7 +74,7 @@ namespace AT::serializer {
 						if ((util::measure_indentation(line) == 0) && (line.find(key_name) != std::string::npos) && (line.back() == ':')) {
 
 							found_section = true;
-							value.clear();				// clear previous data when section found
+							value.clear();								// clear previous data when section found
 
 							//     not end of content                     has correct indentation	         		doesn't end in double-points
 							while (std::getline(m_file_content, line) && (util::measure_indentation(line) == 1) && (line.back() != ':')) {
@@ -85,10 +85,9 @@ namespace AT::serializer {
 								value.emplace_back(buffer);
 							}
 
-							//LOG(Debug, "END OF SUB-SECTION");
 						}
 
-						if (found_section)				// skip rest of content if section found
+						if (found_section)								// skip rest of content if section found
 							break;
 					}
 
@@ -96,7 +95,7 @@ namespace AT::serializer {
 
 					std::string buffer{};
 					auto iterator = m_key_value_pares.find(key_name);
-					if (iterator == m_key_value_pares.end())				// key is not in map
+					if (iterator == m_key_value_pares.end())			// key is not in map
 						return *this;
 
 					buffer = iterator->second;
