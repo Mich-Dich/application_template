@@ -137,8 +137,6 @@ group "core"
             
             externalincludedirs											-- treat VMA as system headers (prevent warnings)
             {
-                -- "/usr/include",
-                -- "/usr/include/c++/13",
                 "/usr/include/x86_64-linux-gnu/qt5", 				-- Base Qt include path
                 "/usr/include/x86_64-linux-gnu/qt5/QtCore",
                 "/usr/include/x86_64-linux-gnu/qt5/QtWidgets",
@@ -234,110 +232,119 @@ group "core"
 group ""
 
 
--- group "tests"
---     project "tests"
---         kind "ConsoleApp"
---         language "C++"
---         cppdialect "C++20"
---         staticruntime "on"
+group "tests"
+    project "tests"
+        kind "ConsoleApp"
+        language "C++"
+        cppdialect "C++20"
+        staticruntime "on"
 
---         targetdir ("%{wks.location}/bin/" .. outputs .. "/%{prj.name}")
---         objdir ("%{wks.location}/bin-int/" .. outputs .. "/%{prj.name}")
+        targetdir ("%{wks.location}/bin/" .. outputs .. "/%{prj.name}")
+        objdir ("%{wks.location}/bin-int/" .. outputs .. "/%{prj.name}")
 
---         files
---         {
---             "test/**.h",
---             "test/**.cpp",
+        files
+        {
+            "testing/**.h",
+            "testing/**.cpp",
 
---             "src/util/math/random.cpp",
---             "src/util/math/math.cpp",
---             "src/util/io/io.cpp",
---             "src/util/io/config.cpp",
---             "src/util/io/logger.cpp",
---             "src/util/io/serializer_data.h",
---             "src/util/io/serializer_yaml.h",
---             "src/util/io/serializer_yaml.cpp",
---             "src/util/data_structures/string_manipulation.cpp",
---             "src/util/system.cpp",
+            "src/util/math/random.cpp",
+            "src/util/math/math.cpp",
+            "src/util/io/io.cpp",
+            "src/util/io/config.cpp",
+            "src/util/io/logger.cpp",
+            "src/util/io/serializer_data.h",
+            "src/util/io/serializer_yaml.h",
+            "src/util/io/serializer_yaml.cpp",
+            "src/util/data_structures/string_manipulation.cpp",
+            "src/util/system.cpp",
+            
+        }
 
---             -- Remove these broad inclusions:
---             -- "src/util/**.h",
---             -- "src/util/**.cpp",
+        includedirs
+        {
+            "src",
+            "%{IncludeDir.catch2}",
+            "%{IncludeDir.glm}",
+            "%{vendor_path.catch2}/Build/generated-includes",
 
---             -- Remove UI-related files that are causing issues:
---             -- "vendor/implot/*.h",
---             -- "vendor/implot/*.cpp",
---         }
+            "%{IncludeDir.glew}",
+            "%{IncludeDir.glm}",
+            "%{IncludeDir.glfw}/include",
+            "%{IncludeDir.ImGui}",
+            "%{IncludeDir.ImGui}/backends/",
+            "%{IncludeDir.implot}",
+            "%{IncludeDir.stb_image}",
+        }
 
---         includedirs
---         {
---             "src",
---             "%{IncludeDir.catch2}",
---             "%{IncludeDir.glm}",
---             "%{vendor_path.catch2}/build/generated-includes",
---         }
+        links
+        {
+            "Catch2Main",  -- Provides the main function
+            "Catch2",       -- Provides the Catch2 framework itself
+            "ImGui",
+        }
 
---         links
---         {
---             "Catch2Main",  -- Provides the main function
---             "Catch2",       -- Provides the Catch2 framework itself
---             "ImGui",
---         }
+        libdirs 
+        {
+            "%{vendor_path.catch2}/Build/src",
+            "vendor/imgui/bin/" .. outputs .. "/imgui",
+        }
 
---         libdirs 
---         {
---             "%{vendor_path.catch2}/build/src",
---             "vendor/imgui/bin/" .. outputs .. "/imgui",
---         }
+        prebuildcommands
+        {
+            "cmake -S ./vendor/Catch2 -B ./vendor/Catch2/Build -DCMAKE_BUILD_TYPE=%{cfg.buildcfg}",
+            "cmake --build ./vendor/Catch2/Build --config %{cfg.buildcfg}"
+        }
 
---         prebuildcommands
---         {
---             "cmake -S ./vendor/Catch2 -B ./vendor/Catch2/build -DCMAKE_BUILD_TYPE=%{cfg.buildcfg}",
---             "cmake --build ./vendor/Catch2/build --config %{cfg.buildcfg}"
---         }
-
---         filter "files:vendor/implot/**.cpp"
---             flags { "NoPCH" }
+        filter "files:vendor/implot/**.cpp"
+            flags { "NoPCH" }
         
---         filter "files:vendor/imgui/**.cpp"
---             flags { "NoPCH" }
+        filter "files:vendor/imgui/**.cpp"
+            flags { "NoPCH" }
         
---         filter "system:linux"
---             systemversion "latest"
---             defines "PLATFORM_LINUX"
---             links { 
---                 "pthread",      -- Catch2 requires pthread on Linux
---                 "Qt5Core",  -- Add Qt libraries if needed
---                 "Qt5Widgets",
---                 "Qt5Gui",
---             }
+        filter "system:linux"
+            systemversion "latest"
+            defines "PLATFORM_LINUX"
+            links { 
+                "pthread",      -- Catch2 requires pthread on Linux
+                "Qt5Core",  -- Add Qt libraries if needed
+                "Qt5Widgets",
+                "Qt5Gui",
+            }
 
---             buildoptions
---             {
---                 "-msse4.1",
---                 "-fPIC",
---                 "-Wall",
---                 "-Wno-dangling-else"
---             }
+            buildoptions
+            {
+                "-msse4.1",
+                "-fPIC",
+                "-Wall",
+                "-Wno-dangling-else"
+            }
+            
+            externalincludedirs											-- treat VMA as system headers (prevent warnings)
+            {
+                "/usr/include/x86_64-linux-gnu/qt5", 				-- Base Qt include path
+                "/usr/include/x86_64-linux-gnu/qt5/QtCore",
+                "/usr/include/x86_64-linux-gnu/qt5/QtWidgets",
+                "/usr/include/x86_64-linux-gnu/qt5/QtGui",
+            }
 
---         filter "system:windows"
---             systemversion "latest"
---             defines "PLATFORM_WINDOWS"
+        filter "system:windows"
+            systemversion "latest"
+            defines "PLATFORM_WINDOWS"
 
---         filter "configurations:Debug"
---             defines "DEBUG"
---             runtime "Debug"
---             symbols "on"
+        filter "configurations:Debug"
+            defines "DEBUG"
+            runtime "Debug"
+            symbols "on"
 
---         filter "configurations:RelWithDebInfo"
---             defines "RELEASE_WITH_DEBUG_INFO"
---             runtime "Release"
---             symbols "on"
---             optimize "on"
+        filter "configurations:RelWithDebInfo"
+            defines "RELEASE_WITH_DEBUG_INFO"
+            runtime "Release"
+            symbols "on"
+            optimize "on"
 
---         filter "configurations:Release"
---             defines "RELEASE"
---             runtime "Release"
---             symbols "off"
---             optimize "on"
--- group ""
+        filter "configurations:Release"
+            defines "RELEASE"
+            runtime "Release"
+            symbols "off"
+            optimize "on"
+group ""

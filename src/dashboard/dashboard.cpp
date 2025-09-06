@@ -25,7 +25,7 @@ namespace AT {
     dashboard::~dashboard() {}
 
 
-    // init will be called when every system is initalized
+
     bool dashboard::init() {
 
         PROFILE_APPLICATION_FUNCTION();
@@ -36,14 +36,14 @@ namespace AT {
 			.entry(KEY_VALUE(long_startup_process));
 
         if (long_startup_process)
-            std::this_thread::sleep_for(std::chrono::milliseconds(1000));  // 10s
+            std::this_thread::sleep_for(std::chrono::milliseconds(2000));  // 10s
         // ===========================================================================================
 
         LOG_INIT
         return true;
     }
 
-    // shutdown will be called bevor any system is deinitalized
+
     bool dashboard::shutdown() {
 
         PROFILE_APPLICATION_FUNCTION();
@@ -56,7 +56,6 @@ namespace AT {
         
         LOG(Error, "Crash occurred")
     }
-
 
 
     void dashboard::update(f32 delta_time) {

@@ -152,7 +152,7 @@ TEST_CASE("Random number generation", "[random]") {
 }
 
 
-TEST_CASE("Math functions work correctly", "[math]") {
+TEST_CASE("Math functions", "[math]") {
     
 #if 0
     unsigned int catch_seed = Catch::rngSeed();      // Get the seed from Catch2's random number generator
@@ -405,20 +405,26 @@ TEST_CASE("Math functions work correctly", "[math]") {
 }
 
 TEST_CASE("YAML Serializer - Basic Types", "[serializer][yaml]") {
-    std::filesystem::path test_file = "test_basic.yml";
+    
+    // use temporary directory for generated file
+    std::filesystem::path temp_dir = std::filesystem::temp_directory_path();
+    std::filesystem::path test_file = temp_dir / "test_basic.yml";
+    
+    if (std::filesystem::exists(test_file))             // Ensure clean state
+        std::filesystem::remove(test_file);
     
     // Test data
-    int             test_int = 42,          loaded_int;
-    float           test_float = 3.14f,     loaded_float;
-    std::string     test_string = "hello",  loaded_string;
-    bool            test_bool = true,       loaded_bool;
+    int             test_int = 42,          loaded_int = 0;
+    float           test_float = 3.14f,     loaded_float = 0.f;
+    std::string     test_string = "hello",  loaded_string;          // leave uninitialized for test
+    bool            test_bool = true,       loaded_bool;            // leave uninitialized for test
 
     // Serialize
     {
         AT::serializer::yaml(test_file, "basic_data", AT::serializer::option::save_to_file)
             .entry("test_int", test_int)
-            .entry("test_float", test_float)
-            .entry("test_string", test_string)
+            .entry(KEY_VALUE(test_float))           // test macro with initialized
+            .entry(KEY_VALUE(test_string))          // test macro with uninitialized
             .entry("test_bool", test_bool);
     }
     
@@ -438,13 +444,18 @@ TEST_CASE("YAML Serializer - Basic Types", "[serializer][yaml]") {
 }
 
 
-/* compile and run test:
+/*
 
+build and run only tests:
+    clear && vendor/premake/premake5 gmake2 && make tests -j && echo "" && bin/Debug-linux-x86_64/tests/tests
+    use     -s      for verbose output
 
-clear && vendor/premake/premake5 gmake2 && make tests && echo "" && bin/Debug-linux-x86_64/tests/tests
-use     -s      for verbose output
 
 Run the tests multiple times:
-./test_multi.sh
+    ./test_multi.sh
+
+
+build test and application (everything):
+    clear; .vscode/build.sh
 
 */
