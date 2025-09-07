@@ -4,7 +4,7 @@
 #include <glm/glm.hpp>
 
 #include "application.h"
-#include "util/data_structures/UUID.h"
+#include "util/data_structures/GUID.h"
 #include "util/data_structures/string_manipulation.h"
 
 

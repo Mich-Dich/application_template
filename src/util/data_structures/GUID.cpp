@@ -1,7 +1,7 @@
 
 #include "util/pch.h"
 
-#include "UUID.h"
+#include "GUID.h"
 
 
 //#define USE_EXPERIMENTAL_COLLISION_AVOIDANCE
@@ -11,28 +11,28 @@
 	static std::uniform_int_distribution<u64> s_UniformDistribution;
 
 #ifdef USE_EXPERIMENTAL_COLLISION_AVOIDANCE
-	static std::unordered_set<u64> s_generated_UUIDs;		// To track generated UUIDs and avoid duplicates
-	FORCEINLINE static bool is_unique(u64 uuid) { return s_generated_UUIDs.find(uuid) == s_generated_UUIDs.end(); }
+	static std::unordered_set<u64> s_generated_GUIDs;		// To track generated GUIDs and avoid duplicates
+	FORCEINLINE static bool is_unique(u64 uuid) { return s_generated_GUIDs.find(uuid) == s_generated_GUIDs.end(); }
 #endif // USE_EXPERIMENTAL_COLLISION_AVOIDANCE
 
-	UUID::UUID() {
+	GUID::GUID() {
 #ifdef USE_EXPERIMENTAL_COLLISION_AVOIDANCE
 
 		do {
-			m_UUID = s_UniformDistribution(s_Engine);
-		} while (!is_unique(m_UUID));
-		s_generated_UUIDs.insert(m_UUID);
+			m_GUID = s_UniformDistribution(s_Engine);
+		} while (!is_unique(m_GUID));
+		s_generated_GUIDs.insert(m_GUID);
 #else
-		m_UUID = s_UniformDistribution(s_Engine);
+		m_GUID = s_UniformDistribution(s_Engine);
 #endif // USE_EXPERIMENTAL_COLLISION_AVOIDANCE
 	}
 
-	UUID::UUID(u64 uuid)
-		: m_UUID(uuid) { }
+	GUID::GUID(u64 uuid)
+		: m_GUID(uuid) { }
 
-	UUID::~UUID() { 
+	GUID::~GUID() { 
 #ifdef USE_EXPERIMENTAL_COLLISION_AVOIDANCE
-		s_generated_UUIDs.erase(m_UUID);
+		s_generated_GUIDs.erase(m_GUID);
 #endif // USE_EXPERIMENTAL_COLLISION_AVOIDANCE
 	}
 

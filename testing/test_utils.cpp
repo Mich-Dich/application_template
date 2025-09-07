@@ -13,6 +13,9 @@
 #include "util/io/serializer_binary.h"
 #include "util/timing/stopwatch.h"
 
+#if PLATFORM_WINDOWS
+    #include <numeric> 
+#endif
 
 
 // ==============================================================================================================================
