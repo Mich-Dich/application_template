@@ -165,7 +165,7 @@ namespace AT::crash_handler {
 
 	LONG WINAPI exception_filter(_EXCEPTION_POINTERS* ExceptionInfo) {
 
-		execute();
+		execute_user_functions();
 
 		// Save the old filter and detach the crash handler
 		LPTOP_LEVEL_EXCEPTION_FILTER old_filter = old_exception_filter;
