@@ -113,16 +113,33 @@ def prompt_build_config():
             print("Please enter a valid number.")
 
 
-def setup_vscode_configs(project_root, build_config, application_name):
+def setup_vscode_configs(project_root, build_config, application_name, clean_art_on_build):
 
     vscode_dir = os.path.join(project_root, ".vscode")
     os.makedirs(vscode_dir, exist_ok=True)
+
     arch = "x86_64"
     system = platform.system().lower()  # "linux" or "windows"
     output_dir = f"{build_config}-{system}-{arch}"
     bin_dir = os.path.join(project_root, "bin", output_dir)
 
-    # create build.sh
+    # Optional block for cleaning artifacts
+    clean_artifacts_block = f"""
+echo "------ Clearing previous artifacts (trash at: $STAGE_DIR) ------"
+mkdir -p "$STAGE_DIR"
+
+# move all previous artifacts into staging (ignore missing)
+mv "{bin_dir}/{application_name}" "$STAGE_DIR/" 2>/dev/null || true
+
+# trash the staging directory and Makefiles
+gio trash "$STAGE_DIR" --force || true
+cd "{project_root}"
+find . -name "Makefile" -delete
+""" if clean_art_on_build else """
+# To enable clearing of previous artifacts change [clean_build_artifacts_on_build] to true in file [config/app_settings.yml]
+"""
+
+    # Create build.sh
     build_script_path = os.path.join(vscode_dir, "build.sh")
     build_script_content = f"""#!/usr/bin/env bash
 set -e
@@ -131,18 +148,7 @@ build_config="{build_config}"
 timestamp=$(date '+%Y-%m-%d-%H:%M:%S')
 stage_name="{application_name}_${{build_config}}_${{timestamp}}"
 STAGE_DIR="{bin_dir}/${{stage_name}}"
-
-echo "------ Clearing previous artifacts (trash at: $STAGE_DIR) ------"
-mkdir -p "$STAGE_DIR"
-
-# move all previous artifacts into staging (ignore missing)
-mv "{bin_dir}/{application_name}"             "$STAGE_DIR/" 2>/dev/null || true
-
-# trash the staging directory and Makefiles
-gio trash "$STAGE_DIR" --force || true
-cd "{project_root}"
-find . -name "Makefile" -delete
-
+{clean_artifacts_block}
 echo "------ Regenerating Makefiles and rebuilding ------"
 ./vendor/premake/premake5 gmake2
 

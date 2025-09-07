@@ -48,7 +48,7 @@ else:
 
 
 
-def apply_settings(file_path="./config/app_settings.yml", premake_file_path="./premake5.lua"):
+def apply_premake_settings(file_path="./config/app_settings.yml", premake_file_path="./premake5.lua"):
     try:
         with open(file_path, 'r') as stream:
             data = yaml.safe_load(stream)
@@ -80,6 +80,7 @@ def apply_settings(file_path="./config/app_settings.yml", premake_file_path="./p
         utils.print_c(f"Error while applying settings: {str(e)}", "red")
         sys.exit(1)
 
+
 def get_application_name(file_path="./config/app_settings.yml"):
     try:
         with open(file_path, 'r') as stream:
@@ -88,6 +89,17 @@ def get_application_name(file_path="./config/app_settings.yml"):
     except Exception as e:
         utils.print_c(f"Error while reading settings file: {str(e)}", "red")
         sys.exit(1)
+
+
+def get_clean_build_artifacts_on_build(file_path="./config/app_settings.yml"):
+    try:
+        with open(file_path, 'r') as stream:
+            data = yaml.safe_load(stream)
+            return data['general_settings']['clean_build_artifacts_on_build']
+    except Exception as e:
+        utils.print_c(f"Error while reading settings file: {str(e)}", "red")
+        sys.exit(1)
+
 
 
 def main():
@@ -117,17 +129,18 @@ def main():
             sys.exit(1)
     
         utils.print_u("\nUPDATING SUBMODULES")                  # Update submodules to desired branches
-        git_util.update_submodule("vendor/glfw", "main")
-        git_util.update_submodule("vendor/glm", "master")
-        git_util.update_submodule("vendor/imgui", "docking")
-        git_util.update_submodule("vendor/implot", "master")
-        git_util.update_submodule("vendor/Catch2", "devel")
+        # git_util.update_submodule("vendor/glfw", "main")
+        # git_util.update_submodule("vendor/glm", "master")
+        # git_util.update_submodule("vendor/imgui", "docking")
+        # git_util.update_submodule("vendor/implot", "master")
+        # git_util.update_submodule("vendor/Catch2", "devel")
 
 
         utils.print_u("\nAPPLY SETTINGS")
         utils.print_c("Settings are defined at [./config/app_settings.yml]. after changing the settings, it is recommended to reexecute the setup script", "blue")
-        apply_settings()
+        apply_premake_settings()
         application_name = get_application_name()
+        clean_art_on_build = get_clean_build_artifacts_on_build()
         print(f"name: {application_name}")
         
 
@@ -147,7 +160,7 @@ def main():
                 build_config = "Debug"
             else:
                 build_config = IDE_setup.prompt_build_config()
-            IDE_setup.setup_vscode_configs(os.getcwd(), build_config, application_name)
+            IDE_setup.setup_vscode_configs(os.getcwd(), build_config, application_name, clean_art_on_build)
         
 
         if platform.system() == "Linux":                # ---- LINUX VERSION ----

@@ -98,25 +98,18 @@ def prompt_ide_selection():
 
 
 
-def setup_vscode_configs(project_root, build_config, application_name):
+def setup_vscode_configs(project_root, build_config, application_name, clean_art_on_build):
     vscode_dir = os.path.join(project_root, ".vscode")
     os.makedirs(vscode_dir, exist_ok=True)
+
     arch = "x86_64"
     system = "windows"
     output_dir = f"{build_config}-{system}-{arch}"
     bin_dir = os.path.join(project_root, "bin", output_dir)
-    exe_path = os.path.join(bin_dir, "{application_name}", "{application_name}.exe")
+    exe_path = os.path.join(bin_dir, application_name, f"{application_name}.exe")
 
-    # Create build.bat script
-    build_script_path = os.path.join(vscode_dir, "build.bat")
-    build_script_content = f"""@echo off
-setlocal
-
-set build_config={build_config}
-set timestamp=%date:~-4%-%date:~7,2%-%date:~4,2%-%time:~0,2%-%time:~3,2%-%time:~6,2%
-set stage_name={application_name}_%build_config%_%timestamp%
-set STAGE_DIR={bin_dir}\\%stage_name%
-
+    # Conditionally include or skip cleaning artifacts
+    clean_artifacts_block = f"""
 echo ------ Clearing previous artifacts (trash at: %STAGE_DIR%) ------
 mkdir "%STAGE_DIR%" 2>nul
 
@@ -127,7 +120,20 @@ rd /s /q "{bin_dir}\\{application_name}" 2>nul
 cd "{project_root}"
 del /f /q Makefile 2>nul
 del /f /q *.make 2>nul
+""" if clean_art_on_build else """
+REM To enable clearing of previous artifacts change [clean_build_artifacts_on_build] to true in file [config/app_settings.yml]
+"""
 
+    # Create build.bat script
+    build_script_path = os.path.join(vscode_dir, "build.bat")
+    build_script_content = f"""@echo off
+setlocal
+
+set build_config={build_config}
+set timestamp=%date:~-4%-%date:~7,2%-%date:~4,2%-%time:~0,2%-%time:~3,2%-%time:~6,2%
+set stage_name={application_name}_%build_config%_%timestamp%
+set STAGE_DIR={bin_dir}\\%stage_name%
+{clean_artifacts_block}
 echo ------ Regenerating Makefiles and rebuilding ------
 vendor\\premake\\premake5 gmake2
 
