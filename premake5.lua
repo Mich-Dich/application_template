@@ -300,6 +300,12 @@ group "tests"
             "vendor/imgui/bin/" .. outputs .. "/imgui",
         }
 
+        prebuildcommands
+        {
+            "cmake -S ./vendor/Catch2 -B ./vendor/Catch2/Build -DCMAKE_BUILD_TYPE=%{cfg.buildcfg} -DCATCH_INSTALL_DOCS=OFF -DCATCH_INSTALL_EXTRAS=OFF",
+            "cmake --build ./vendor/Catch2/Build --config %{cfg.buildcfg}"
+        }
+
         filter "configurations:Debug"
             links { "Catch2Maind", "Catch2d" }
 
@@ -308,12 +314,6 @@ group "tests"
 
         filter "configurations:Release"
             links { "Catch2Main", "Catch2" }
-
-        prebuildcommands
-        {
-            "cmake -S ./vendor/Catch2 -B ./vendor/Catch2/Build -DCMAKE_BUILD_TYPE=%{cfg.buildcfg} -DCATCH_INSTALL_DOCS=OFF -DCATCH_INSTALL_EXTRAS=OFF",
-            "cmake --build ./vendor/Catch2/Build --config %{cfg.buildcfg}"
-        }
 
         filter "files:vendor/implot/**.cpp"
             flags { "NoPCH" }

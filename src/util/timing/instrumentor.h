@@ -115,7 +115,7 @@ namespace AT {
 		// @param name The name of the profiling session.
 		// @param directory The directory where the profiling result file will be saved.
 		// @param filename The name of the output file (defaults to "result.json").
-		void begin_session(const std::string& name, const std::string& directory, const std::string& filename = "result.json") {
+		void begin_session(const std::string& name, const std::filesystem::path& directory, const std::string& filename = "result.json") {
             std::unique_lock lock(m_mutex);
             
             if (m_current_session) {
@@ -130,7 +130,7 @@ namespace AT {
                 }
             }
 
-            std::string total_filepath = directory + "/" + filename;
+            std::filesystem::path total_filepath = directory / filename;
             m_output_stream.open(total_filepath);
             
             if (m_output_stream.is_open()) {

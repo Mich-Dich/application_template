@@ -65,7 +65,7 @@ namespace AT::logger {
     // @param $O data month              mm
     // @param $D data day                dd
     //
-    // @param $M thread                  Thread_id: 137575225550656 or a label if provided
+    // @param $Q thread                  Thread_id: 137575225550656 or a label if provided
     // @param $F function name           application::main, math::foo
     // @param $P only function name      main, foo
     // @param $A file name               /home/workspace/test_cpp/src/main.cpp  /home/workspace/test_cpp/src/project.cpp

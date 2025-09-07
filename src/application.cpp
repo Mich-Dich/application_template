@@ -79,7 +79,7 @@ namespace AT {
     
     void application::run() {
 
-        PROFILE_APPLICATION_FUNCTION();     // <= THIS HERE
+        PROFILE_APPLICATION_FUNCTION();
 
         // ---------------------------------------- finished setup ----------------------------------------
         bool long_startup_process = false;
@@ -98,14 +98,17 @@ namespace AT {
 
             std::atomic<bool> running_init = true;
             std::future<bool> init_future = std::async(std::launch::async, [this, &running_init]() {
+                
+                AT::logger::register_label_for_thread("client_init");
                 bool result = m_dashboard->init();
                 running_init = false;
+                AT::logger::unregister_label_for_thread();
                 return result;
             });
 
             while (running_init) {
     
-                s_window->poll_events();				// update internal state
+                s_window->poll_events();				    // update internal state
                 m_renderer->draw_startup_UI(m_delta_time);
                 limit_fps();
             }
@@ -129,7 +132,7 @@ namespace AT {
             PROFILE_APPLICATION_SCOPE("main loop");
 
             // PROFILE_SCOPE("run")
-            s_window->poll_events();				// update internal state
+            s_window->poll_events();                        // update internal state
             m_dashboard->update(m_delta_time);
             m_renderer->draw_frame(m_delta_time);
             limit_fps();

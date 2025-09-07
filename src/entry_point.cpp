@@ -25,7 +25,7 @@
 
             PROFILE_SCOPE("sub-systems startup");
             AT::crash_handler::attach();
-            AT::logger::init("[$B$T:$J$E] [$B$L$X $I - $P:$G$E] $C$Z", true, AT::util::get_executable_path() / "logs", "application.log", true);
+            AT::logger::init("[$B$T:$J$E] [$B$L$X $Q - $I:$P:$G$E] $C$Z", true, AT::util::get_executable_path() / "logs", "application.log", true);
             AT::logger::set_buffer_threshold(AT::logger::severity::Warn);
             AT::logger::register_label_for_thread("main");
             AT::crash_handler::subscribe(AT::logger::shutdown);
