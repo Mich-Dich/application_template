@@ -24,7 +24,7 @@
 #include "util/data_structures/data_types.h"
 #include "util/data_structures/deletion_queue.h"
 #include "util/data_structures/string_manipulation.h"
-#include "util/data_structures/GUID.h"
+#include "util/data_structures/UUID.h"
 
 // #include "util/io/config.h"
 #include "util/io/io.h"

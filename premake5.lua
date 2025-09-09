@@ -170,8 +170,8 @@ group "core"
 
             postbuildcommands
             {
-                '{COPYDIR} "%{wks.location}/assets" "%{wks.location}/bin/' .. outputs .. '/%{prj.name}"',
-                '{COPYDIR} "%{wks.location}/config" "%{wks.location}/bin/' .. outputs .. '/%{prj.name}"',
+                '{COPYDIR} -n "%{wks.location}/assets" "%{wks.location}/bin/' .. outputs .. '/%{prj.name}"',
+                '{COPYDIR} -n "%{wks.location}/config" "%{wks.location}/bin/' .. outputs .. '/%{prj.name}"',
             }
 
         filter "system:windows"
@@ -207,9 +207,9 @@ group "core"
             postbuildcommands
             {
 
-                '{COPYDIR} "%{wks.location}/assets" "%{wks.location}/bin/' .. outputs .. '/%{prj.name}/assets"',
-                '{COPYDIR} "%{wks.location}/config" "%{wks.location}/bin/' .. outputs .. '/%{prj.name}/config"',
-                '{COPYDIR} "%{wks.location}/vendor/glfw/bin/' .. outputs .. '/glfw" "%{wks.location}/bin/' .. outputs .. '/%{prj.name}"',       -- copy GLFW
+                '{COPYDIR} -n "%{wks.location}/assets" "%{wks.location}/bin/' .. outputs .. '/%{prj.name}/assets"',
+                '{COPYDIR} -n "%{wks.location}/config" "%{wks.location}/bin/' .. outputs .. '/%{prj.name}/config"',
+                '{COPYDIR} -n "%{wks.location}/vendor/glfw/bin/' .. outputs .. '/glfw" "%{wks.location}/bin/' .. outputs .. '/%{prj.name}"',       -- copy GLFW
             }
 
         filter "configurations:Debug"

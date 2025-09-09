@@ -3,7 +3,7 @@
 struct ImVec2;
 struct ImVec4;
 
-#include "util/data_structures/GUID.h"
+#include "util/data_structures/UUID.h"
 
 namespace AT::util {
 
@@ -195,7 +195,7 @@ namespace AT::util {
             return;
         }
 
-        else if constexpr (std::is_same_v<T, GUID>) {
+        else if constexpr (std::is_same_v<T, UUID>) {
 
             dest_string = std::to_string((u64)src_value);
             return;
@@ -318,7 +318,7 @@ namespace AT::util {
             return;
         }
 
-        else if constexpr (std::is_same_v<T, GUID>) {
+        else if constexpr (std::is_same_v<T, UUID>) {
 
             dest_value = util::str_to_num<u64>(src_string);
             return;
