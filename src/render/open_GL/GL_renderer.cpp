@@ -3,7 +3,7 @@
 #if defined(PLATFORM_LINUX)
     #include <GL/glew.h>
 #elif defined(PLATFORM_WINDOWS)
-    #include <Windows.h>
+    // #include <Windows.h>
     #define GLFW_EXPOSE_NATIVE_WIN32
     #include <GL/glew.h>
 #endif

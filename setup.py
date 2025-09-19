@@ -129,11 +129,11 @@ def main():
             sys.exit(1)
     
         utils.print_u("\nUPDATING SUBMODULES")                  # Update submodules to desired branches
-        git_util.update_submodule("vendor/glfw", "main")
-        git_util.update_submodule("vendor/glm", "master")
-        git_util.update_submodule("vendor/imgui", "docking")
-        git_util.update_submodule("vendor/implot", "master")
-        git_util.update_submodule("vendor/Catch2", "devel")
+        # git_util.update_submodule("vendor/glfw", "main")
+        # git_util.update_submodule("vendor/glm", "master")
+        # git_util.update_submodule("vendor/imgui", "docking")
+        # git_util.update_submodule("vendor/implot", "master")
+        # git_util.update_submodule("vendor/Catch2", "devel")
 
 
         utils.print_u("\nAPPLY SETTINGS")
@@ -190,7 +190,7 @@ def main():
             elif selected_ide == "JetBrains Rider":
                 premake_action = "rider"
             
-            premake_result = subprocess.run(['vendor/premake/premake5.exe', premake_action], text=True)
+            premake_result = subprocess.run(['vendor\\premake\\premake5.exe', premake_action], text=True)
 
         if premake_result.returncode != 0:
             utils.print_c(f"BUILD FAILED! Premake script encountered errors [{premake_result.returncode}]", "red")
@@ -210,14 +210,14 @@ def main():
             # Print helpful hints
             utils.print_c("\nHelpful hints for Windows", "blue")
             if "Visual Studio" in selected_ide or "Rider" in selected_ide:
-                print("  Open solution file:               build/*.sln")
+                print("  Open solution file:               *.sln")
                 print("  Clean solution:                   msbuild /t:Clean")
                 print("  Build solution:                   msbuild /t:Build")
             elif selected_ide == "VSCode":
-                print("  Apply changed premake scripts:    vendor/premake/premake5 gmake2")
+                print("  Apply changed premake scripts:    vendor\\premake\\premake5.exe gmake2")
                 print("  Clean solution:                   gmake clean")
                 print("  Build solution:                   gmake -j")
-            print("  More help:                        vendor/premake/premake5 --help")
+            print("  More help:                        vendor\\premake\\premake5.exe --help")
 
 
     except KeyboardInterrupt:

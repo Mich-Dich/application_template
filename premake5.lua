@@ -181,36 +181,56 @@ group "core"
                 "PLATFORM_WINDOWS",
                 "WIN32_LEAN_AND_MEAN",
                 "GLEW_STATIC",
+                "UNICODE",
+                "_UNICODE",
             }
 
             links
             {
+                "ImGui",
                 "glfw",
                 "glew32s",
                 "opengl32",
                 "gdi32",
                 "user32",
+                "comdlg32",
+                "shell32",
             }
 
             libdirs
             {
-                "%{wks.location}/vendor/glfw/lib-vc2022",  -- Path to GLFW libraries
-                "%{vendor_path.glew}/lib/Release/x64",
-            }
-
-
-            prebuildcommands 
-            {
-                "{COPY} \"%{vendor_path.glew}/bin/Release/x64/glew32.dll\" \"%{cfg.targetdir}\""
+                "%{wks.location}\\vendor\\glfw\\bin\\" .. outputs  .. "\\glfw",
+                "%{wks.location}\\vendor\\imgui\\bin\\" .. outputs  .. "\\imgui",
+                "%{vendor_path.glew}\\lib\\Release\\x64",
             }
             
             postbuildcommands
             {
-
-                '{COPYDIR} -n "%{wks.location}/assets" "%{wks.location}/bin/' .. outputs .. '/%{prj.name}/assets"',
-                '{COPYDIR} -n "%{wks.location}/config" "%{wks.location}/bin/' .. outputs .. '/%{prj.name}/config"',
-                '{COPYDIR} -n "%{wks.location}/vendor/glfw/bin/' .. outputs .. '/glfw" "%{wks.location}/bin/' .. outputs .. '/%{prj.name}"',       -- copy GLFW
+                '{COPYDIR} "%{wks.location}\\assets" "%{wks.location}\\bin\\' .. outputs .. '\\%{prj.name}\\assets"',
+                '{COPYDIR} "%{wks.location}\\config" "%{wks.location}\\bin\\' .. outputs .. '\\%{prj.name}\\config"',
             }
+
+        
+        filter { "system:windows", "action:gmake2" }  -- MinGW specific settings
+            links
+            {
+                "ImGui",
+                "glfw3",
+                "glew32",
+                "opengl32",
+                "gdi32",
+                "user32",
+                "comdlg32",
+                "shell32",
+            }
+
+            libdirs
+            {
+                "%{wks.location}\\vendor\\glfw\\build-mingw\\src",
+                "%{wks.location}\\vendor\\glfw\\bin\\' .. outputs .. '\\glfw",
+                "%{vendor_path.glew}\\lib\\Release\\Win32",
+            }
+
 
         filter "configurations:Debug"
             defines "DEBUG"
@@ -349,7 +369,30 @@ group "tests"
 
         filter "system:windows"
             systemversion "latest"
-            defines "PLATFORM_WINDOWS"
+            defines
+            {
+                "PLATFORM_WINDOWS",
+                "UNICODE",
+                "_UNICODE",
+            }
+
+            links
+            {
+                "ImGui",
+                "glfw",
+                "glew32s",
+                "opengl32",
+                "gdi32",
+                "user32",
+                "comdlg32",   -- For GetOpenFileNameW
+                "shell32",    -- For other Windows APIs
+            }
+
+            libdirs
+            {
+                "%{wks.location}/vendor/glfw/lib-vc2022",
+                "%{vendor_path.glew}/lib/Release/x64",
+            }
 
         filter "configurations:Debug"
             defines "DEBUG"

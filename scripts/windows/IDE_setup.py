@@ -1,7 +1,12 @@
 
 import os
 import sys
+import json
+import glob
 import subprocess
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
+import scripts.utils as utils
+
 
 def detect_visual_studio_versions():
     vs_version_map = {
@@ -26,6 +31,21 @@ def detect_visual_studio_versions():
         print(f"Error detecting Visual Studio versions: {e}")
     return []
 
+
+def prompt_build_config():
+    print("Select build configuration:")
+    print("0. Debug")
+    print("1. Release")
+    print("2. RelWithDebInfo")
+    
+    choice = input("Enter the number (default 0): ").strip()
+    if choice == "1":
+        return "Release"
+    elif choice == "2":
+        return "RelWithDebInfo"
+    else:
+        return "Debug"
+    
 
 def detect_rider():
     # Check common Rider installation paths
@@ -135,16 +155,10 @@ set stage_name={application_name}_%build_config%_%timestamp%
 set STAGE_DIR={bin_dir}\\%stage_name%
 {clean_artifacts_block}
 echo ------ Regenerating Makefiles and rebuilding ------
-vendor\\premake\\premake5 gmake2
+vendor\\premake\\premake5.exe gmake2
 
-set make_config=%build_config%
-set make_config=%make_config: =%
-set make_config=%make_config:-=%
-set make_config=%make_config:RelWithDebInfo=release_with_debug_info%
-set make_config=%make_config:Debug=debug%
-set make_config=%make_config:Release=release%
-
-mingw32-make config=%make_config%_x64 -j -k
+echo ------ Building with MSBuild ------
+msbuild {application_name}.sln /p:Configuration=%build_config% /p:Platform=x64 /t:Build /m
 
 echo ------ Done ------
 endlocal
@@ -175,7 +189,7 @@ endlocal
 
     # Create launch.json
     launch_json_path = os.path.join(vscode_dir, "launch.json")
-    cwd_path = os.path.join("${workspaceFolder}", "bin", output_dir, "{application_name}")
+    cwd_path = os.path.join("${workspaceFolder}", "bin", output_dir, "${application_name}")
 
     launch_data = {
         "version": "0.2.0",

@@ -4,6 +4,8 @@
 #include "UUID.h"
 
 
+namespace AT {
+
 //#define USE_EXPERIMENTAL_COLLISION_AVOIDANCE
 
 	static std::random_device s_RandomDevice;
@@ -36,3 +38,4 @@
 #endif // USE_EXPERIMENTAL_COLLISION_AVOIDANCE
 	}
 
+}

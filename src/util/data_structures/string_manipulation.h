@@ -3,6 +3,10 @@
 struct ImVec2;
 struct ImVec4;
 
+#if defined(__GNUC__) || defined(__clang__)
+    #include <cxxabi.h>  // Add this include for demangling
+#endif
+
 #include "util/data_structures/UUID.h"
 
 namespace AT::util {

@@ -98,7 +98,7 @@ namespace AT::io {
 
 	std::vector<std::string> get_processes_using_file(const std::wstring& filePath) {
 
-#ifdef PLATFORM_WINDOWS
+#if defined(PLATFORM_WINDOWS)
 
 		std::vector<std::string> processNames;
 		HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
@@ -128,7 +128,7 @@ namespace AT::io {
 					if (!GetModuleFileNameEx(hProcess, hMods[i], szModName, sizeof(szModName) / sizeof(TCHAR)))
 						continue;
 
-					if (_wcsicmp(szModName, filePath.c_str()) != 0)
+					if (wcscmp(szModName, filePath.c_str()) != 0)  // Use wcscmp instead of _wcsicmp
 						continue;
 
 					std::wstring buffer = pe32.szExeFile;

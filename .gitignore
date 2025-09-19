@@ -54,6 +54,8 @@ scripts/windows/__pycache__/
 *.vcxproj
 *.vcxproj.filters
 *.vcxproj.user
-vendor/premake/
 vendor/glew/
 Makefile
+vendor/premake/
+vendor/premake/*
+vendor/premake/LICENSE.txt
