@@ -88,13 +88,13 @@ namespace AT {
 
         LOG(Info, "long_startup_process [" << util::to_string(long_startup_process) << "]")
 
+        s_running = true;
+        m_renderer->set_state(system_state::active);
+        s_window->show_window(true);
+        start_fps_measurement();
         if (long_startup_process) {
 
             PROFILE_APPLICATION_SCOPE("long startup process(different thread)");
-
-            m_renderer->set_state(system_state::active);
-            s_window->show_window(true);
-            start_fps_measurement();
 
             std::atomic<bool> running_init = true;
             std::future<bool> init_future = std::async(std::launch::async, [this, &running_init]() {
@@ -107,23 +107,23 @@ namespace AT {
             });
 
             while (running_init) {
-    
+                
                 s_window->poll_events();				    // update internal state
+                if (!s_running) {                           // Handle early termination
+                    init_future.wait();                     // Ensure thread finishes before shutdown
+                    break;                                  // Skip main loop entirely
+                }
+
                 m_renderer->draw_startup_UI(m_delta_time);
                 limit_fps();
             }
-            s_running = true;
 
         } else {
 
             PROFILE_APPLICATION_SCOPE("startup process(main thread)");
 
             m_dashboard->init();
-            m_renderer->set_state(system_state::active);
-            s_running = true;
-            s_window->show_window(true);
             s_window->poll_events();
-            start_fps_measurement();
         }
     
         // ---------------------------------------- main loop ----------------------------------------

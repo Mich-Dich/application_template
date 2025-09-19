@@ -6,3 +6,7 @@ general_settings:
   project_version: 0 0 0
   long_startup_process: true
   clean_build_artifacts_on_build: false
+  icons:    # icons for file types after installation (not implemented yet)
+    application_template: assets/images/logo.png
+    atproj: assets/images/logo.png
+    atasset: assets/images/logo.png
