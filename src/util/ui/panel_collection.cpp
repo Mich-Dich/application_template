@@ -11,7 +11,7 @@
 
 #include "config/imgui_config.h"
 
-#include "pannel_collection.h"
+#include "panel_collection.h"
 
 namespace AT::UI {
 
@@ -23,7 +23,7 @@ namespace AT::UI {
 	// INTERACTION
 	// ============================================================================================================
 
-	bool is_holvering_window() {
+	bool is_hovering_window() {
 
 		const ImVec2 mouse_pos = ImGui::GetMousePos();
 		const ImVec2 popup_pos = ImGui::GetWindowPos();
@@ -363,9 +363,22 @@ namespace AT::UI {
 	// TEXT
 	// ============================================================================================================
 
+	void text(ImFont* font, const char* fmt, ...) {
+
+		ImGui::PushFont(font);
+
+		va_list args;
+		va_start(args, fmt);
+		ImGui::TextV(fmt, args);
+		va_end(args);
+		
+		ImGui::PopFont();
+	}
+
+	
 	void big_text(const char* text, bool wrapped) {
 
-		ImGui::PushFont(application::get().get_imgui_config_ref()->get_font("regular_big"));
+		ImGui::PushFont(application::get().get_imgui_config_ref()->get_font(font_type::regular_big));
 
 		if (wrapped)
 			ImGui::TextWrapped("%s", text);
@@ -378,7 +391,7 @@ namespace AT::UI {
 
 	void text_bold(const char* text, bool wrapped) {
 
-		ImGui::PushFont(application::get().get_imgui_config_ref()->get_font("bold"));
+		ImGui::PushFont(application::get().get_imgui_config_ref()->get_font(font_type::bold));
 
 		if (wrapped)
 			ImGui::TextWrapped("%s", text);
@@ -391,7 +404,7 @@ namespace AT::UI {
 
 	void text_italic(const char* text, bool wrapped) {
 
-		ImGui::PushFont(application::get().get_imgui_config_ref()->get_font("italic"));
+		ImGui::PushFont(application::get().get_imgui_config_ref()->get_font(font_type::italic));
 
 		if (wrapped)
 			ImGui::TextWrapped("%s", text);
@@ -620,7 +633,7 @@ namespace AT::UI {
 	}
 
 
-	void anci_text(std::string_view text) {
+	void ansi_text(std::string_view text) {
 
 		size_t current_position = 0;
 		ImVec4 color = ImVec4(1.f);
@@ -884,7 +897,7 @@ namespace AT::UI {
 	// MISC
 	// ============================================================================================================
 
-	bool serach_input(const char* lable, std::string& search_text) {
+	bool search_input(const char* lable, std::string& search_text) {
 
 		std::string buffer = search_text;
 		buffer.resize(256);
@@ -1021,7 +1034,7 @@ namespace AT::UI {
 	}
 
 
-	void seperation_vertical() {
+	void separation_vertical() {
 
 		ImGui::SameLine();
 		shift_cursor_pos(5, 0);

@@ -7,7 +7,7 @@
 #include "application.h"
 #include "util/timing/instrumentor.h"
 #include "config/imgui_config.h"
-#include "pannel_collection.h"
+#include "panel_collection.h"
 
 #include "imgui_markdown.h"
 
@@ -21,14 +21,14 @@ namespace AT::UI {
 // USER DATA
 // ====================================================================================================================================
 
-#define FONT_ITALLIC                application::get().get_imgui_config_ref()->get_font("italic")
-#define FONT_BOLD                   application::get().get_imgui_config_ref()->get_font("bold")
-#define FONT_HEADER_0               application::get().get_imgui_config_ref()->get_font("header_0")
-#define FONT_HEADER_1               application::get().get_imgui_config_ref()->get_font("header_1")
-#define FONT_HEADER_2               application::get().get_imgui_config_ref()->get_font("header_2")
-#define FONT_HEADER_DEFAULT         application::get().get_imgui_config_ref()->get_font("header_default")
+#define FONT_ITALIC                 application::get().get_imgui_config_ref()->get_font(font_type::italic)
+#define FONT_BOLD                   application::get().get_imgui_config_ref()->get_font(font_type::bold)
+#define FONT_HEADER_0               application::get().get_imgui_config_ref()->get_font(font_type::header_0)
+#define FONT_HEADER_1               application::get().get_imgui_config_ref()->get_font(font_type::header_1)
+#define FONT_HEADER_2               application::get().get_imgui_config_ref()->get_font(font_type::header_2)
+#define FONT_HEADER_DEFAULT         application::get().get_imgui_config_ref()->get_font(font_type::header_0)
 
-#define FONT_MONOSPACE_DEFAULT      application::get().get_imgui_config_ref()->get_font("monospace_regular")
+#define FONT_MONOSPACE_DEFAULT      application::get().get_imgui_config_ref()->get_font(font_type::monospace_regular)
 
     const f32 INDENTATION_SPACING = 16;
     static const bool skip_empty_lines = false;
@@ -224,7 +224,7 @@ namespace AT::UI {
         bullet,
         headline,
         highlight_block,
-        sperator,
+        speratom,
     };
 
     // Helper function to render text with a background
@@ -279,7 +279,7 @@ namespace AT::UI {
     // render markdown
     void markdown(const char* markdown_text, size_t markdown_length) {
 
-        //SCOPED_PROFILER(700, "markdown imgui convertion", AT::duration_precision::microseconds);
+        //SCOPED_PROFILER(700, "markdown imgui conversion", AT::duration_precision::microseconds);
 
         const float line_height = ImGui::GetTextLineHeight();
         button_size = ImVec2(line_height + ((ImGui::GetTextLineHeightWithSpacing() - line_height) * 2));
@@ -350,7 +350,7 @@ namespace AT::UI {
 
                 } break;
 
-                case '-': {                     // Line beginns with bullet point
+                case '-': {                     // Line begins with bullet point
 
                     if (markdown_text[x + 1] == '-' && markdown_text[x + 2] == '-') {
 
@@ -358,7 +358,7 @@ namespace AT::UI {
                         ImGui::Separator();
                         ImGui::NewLine();
                         x += 3;
-                        last_line_purpose = line_purpose::sperator;
+                        last_line_purpose = line_purpose::speratom;
                         continue;
 
                     } else {
@@ -414,7 +414,7 @@ namespace AT::UI {
             }
 
             while (markdown_text[x] != '\n' && x < markdown_length) {
-                switch (markdown_text[x]) {                                 // check for spetial characters in line
+                switch (markdown_text[x]) {                                 // check for spatial characters in line
 
                     case '[':                                               // check if '[' starts a link
                         check_for_link(loc_context, x);

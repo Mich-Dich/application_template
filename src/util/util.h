@@ -43,7 +43,7 @@
 // #include "util/timing/timer.h"
 
 #include "util/ui/imgui_markdown.h"
-#include "util/ui/pannel_collection.h"
+#include "util/ui/panel_collection.h"
 
 namespace AT::util {
 

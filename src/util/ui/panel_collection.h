@@ -46,7 +46,7 @@ namespace AT::UI {
 		none,
 		hovered,						// The mouse cursor is over the item.
 
-		// DONT CHANGE ORDER OF: LEFT / RIGHT / MIDDLE ENTRYS   else change refrence in: util/ui/pannel_collection/set_mouse_interaction_state()
+		// DONT CHANGE ORDER OF: LEFT / RIGHT / MIDDLE ENTRYS   else change reference in: util/ui/panel_collection/set_mouse_interaction_state()
 		left_clicked,					// The mouse button was pressed and released over the item.
 		left_double_clicked,			// The mouse button was clicked twice in quick succession over the item.
 		left_pressed,					// The mouse button is currently held down over the item.
@@ -74,7 +74,7 @@ namespace AT::UI {
 
 	// @brief Checks if the mouse is currently hovering over the current ImGui window.
 	// @return True if the mouse is hovering over the window, false otherwise.
-	bool is_holvering_window();
+	bool is_hovering_window();
 
 	// @brief Checks if the current ImGui item (e.g., button, text) is double-clicked.
 	// @return True if the item is double-clicked, false otherwise.
@@ -130,7 +130,7 @@ namespace AT::UI {
 	// @param [bool_var] The boolean variable that controls the button's state.
 	// @param [size] The size of the button. If {0, 0}, the size is automatically calculated.
 	// @return True if the button is clicked, false otherwise.
-	bool toggle_button(const char* lable, bool& bool_var, const ImVec2& size = { 0, 0 });
+	bool toggle_button(const char* label, bool& bool_var, const ImVec2& size = { 0, 0 });
 
 	// ============================================================================================================
 	// LOAD INDICATOR
@@ -145,6 +145,9 @@ namespace AT::UI {
 	// ============================================================================================================
 	// TEXT
 	// ============================================================================================================
+
+	// Print a text with a specific font
+	void text(ImFont* font, const char* fmt, ...);
 
 	// @brief Draws text using a larger font.
 	// @param [text] The text to be drawn.
@@ -162,7 +165,7 @@ namespace AT::UI {
 
 	// @brief Displays text with a specific style (e.g., ancient text style).
 	// @param [text] The text to display.
-	void anci_text(std::string_view text);
+	void ansi_text(std::string_view text);
 
 	// 
 	std::string wrap_text(const std::string& text, f32 wrap_width, int max_lines = -1);
@@ -200,7 +203,7 @@ namespace AT::UI {
 
 	// @brief This function draws a custom frame with two separate sections: [left_side] and [right_side].
 	//          The width of the first column is specified by [width_left_side]. Both sections are contained within
-	//          the same ImGui table. Each section's content is drawn using the provided function callbacks (lamdas or functions)
+	//          the same ImGui table. Each section's content is drawn using the provided function callbacks (lambdas or functions)
 	// @param [width_left_side] The fixed width of the first column.
 	// @param [left_side] The function representing the content of the left side.
 	// @param [right_side] The function representing the content of the right side.
@@ -219,10 +222,10 @@ namespace AT::UI {
 	// ============================================================================================================
 
 	// @brief Creates a search input field with a clear button.
-	// @param [lable] The label for the search input field.
+	// @param [label] The label for the search input field.
 	// @param [search_text] A reference to the string that holds the search text.
 	// @return true if the search text was changed, false otherwise.
-	bool serach_input(const char* lable, std::string& search_text);
+	bool search_input(const char* label, std::string& search_text);
 
 	//
 	void color_picker(ImVec4& color);
@@ -231,16 +234,16 @@ namespace AT::UI {
 	void show_directory_tree(const std::filesystem::path& dir_path, const std::string_view extention, const bool default_open, const std::function<void(const std::filesystem::path&)>& on_shader_select);
 
 	// @brief Draws a vertical separation line.
-	void seperation_vertical();
+	void separation_vertical();
 
 	// ============================================================================================================
-	// COLLABSING HEADER
+	// COLLAPSING HEADER
 	// ============================================================================================================
 
 	// @brief Begins a collapsible header section with an indent.
-	// @param [lable] The label for the collapsible header.
+	// @param [label] The label for the collapsible header.
 	// @return true if the header is open, false otherwise.
-	bool begin_collapsing_header_section(const char* lable);
+	bool begin_collapsing_header_section(const char* label);
 
 	// @brief Ends a collapsible header section and removes the indent.
 	void end_collapsing_header_section();
@@ -249,7 +252,7 @@ namespace AT::UI {
 	// TABLE
 	// ============================================================================================================
 
-	// @brief This function sets up an ImGui table with two columns, where the first column is resizable and the second column fills the remaining availabel area
+	// @brief This function sets up an ImGui table with two columns, where the first column is resizable and the second column fills the remaining available area
 	// @brief CAUTION - you need to call UI::end_table() at the end of the table;
 	// @param [label] Is used to identify the table
 	bool begin_table(std::string_view label, bool display_name = true, ImVec2 size = ImVec2(0,0), f32 inner_width = 0.0f, bool set_columns_width = true, f32 columns_width_percentage = 0.5f);
@@ -277,9 +280,9 @@ namespace AT::UI {
 
 
 	// @brief Renders a table row with two columns, each containing custom content.
-	// @param [first_colum] A function to render the content of the first column.
-	// @param [second_colum] A function to render the content of the second column.
-	void table_row(std::function<void()> first_colum, std::function<void()> second_colum);
+	// @param [first_column] A function to render the content of the first column.
+	// @param [second_column] A function to render the content of the second column.
+	void table_row(std::function<void()> first_column, std::function<void()> second_column);
 
 	// @brief Renders a table row with a label and an editable text field.
 	// @param [label] The label for the row.
@@ -471,7 +474,7 @@ namespace AT::UI {
 			return ImGui::SliderFloat4(loc_label.c_str(), &value[0], min_value, max_value, "%.2f", flags);
 
 		else
-			ImGui::Text("unsuported data type");
+			ImGui::Text("unsupported data type");
 
 		return false;
 	}

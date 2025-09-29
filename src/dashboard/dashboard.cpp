@@ -9,7 +9,7 @@
 #include "events/key_event.h"
 #include "util/io/serializer_data.h"
 #include "util/io/serializer_yaml.h"
-#include "util/ui/pannel_collection.h"
+#include "util/ui/panel_collection.h"
 #include "util/math/constance.h"
 #include "application.h"
 #include "config/imgui_config.h"
@@ -36,7 +36,7 @@ namespace AT {
 			.entry(KEY_VALUE(long_startup_process));
 
         if (long_startup_process)
-            std::this_thread::sleep_for(std::chrono::milliseconds(1500));  // 1.5s
+            std::this_thread::sleep_for(std::chrono::milliseconds(2500));  // 2.5s
         // ===========================================================================================
 
         LOG_INIT
