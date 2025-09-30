@@ -46,6 +46,7 @@
 .vs/
 bin/
 bin-int/
+test_multi.sh
 scripts/__pycache__/
 scripts/linux/__pycache__/
 scripts/windows/__pycache__/
@@ -59,3 +60,4 @@ Makefile
 vendor/premake/
 vendor/premake/*
 vendor/premake/LICENSE.txt
+vendor/Catch2/
