@@ -61,3 +61,5 @@ vendor/premake/
 vendor/premake/*
 vendor/premake/LICENSE.txt
 vendor/Catch2/
+
+plugins/*/build/

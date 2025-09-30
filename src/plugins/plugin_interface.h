@@ -21,10 +21,7 @@
 #define FACTORY_FUNC(plugin_name)       PLUGIN_API AT::plugin* create_plugin()               { return new plugin_name(); }       \
                                         PLUGIN_API void destroy_plugin(AT::plugin* plugin)   { delete plugin; }
 
-
-// defines for parser
 #define PLUGIN_FUNC(...)
-
 
 namespace AT {
     
@@ -77,7 +74,7 @@ namespace AT {
         void call_function_void(const std::string& name, Args&&... args) {
             call_function<void, Args...>(name, std::forward<Args>(args)...);
         }
-
+    
     private:
         // Helper to call functions with proper argument unpacking
         template<typename Function>

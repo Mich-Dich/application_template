@@ -20,25 +20,13 @@ namespace AT::plugins {
             call_plugin_function<void>("test_plugin", "initialize", value, enabled);
         }
         
-        // Optional: Add loading method
-        static bool load_plugin(const std::filesystem::path& path = get_default_path()) {
-            try {
-                get_plugin_manager().load_plugin(path);
-                return true;
-            } catch (const std::exception& e) {
-                LOG(Error, "Failed to load test_plugin: " << e.what());
-                return false;
-            }
-        }
-        
-        static bool is_loaded() {
-            return get_plugin("test_plugin") != nullptr;
-        }
+        DEFAULT_LOAD_PLUGIN(test_plugin)
 
     private:
         static std::filesystem::path get_default_path() {
             return util::get_executable_path().parent_path().parent_path().parent_path() 
-                / "plugins" / "libtest_plugin.so";
+                / "plugins" / "test_plugin" / "build" / "libtest_plugin.so";
+
         }
     };
 

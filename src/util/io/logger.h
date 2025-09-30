@@ -1,6 +1,5 @@
 #pragma once
 
-#include "util/pch.h"
 #include "util/core_config.h"
 
 #undef ERROR
