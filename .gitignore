@@ -59,3 +59,5 @@ Makefile
 vendor/premake/
 vendor/premake/*
 vendor/premake/LICENSE.txt
+
+build/

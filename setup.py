@@ -35,13 +35,11 @@ IS_CI = os.getenv("CI") == "true"
 
 if platform.system() == "Linux":
     from scripts.linux.setup_env import env_configuration
-    from scripts.linux.setup_premake import premake_configuration
     import scripts.linux.IDE_setup as IDE_setup
 elif platform.system() == "Windows":
     from scripts.windows.setup_env import env_configuration
     import scripts.windows.win_utils as win_util
     win_util.enable_ansi_support()
-    from scripts.windows.setup_premake import premake_configuration
     import scripts.windows.IDE_setup as IDE_setup
 else:
     raise Exception("Unsupported operating system")
@@ -117,11 +115,6 @@ def main():
         if not env_configuration.validate():
             utils.print_c("Missing required packages - setup aborted", "red")
             sys.exit(1)
-        
-        utils.print_u("\nCHECK PREMAKE-5 SETUP")
-        if not premake_configuration.validate():
-            utils.print_c("Premake5 download failed - setup aborted", "red")
-            sys.exit(1)
     
         utils.print_u("\nINITIALIZING SUBMODULES")              # Initialize submodule configuration
         if not git_util.initialize_submodules():
@@ -129,16 +122,16 @@ def main():
             sys.exit(1)
     
         utils.print_u("\nUPDATING SUBMODULES")                  # Update submodules to desired branches
-        # git_util.update_submodule("vendor/glfw", "main")
-        # git_util.update_submodule("vendor/glm", "master")
-        # git_util.update_submodule("vendor/imgui", "docking")
-        # git_util.update_submodule("vendor/implot", "master")
-        # git_util.update_submodule("vendor/Catch2", "devel")
+        git_util.update_submodule("vendor/glfw", "main")
+        git_util.update_submodule("vendor/glm", "master")
+        git_util.update_submodule("vendor/imgui", "docking")
+        git_util.update_submodule("vendor/implot", "master")
+        git_util.update_submodule("vendor/Catch2", "devel")
 
 
         utils.print_u("\nAPPLY SETTINGS")
         utils.print_c("Settings are defined at [./config/app_settings.yml]. after changing the settings, it is recommended to reexecute the setup script", "blue")
-        apply_premake_settings()
+        # apply_premake_settings()
         application_name = get_application_name()
         clean_art_on_build = get_clean_build_artifacts_on_build()
         print(f"name: {application_name}")
