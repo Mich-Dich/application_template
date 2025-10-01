@@ -1,9 +1,6 @@
-#include <iostream>
-#include <cmath>
-#include <string>
-#include <any>
 
 #include "util/pch.h"
+
 #include "plugins/plugin_interface.h"
 
 class test_plugin : public AT::plugin {

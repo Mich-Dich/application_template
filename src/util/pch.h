@@ -16,6 +16,9 @@
 #include <utility>
 #include <concepts>
 
+#include <cmath>
+#include <any>
+
 // Strings and Text Manipulation
 #include <string>
 #include <string_view>
