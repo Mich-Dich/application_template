@@ -9,7 +9,6 @@ A simple, cross-platform C++ application template with a graphical user interfac
 * **ImGui** for immediate-mode GUI widgets
 * **GLFW** for window and input management
 * **OpenGL** (configurable via `GL_renderer`)
-* **Premake5** for build configuration
 
 The template handles platform detection, dependency setup, and IDE integration out of the box.
 
@@ -64,26 +63,18 @@ If you selected **VSCode** during setup:
 From the project root directory:
 
 ```bash
-cd application_template
-.vscode/build.sh      # Generate gmake2 files and run premake
-make -j               # Compile with parallel jobs
+cmake -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Debug        # Generate build files
+cmake --build build --parallel  16                                  # Compile with parallel jobs
 ```
 
-If you modify `premake5.lua`, regenerate build files:
-
-```bash
-make clean && vendor/premake/premake5 gmake2
-make -j
-```
-
-**Optional Bash Aliases** (add to your `~/.bashrc`):
+<!-- **Optional Bash Aliases** (add to your `~/.bashrc`):
 
 ```bash
 alias app_build='cd ~/workspace/application_template && .vscode/build.sh && make -j'
 alias app_run='app_build && bin/Debug-linux-x86_64/application_template/application_template'
 ```
 
-Replace `~/workspace/application_template` with your project path.
+Replace `~/workspace/application_template` with your project path. -->
 
 ## 6. Window Manager Integration
 
@@ -97,7 +88,8 @@ This matches ImGui popup windows by their title prefix.
 
 ## 7. Usage
 
-Run the compiled binary directly or via IDE. The main window displays ImGui controls—customize widgets in `application.cpp`.
+'F5' Runs the compiled binary directly or via IDE. 
+The main window displays ImGui controls—customize widgets in `application.cpp`.
 
 ## Dashboard Module
 
