@@ -56,25 +56,24 @@ If you selected **VSCode** during setup:
 
 ###### While in the VSCode editor:
 * Press <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>B</kbd> to build the application.
-* Press <kbd>F5</kbd> to launch the application in the debugger after building.
+* Press <kbd>F5</kbd> to build and launch the application in the debugger.
 
 ### Manual Build
 
 From the project root directory:
 
 ```bash
-cmake -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Debug        # Generate build files
-cmake --build build --parallel  16                                  # Compile with parallel jobs
+cmake -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Debug
+cmake --build build --parallel 16
 ```
 
-<!-- **Optional Bash Aliases** (add to your `~/.bashrc`):
+Create 'build' manually:
 
 ```bash
-alias app_build='cd ~/workspace/application_template && .vscode/build.sh && make -j'
-alias app_run='app_build && bin/Debug-linux-x86_64/application_template/application_template'
+mkdir build && cd build
+cmake ..
+make -j
 ```
-
-Replace `~/workspace/application_template` with your project path. -->
 
 ## 6. Window Manager Integration
 
