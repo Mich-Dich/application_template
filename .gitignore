@@ -40,12 +40,20 @@
 # debug information files
 *.dwo
 
-
 # generated files
 .vscode/
 .vs/
+
+build/
 bin/
 bin-int/
+
+**/premake5.lua
+premake5.lua
+
+**/CMakeLists.txt
+CMakeLists.txt
+
 scripts/__pycache__/
 scripts/linux/__pycache__/
 scripts/windows/__pycache__/
@@ -54,8 +62,9 @@ scripts/windows/__pycache__/
 *.vcxproj
 *.vcxproj.filters
 *.vcxproj.user
-vendor/glew/
 Makefile
+
+vendor/glew/
 vendor/premake/
 vendor/premake/*
 vendor/premake/LICENSE.txt

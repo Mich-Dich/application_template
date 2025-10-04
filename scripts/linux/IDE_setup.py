@@ -8,8 +8,7 @@ import stat
 import json
 import datetime
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-import utils
+import scripts.utils as utils
 
 def detect_rider():
     # Check common Rider installation paths on Linux
@@ -64,8 +63,6 @@ def detect_IDEs():
     if detect_rider():                      # Detect available IDEs
         IDEs.append("JetBrains Rider")
 
-    IDEs.append("Makefile (CLion/Ninja compatible)")
-    
     if not IDEs:
         print("No supported IDEs detected.")
         sys.exit(1)
@@ -76,6 +73,9 @@ def detect_IDEs():
 def prompt_ide_selection():
     
     IDEs = detect_IDEs()
+    if (len(IDEs) == 1) and utils.get_silent():
+        return IDEs[0]
+
     print("\nDetected IDEs:")
     for i, ide in enumerate(IDEs):
         print(f"{i}. {ide}")
@@ -106,9 +106,11 @@ def prompt_build_config():
         try:
             index = int(choice)
             if 0 <= index < len(configs):
+                if utils.SILENT:
+                    print("")
                 return configs[index]
-            else:
-                print("Invalid number.")
+            
+            print("Invalid selection number.")
         except ValueError:
             print("Please enter a valid number.")
 
@@ -247,7 +249,7 @@ echo "------ Done ------"
     with open(cpp_props_path, "w") as f:
         json.dump(cpp_props, f, indent=4)
 
-    print("VSCode integration files generated in .vscode/")
+    utils.print_info("VSCode integration files generated in .vscode/")
     utils.print_c("\nVSCode usage", "blue")
-    print("  Build the project:                 Ctrl+Shift+B (runs 'Clean & Build')")
-    print("  Launch the application:            F5 (runs the debugger with selected config)")
+    utils.print_info("  Build the project:                 Ctrl+Shift+B (runs 'Clean & Build')")
+    utils.print_info("  Launch the application:            F5 (runs the debugger with selected config)")

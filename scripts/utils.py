@@ -1,10 +1,17 @@
-# This is a modefied version of: https://github.com/TheCherno/Hazel/blob/master/scripts/Utils.py
+# This is a modified version of: https://github.com/TheCherno/Hazel/blob/master/scripts/Utils.py
 
 import sys
 import os
 import subprocess
 import time
 import urllib
+
+
+SILENT = False
+
+
+def get_silent():
+    return SILENT
 
 def install(package):
     subprocess.check_call([sys.executable, '-m', 'pip', 'install', package])
@@ -36,11 +43,21 @@ def print_c(text, color):
         "white": "\033[37m",
         "reset": "\033[0m"  # Reset to default color
     }
-    print(f"{colors.get(color, colors['reset'])}{text}{colors['reset']}")
+    if not SILENT and (color != "red" or color != "orange"):
+        print(f"{colors.get(color, colors['reset'])}{text}{colors['reset']}")
+
 
 
 def print_u(text):
+    if SILENT:
+        return
     print(f"\033[4m{text}\033[0m")
+
+def print_info(text):
+    """Print informational messages (suppressed in silent mode)"""
+    if SILENT:
+        return
+    print(text)
 
 
 def download_file(url, filepath):

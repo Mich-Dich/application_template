@@ -4,18 +4,19 @@ A simple, cross-platform C++ application template with a graphical user interfac
 
 ## 1. Overview
 
-`application_template` provides a minimal but fully functional starting point for GUI-based C++ applications. It uses:
+`application_template` provides a functional starting point for GUI-based C++ applications. It uses:
 
 * **ImGui** for immediate-mode GUI widgets
+* **ImPlot**    <!-- TODO: add explanation -->
 * **GLFW** for window and input management
 * **OpenGL** (configurable via `GL_renderer`)
-* **Premake5** for build configuration
 
 The template handles platform detection, dependency setup, and IDE integration out of the box.
 
 ## 2. Features
 
-* Cross-platform support (Linux; Windows support coming soon)
+* Cross-platform support (Linux & Windows)
+* Dual build system support: CMake and Premake5
 * Automatic and manual build workflows
 * IDE configuration for VSCode (default) and others
 * Customizable dashboard module for runtime statistics or visuals
@@ -29,7 +30,7 @@ The template handles platform detection, dependency setup, and IDE integration o
 
 ## 4. Installation & Setup
 
-### Run Setup Script
+### Clone Template
 
 Use this template to create your own project, and clone it.
 
@@ -37,6 +38,8 @@ Use this template to create your own project, and clone it.
 git clone <your_project>
 cd <your_project>
 ```
+
+### Run Setup Script
 
 It is recommended to change the `name` of your project in the `config/app_settings.yml`. This can ofcourse be change at any time, as long as the setup script is run afterwards
 
@@ -47,7 +50,36 @@ python3 setup.py
 ```
 
 * The script detects your OS (Linux/Windows) and ensures all libraries and tools are available.
+* Select your build system when prompted (CMake or Premake5)
 * Select your IDE when prompted (currently VSCode is supported).
+
+
+### Build System Selection
+
+The template supports two build systems:
+
+#### CMake (Recommended)
+- Modern, widely adopted build system
+- Better IDE integration
+- More configuration options
+- Default selection
+
+#### Premake5
+- Simple Lua-based configuration
+- Fast project generation
+- Cross-platform project files
+
+**Command-line options for build system selection:**
+```bash
+# Use CMake (skip selection prompt)
+python3 setup.py -k
+
+# Use Premake5 (skip selection prompt)  
+python3 setup.py -p
+
+# Interactive selection (default)
+python3 setup.py
+```
 
 ## 5. Building the Application
 
@@ -57,35 +89,71 @@ If you selected **VSCode** during setup:
 
 ###### While in the VSCode editor:
 * Press <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>B</kbd> to build the application.
-* Press <kbd>F5</kbd> to launch the application in the debugger after building.
+* Press <kbd>F5</kbd> to build and launch the application in the debugger.
 
-### Manual Build
+### Manual Build - CMake
 
 From the project root directory:
 
 ```bash
-cd application_template
-.vscode/build.sh      # Generate gmake2 files and run premake
-make -j               # Compile with parallel jobs
-```
+# Generate build files and build
+cmake -B build -DCMAKE_BUILD_TYPE=Debug
+cmake --build build --parallel 16
 
-If you modify `premake5.lua`, regenerate build files:
-
-```bash
-make clean && vendor/premake/premake5 gmake2
+# Or create build directory manually
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Debug
 make -j
 ```
 
-**Optional Bash Aliases** (add to your `~/.bashrc`):
+### Manual Build - Premake5
+
+From the project root directory:
 
 ```bash
-alias app_build='cd ~/workspace/application_template && .vscode/build.sh && make -j'
-alias app_run='app_build && bin/Debug-linux-x86_64/application_template/application_template'
+# Generate build files (Linux)
+./vendor/premake/premake5 gmake2
+
+# Generate build files (Windows)  
+vendor\premake\premake5.exe gmake2
+
+# Build the project
+gmake -j
+
+# Clean build
+gmake clean
 ```
 
-Replace `~/workspace/application_template` with your project path.
+## 6. Common Workflows
 
-## 6. Window Manager Integration
+### Development Setup
+```bash
+# CMake with VSCode for debugging
+python3 setup.py -k -V -C Debug
+
+# Premake5 with VSCode
+python3 setup.py -p -V -C Debug
+```
+
+### Release Build
+```bash
+# Generate release build files without building
+python3 setup.py -k -C Release -n
+
+# Or with Premake5
+python3 setup.py -p -C Release -n
+```
+
+### Quick Setup
+```bash
+# CMake with VSCode, generate files only
+python3 setup.py -k -V -n
+
+# Full clean setup (removes previous builds)
+python3 setup.py -c -k -V
+```
+
+## 7. Window Manager Integration
 
 If you use a tiling window manager (e.g., `Krohnkite`), ImGui may spawn floating glfw windows with a prefix. Add the following rule to allow floating windows:
 
@@ -95,14 +163,14 @@ ISM -
 
 This matches ImGui popup windows by their title prefix.
 
-## 7. Usage
+## 8. Usage
 
-Run the compiled binary directly or via IDE. The main window displays ImGui controls—customize widgets in `application.cpp`.
+'F5' Runs the compiled binary directly or via IDE. 
+The main window displays ImGui controls—customize widgets in `application.cpp`.
 
 ## Dashboard Module
 
 The dashboard files (`dashboard.h` / `dashboard.cpp`) are entry points for adding custom UI panels or runtime metrics. Extend this module by implementing:
-
 
 ### Lifecycle Methods
 
@@ -138,7 +206,6 @@ The dashboard files (`dashboard.h` / `dashboard.cpp`) are entry points for addin
 
    * Clean up resources allocated in `initialize()` (free textures, buffers).
    * Called on application exit.
-
 
 ### Long startup process (optional)
 
@@ -181,39 +248,7 @@ The UI shown while `dashboard::init()` runs is intentionally minimal and scales 
 ```cpp
 void dashboard::draw_init_UI(f32 delta_time) {
 
-    ImGuiViewport* viewport = ImGui::GetMainViewport();
-    ImGui::SetNextWindowPos(viewport->Pos);
-    ImGui::SetNextWindowSize(viewport->Size);
-    
-    ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize |
-        ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-    
-    ImGui::Begin("Initialization", nullptr, window_flags);
-    {
-
-        const char* text = "Initializing...";
-        const float target_font_size = 50.0f;
-        ImVec2 base_text_size = ImGui::CalcTextSize(text);                                      // Calculate base text size at default font scale
-        float scale = (base_text_size.y > 0) ? target_font_size / base_text_size.y : 1.0f;      // Calculate required scale to reach target font size
-        ImVec2 available = ImGui::GetContentRegionAvail() * 0.9f;                               // Get available space with 10% margin
-        ImVec2 scaled_size = base_text_size * scale;                                            // Calculate scaled text size
-        
-        if (scaled_size.x > available.x || scaled_size.y > available.y) {                       // Adjust scale if needed to fit available space
-            float width_ratio = available.x / scaled_size.x;
-            float height_ratio = available.y / scaled_size.y;
-            scale *= (width_ratio < height_ratio) ? width_ratio : height_ratio;
-        }
-        
-        // Set font scale and calculate final position
-        ImGui::SetWindowFontScale(scale);
-        ImVec2 text_size = ImGui::CalcTextSize(text);
-        ImVec2 position = (ImGui::GetContentRegionAvail() - text_size) * 0.5f;
-        
-        ImGui::SetCursorPos(position);
-        ImGui::TextUnformatted(text);
-        ImGui::SetWindowFontScale(1.0f);
-    }
-    ImGui::End();
+    // Overwrite with own UI or leave default
 }
 ```
 
@@ -265,4 +300,4 @@ Contributions welcome! Please fork the repo and submit pull requests against `ma
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under the [Apache 2.0 License](LICENSE).

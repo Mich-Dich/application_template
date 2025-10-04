@@ -103,18 +103,23 @@ def prompt_ide_selection():
         print("only one IDE detected")
         return IDEs[0]
 
-    choice = input("Select an IDE to use (enter the number): ")
-    try:
-        choice_index = int(choice)
-        if 0 <= choice_index < len(IDEs):
-            return IDEs[choice_index]
-        else:
-            print("Invalid selection.")
-            sys.exit(1)
+    while (True):
+        choice = input("Select an IDE to use (enter the number): ")
+        try:
+            choice_index = int(choice)
+            if 0 <= choice_index < len(IDEs):
             
-    except ValueError:
-        print("Invalid input.")
-        sys.exit(1)
+                selected_ide = IDEs[choice_index]
+                if "VSCode" in selected_ide:
+                    utils.print_c("\nVSCode usage", "blue")
+                    print("  Build the project:                 Ctrl+Shift+B (runs 'Clean & Build')")
+                    print("  Launch the application:            F5 (runs the debugger with selected config)")
+                return selected_ide
+            
+            print("Invalid selection number.")
+        except ValueError:
+            print("Please enter a valid number.")
+
 
 
 
@@ -251,6 +256,3 @@ endlocal
         json.dump(cpp_props, f, indent=4)
 
     print("VSCode integration files generated in .vscode/")
-    utils.print_c("\nVSCode usage", "blue")
-    print("  Build the project:                 Ctrl+Shift+B (runs 'Clean & Build')")
-    print("  Launch the application:            F5 (runs the debugger with selected config)")
