@@ -196,8 +196,7 @@ Common workflows:
         # apply_premake_settings()
         application_name = get_application_name()
         clean_art_on_build = get_clean_build_artifacts_on_build()
-        utils.print_info(f"name: {application_name}")
-        shutil.copy2("./scripts/imgui_CMakeLists.txt", "./vendor/imgui/CMakeLists.txt")         # copy template CMake file to correct directory
+        utils.print_info(f"application name loaded from [.config/app_settings.yml]: {application_name}")
 
         # select build system
         utils.print_u("\nSETUP A BUILD SYSTEM")              # Initialize submodule configuration
