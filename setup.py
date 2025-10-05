@@ -243,7 +243,7 @@ Common workflows:
             if not any(arg in sys.argv for arg in ['-C', '--config']):
                 build_config = IDE_setup.prompt_build_config()
             
-            IDE_setup.setup_vscode_configs(os.getcwd(), build_config, application_name, clean_art_on_build)
+            IDE_setup.setup_vscode_configs(os.getcwd(), build_config, application_name, clean_art_on_build, build_sys != "CMake")
         
         if build_sys == "Premake5":
             if platform.system() == "Linux":                # ---- LINUX VERSION ----

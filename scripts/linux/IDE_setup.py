@@ -115,8 +115,7 @@ def prompt_build_config():
             print("Please enter a valid number.")
 
 
-def setup_vscode_configs(project_root, build_config, application_name, clean_art_on_build):
-
+def setup_vscode_configs(project_root, build_config, application_name, clean_art_on_build, use_premake=True):
     vscode_dir = os.path.join(project_root, ".vscode")
     os.makedirs(vscode_dir, exist_ok=True)
 
@@ -141,28 +140,190 @@ find . -name "Makefile" -delete
 # To enable clearing of previous artifacts change [clean_build_artifacts_on_build] to true in file [config/app_settings.yml]
 """
 
+    # Build system specific commands
+    if use_premake:
+        build_commands = """
+echo "------ Regenerating Makefiles and rebuilding ------"
+./vendor/premake/premake5 gmake2
+
+# Convert build config to lowercase for Makefile compatibility
+make_config=$(echo "$build_config" | tr '[:upper:]' '[:lower:]')
+gmake config=${make_config}_x64 -j -k
+"""
+    else:
+        build_commands = """
+echo "------ Generating build files ------"
+cmake -B build -DCMAKE_BUILD_TYPE=$build_config
+
+echo "------ Building main project ------"
+cmake --build build --config $build_config
+"""
+
     # Create build.sh
     build_script_path = os.path.join(vscode_dir, "build.sh")
     build_script_content = f"""#!/usr/bin/env bash
 set -e
+
+# Color codes
+GREEN='\\033[0;32m'
+YELLOW='\\033[1;33m'
+RED='\\033[0;31m'
+BLUE='\\033[0;34m'
+WHITE='\\033[1;37m'
+CYAN='\\033[0;36m'
+NC='\\033[0m' # No Color
+
+# Icons
+CHECK_MARK="✓"
+X_MARK="✗"
+ARROW_RIGHT="→"
 
 build_config="{build_config}"
 timestamp=$(date '+%Y-%m-%d-%H:%M:%S')
 stage_name="{application_name}_${{build_config}}_${{timestamp}}"
 STAGE_DIR="{bin_dir}/${{stage_name}}"
 {clean_artifacts_block}
-echo "------ Regenerating Makefiles and rebuilding ------"
-./vendor/premake/premake5 gmake2
 
-# Convert build config to lowercase for Makefile compatibility
-make_config=$(echo "{build_config}" | tr '[:upper:]' '[:lower:]')
-gmake config=${{make_config}}_x64 -j -k
+echo -e "${{BLUE}}------ Checking plugins ------${{NC}}"
 
-echo "------ Done ------"
+# Function to check if a plugin needs rebuilding with detailed output
+needs_rebuild() {{
+    local plugin_dir="$1"
+    local plugin_name=$(basename "$plugin_dir")
+    local build_dir="$plugin_dir/build"
+    local so_file="$build_dir/lib$plugin_name.so"
+    
+    echo -e "${{WHITE}}  Checking plugin: ${{CYAN}}$plugin_name${{NC}}"
+    
+    # If no build directory exists
+    if [ ! -d "$build_dir" ]; then
+        echo -e "    ${{YELLOW}}- No build directory found${{NC}}"
+        return 0
+    fi
+    
+    # If no .so file exists
+    if [ ! -f "$so_file" ]; then
+        echo -e "    ${{YELLOW}}- No .so file found${{NC}}"
+        return 0
+    fi
+    
+    # Get the timestamp of the .so file
+    local so_timestamp=$(stat -c %Y "$so_file" 2>/dev/null || echo 0)
+    echo -e "    ${{WHITE}}- .so file timestamp: ${{NC}}$(date -d @$so_timestamp)"
+    
+    # Find the newest source file timestamp
+    local newest_source_timestamp=0
+    local newest_source_file=""
+    
+    if find "$plugin_dir" -name "*.cpp" -o -name "*.h" -o -name "*.hpp" -o -name "CMakeLists.txt" | read -r first_file; then
+        newest_source_timestamp=$(find "$plugin_dir" \\( -name "*.cpp" -o -name "*.h" -o -name "*.hpp" -o -name "CMakeLists.txt" \\) -type f -exec stat -c "%Y %n" {{}} \\; | sort -nr | head -n 1)
+        newest_source_file=$(echo "$newest_source_timestamp" | cut -d' ' -f2-)
+        newest_source_timestamp=$(echo "$newest_source_timestamp" | cut -d' ' -f1)
+        echo -e "    ${{WHITE}}- Newest source: ${{NC}}$(basename "$newest_source_file") ($(date -d @$newest_source_timestamp))"
+    else
+        echo -e "    ${{YELLOW}}- No source files found${{NC}}"
+        return 1
+    fi
+    
+    # If sources are newer than the .so file
+    if [ "$newest_source_timestamp" -gt "$so_timestamp" ]; then
+        echo -e "    ${{YELLOW}}- Source files are newer than .so file${{NC}}"
+        return 0
+    fi
+    
+    echo -e "    ${{GREEN}}- Plugin is up to date${{NC}}"
+    return 1
+}}
+
+# Function to build a plugin
+build_plugin() {{
+    local plugin_dir="$1"
+    local plugin_name=$(basename "$plugin_dir")
+    local build_dir="$plugin_dir/build"
+    
+    echo -e "${{WHITE}}  Building plugin: ${{CYAN}}$plugin_name${{NC}}"
+    
+    # Create build directory if it doesn't exist
+    mkdir -p "$build_dir"
+    
+    # Build the plugin
+    echo -e "    ${{BLUE}}Configuring CMake...${{NC}}"
+    cd "$build_dir"
+    if ! cmake .. -DCMAKE_BUILD_TYPE=$build_config; then
+        echo -e "    ${{RED}}${{X_MARK}} CMake configuration failed for $plugin_name${{NC}}"
+        cd - > /dev/null
+        return 1
+    fi
+    
+    echo -e "    ${{BLUE}}Compiling...${{NC}}"
+    if ! make -j$(nproc); then
+        echo -e "    ${{RED}}${{X_MARK}} Compilation failed for $plugin_name${{NC}}"
+        cd - > /dev/null
+        return 1
+    fi
+    cd - > /dev/null
+    
+    echo -e "    ${{GREEN}}${{CHECK_MARK}} Successfully built: $plugin_name${{NC}}"
+    return 0
+}}
+
+# Main plugin checking logic
+plugins_rebuilt=0
+plugins_failed=0
+
+if [ -d "./plugins" ]; then
+    echo -e "${{WHITE}}Scanning plugins directory...${{NC}}"
+    
+    for plugin_dir in ./plugins/*; do
+        if [ -d "$plugin_dir" ] && [ -f "$plugin_dir/CMakeLists.txt" ]; then
+            if needs_rebuild "$plugin_dir"; then
+                echo -e "  ${{YELLOW}}${{ARROW_RIGHT}} Rebuilding required${{NC}}"
+                if build_plugin "$plugin_dir"; then
+                    ((plugins_rebuilt++))
+                else
+                    ((plugins_failed++))
+                fi
+            else
+                echo -e "  ${{GREEN}}${{CHECK_MARK}} Up to date${{NC}}"
+            fi
+            echo ""  # Empty line for readability
+        fi
+    done
+else
+    echo -e "${{YELLOW}}No plugins directory found${{NC}}"
+fi
+
+# Summary
+echo -e "${{BLUE}}------ Build Summary ------${{NC}}"
+if [ $plugins_rebuilt -gt 0 ]; then
+    echo -e "${{GREEN}}${{CHECK_MARK}} Successfully rebuilt $plugins_rebuilt plugin(s)${{NC}}"
+fi
+if [ $plugins_failed -gt 0 ]; then
+    echo -e "${{RED}}${{X_MARK}} Failed to build $plugins_failed plugin(s)${{NC}}"
+fi
+if [ $plugins_rebuilt -eq 0 ] && [ $plugins_failed -eq 0 ]; then
+    echo -e "${{GREEN}}${{CHECK_MARK}} All plugins are up to date${{NC}}"
+fi
+
+echo ""
+{build_commands}
+
+echo -e "${{GREEN}}------ Done ------${{NC}}"
 """
     with open(build_script_path, "w") as f:
         f.write(build_script_content)
     os.chmod(build_script_path, os.stat(build_script_path).st_mode | stat.S_IEXEC)
+
+
+
+
+
+
+
+
+
+
+    
 
     # create tasks.json
     tasks_json_path = os.path.join(vscode_dir, "tasks.json")
