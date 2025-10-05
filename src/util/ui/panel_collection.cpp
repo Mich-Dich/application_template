@@ -636,8 +636,8 @@ namespace AT::UI {
 	void ansi_text(std::string_view text) {
 
 		size_t current_position = 0;
-		ImVec4 color = ImVec4(1.f);
-		ImVec4 bg_color = ImVec4(0.f);
+		ImVec4 color = ImVec4(1.f, 1.f, 1.f, 1.f);
+		ImVec4 bg_color = ImVec4(0.f, 0.f, 0.f, 0.f);
 
 		while (current_position < text.length()) {
 
@@ -681,8 +681,8 @@ namespace AT::UI {
 					const int p = params[i++];
 
 					if (p == 0) {                                               // Reset
-						color = ImVec4(1.f);
-						bg_color = ImVec4(0.f);
+						color = ImVec4(1.f, 1.f, 1.f, 1.f);
+						bg_color = ImVec4(0.f, 0.f, 0.f, 0.f);
 					}
 					else if (p == 1) {                                          // Bold
 						color.x = std::min(color.x * 1.2f, 1.0f);

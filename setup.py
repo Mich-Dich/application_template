@@ -97,6 +97,52 @@ def clean_build_artifacts():
             utils.print_c(f"Removing {file}", "yellow")
             os.remove(file)
 
+# modify the ImGui implementation by search/replace
+def modify_imgui_impl_glfw():
+    """Modify the ImGui_ImplGlfw_SetWindowTitle function to add a prefix to window titles"""
+    # Determine the correct path to the imgui_impl_glfw.cpp file
+    backends_path = "./vendor/imgui/backends"
+    examples_path = "./vendor/imgui/examples"
+    
+    if os.path.exists(backends_path):
+        impl_glfw_path = os.path.join(backends_path, "imgui_impl_glfw.cpp")
+    elif os.path.exists(examples_path):
+        impl_glfw_path = os.path.join(examples_path, "imgui_impl_glfw.cpp")
+    else:
+        print("Could not find imgui_impl_glfw.cpp file")
+        return False
+    
+    try:
+        # Read the file content
+        with open(impl_glfw_path, 'r') as file:
+            content = file.read()
+        
+        # Define the pattern to find the function
+        pattern = r'(static void ImGui_ImplGlfw_SetWindowTitle\(ImGuiViewport\s*\*\s*viewport,\s*const char\s*\*\s*title\)\s*\{[^}]*glfwSetWindowTitle\(vd->Window, title\);\s*\})'
+        
+        # Define the replacement
+        replacement = r'''static void ImGui_ImplGlfw_SetWindowTitle(ImGuiViewport* viewport, const char* title)
+{
+    ImGui_ImplGlfw_ViewportData* vd = (ImGui_ImplGlfw_ViewportData*)viewport->PlatformUserData;
+    char new_title[4096] = {0};
+    snprintf(new_title, 4096, "ISW - %s", title);
+    glfwSetWindowTitle(vd->Window, new_title);
+}'''
+        
+        # Replace the function
+        new_content = re.sub(pattern, replacement, content, flags=re.DOTALL)
+        
+        # Write the modified content back to the file
+        with open(impl_glfw_path, 'w') as file:
+            file.write(new_content)
+        
+        print(f"Successfully modified {impl_glfw_path}")
+        return True
+        
+    except Exception as e:
+        print(f"Error modifying imgui_impl_glfw.cpp: {str(e)}")
+        return False
+    
 
 def main():
 
@@ -176,20 +222,21 @@ Common workflows:
             utils.print_c("Missing required packages - setup aborted", "red")
             sys.exit(1)
     
-        utils.print_u("\nINITIALIZING SUBMODULES")              # Initialize submodule configuration
-        if not git_util.initialize_submodules():
-            utils.print_c("Submodule initialization failed - setup aborted", "red")
-            sys.exit(1)
-    
         if not args.skip_submods:
+            utils.print_u("\nINITIALIZING SUBMODULES")              # Initialize submodule configuration
+            if not git_util.initialize_submodules():
+                utils.print_c("Submodule initialization failed - setup aborted", "red")
+                sys.exit(1)
+    
             utils.print_u("\nUPDATING SUBMODULES")                  # Update submodules to desired branches
             git_util.update_submodule("vendor/glfw", "main")
             git_util.update_submodule("vendor/glm", "master")
             git_util.update_submodule("vendor/imgui", "docking")
+            modify_imgui_impl_glfw()
             git_util.update_submodule("vendor/implot", "master")
             git_util.update_submodule("vendor/Catch2", "devel")
         else:
-            utils.print_c("ignoring update routine for submodules", "orange")
+            utils.print_c("\nIgnoring update-routine for submodules", "orange")
 
         utils.print_u("\nAPPLY SETTINGS")
         utils.print_c("Settings are defined at [./config/app_settings.yml]. after changing the settings, it is recommended to re-execute the setup script", "blue")
@@ -324,8 +371,8 @@ Common workflows:
 
                 # continue to compile only if generation was successful
                 if not args.no_build:
-                    utils.print_c("\nBuilding project using [cmake --build build]", "blue")
-                    cmake_result = subprocess.run(["cmake", "--build", "build"])
+                    utils.print_c("\nBuilding project using [cmake --build build --parallel 32]", "blue")
+                    cmake_result = subprocess.run(["cmake", "--build", "build", "--parallel", "32"])
                     if cmake_result.returncode == 0:
                         utils.print_c("BUILD SUCCESSFUL!", "green")
                     else:

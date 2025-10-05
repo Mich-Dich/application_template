@@ -1,6 +1,3 @@
-[submodule "vendor/imgui"]
-	path = vendor/imgui
-	url = git@github.com:Mich-Dich/imgui.git
 [submodule "vendor/glfw"]
 	path = vendor/glfw
 	url = git@github.com:Mich-Dich/glfw.git
@@ -13,3 +10,7 @@
 [submodule "vendor/Catch2"]
 	path = vendor/Catch2
 	url = https://github.com/catchorg/Catch2.git
+[submodule "vendor/imgui"]
+	path = vendor/imgui
+	url = https://github.com/ocornut/imgui.git
+	branch = docking

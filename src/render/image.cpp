@@ -114,7 +114,7 @@ namespace AT {
         return reinterpret_cast<void*>(m_descriptor_set);
 
 #elif defined(RENDER_API_OPENGL)
-        return reinterpret_cast<void*>(static_cast<uintptr_t>(m_textureID));
+    	return static_cast<ImTextureID>(m_textureID);
 #endif
     }
 

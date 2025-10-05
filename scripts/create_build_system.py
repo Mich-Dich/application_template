@@ -32,8 +32,6 @@ def write_file(target_dir, content):
 def apply_cmake_build_system(project_name):
 
     root_cmake = """
-# Root [CMakeLists.txt]
-
 cmake_minimum_required(VERSION 3.15)
 project(application LANGUAGES CXX)
 
@@ -41,10 +39,19 @@ project(application LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Set output directories for binaries (similar to your targetdir and objdir)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin-int)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin-int)
+# Get platform and architecture information
+if(WIN32)
+    set(PLATFORM_NAME "windows")
+elseif(UNIX)
+    set(PLATFORM_NAME "linux")
+else()
+    set(PLATFORM_NAME "unknown")
+endif()
+
+# Set output directories with platform/configuration specific paths
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE}-${PLATFORM_NAME}-${CMAKE_HOST_SYSTEM_PROCESSOR})
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin-int/${CMAKE_BUILD_TYPE}-${PLATFORM_NAME}-${CMAKE_HOST_SYSTEM_PROCESSOR})
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin-int/${CMAKE_BUILD_TYPE}-${PLATFORM_NAME}-${CMAKE_HOST_SYSTEM_PROCESSOR})
 
 # Define configurations (Debug, RelWithDebInfo, Release)
 if(NOT CMAKE_BUILD_TYPE)
@@ -101,8 +108,6 @@ add_subdirectory(src)
 """
 
     src_cmake = f"""
-# Application [src/CMakeLists.txt]
-
 project({project_name} LANGUAGES CXX)
 
 # Find required packages
@@ -121,17 +126,24 @@ file(GLOB IMGUI_OPENGL3_SOURCES
 )
 
 # Add executable with ALL required sources
-add_executable(application_template 
+add_executable({project_name} 
     ${{SOURCES_CONAN}} 
     ${{IMPLOT_SOURCES}} 
     ${{IMGUI_OPENGL3_SOURCES}}
 )
 
+# Set specific output directories for this target
+set_target_properties({project_name} PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${{CMAKE_RUNTIME_OUTPUT_DIRECTORY}}/{project_name}
+    ARCHIVE_OUTPUT_DIRECTORY ${{CMAKE_ARCHIVE_OUTPUT_DIRECTORY}}/{project_name}
+    LIBRARY_OUTPUT_DIRECTORY ${{CMAKE_LIBRARY_OUTPUT_DIRECTORY}}/{project_name}
+)
+
 # Precompiled headers (requires CMake 3.16+)
-target_precompile_headers(application_template PRIVATE util/pch.h)
+target_precompile_headers({project_name} PRIVATE util/pch.h)
 
 # Include directories
-target_include_directories(application_template PRIVATE
+target_include_directories({project_name} PRIVATE
     ${{CMAKE_CURRENT_SOURCE_DIR}}
     ${{CMAKE_CURRENT_SOURCE_DIR}}/assets
     ${{CMAKE_CURRENT_SOURCE_DIR}}/../vendor
@@ -147,20 +159,20 @@ target_include_directories(application_template PRIVATE
 )
 
 # Add definitions for application target
-target_compile_definitions(application_template PRIVATE 
+target_compile_definitions({project_name} PRIVATE 
     GLFW_INCLUDE_NONE
     GLEW_STATIC
 )
 
 # Configuration-specific definitions
-target_compile_definitions(application_template PRIVATE 
+target_compile_definitions({project_name} PRIVATE 
     $<$<CONFIG:Debug>:DEBUG>
     $<$<CONFIG:RelWithDebInfo>:RELEASE_WITH_DEBUG_INFO>
     $<$<CONFIG:Release>:RELEASE>
 )
 
 # Link libraries
-target_link_libraries(application_template PRIVATE
+target_link_libraries({project_name} PRIVATE
     imgui
     glfw
     OpenGL::GL
@@ -181,18 +193,18 @@ if(WIN32)
     )
     
     if(GLEW_LIBRARY)
-        target_link_libraries(application_template PRIVATE ${{GLEW_LIBRARY}})
+        target_link_libraries({project_name} PRIVATE ${{GLEW_LIBRARY}})
     else()
         # Fallback: try to find GLEW system-wide or use a different approach
         find_package(GLEW)
         if(GLEW_FOUND)
-            target_link_libraries(application_template PRIVATE GLEW::GLEW)
+            target_link_libraries({project_name} PRIVATE GLEW::GLEW)
         else()
             message(WARNING "GLEW library not found. Please check the path.")
         endif()
     endif()
     
-    target_link_libraries(application_template PRIVATE
+    target_link_libraries({project_name} PRIVATE
         gdi32
         user32
         comdlg32
@@ -201,13 +213,13 @@ if(WIN32)
     )
     
     # Copy assets post-build
-    add_custom_command(TARGET application_template POST_BUILD
+    add_custom_command(TARGET {project_name} POST_BUILD
         COMMAND ${{CMAKE_COMMAND}} -E copy_directory
         ${{CMAKE_SOURCE_DIR}}/assets
-        $<TARGET_FILE_DIR:application_template>/assets
+        $<TARGET_FILE_DIR:{project_name}>/assets
         COMMAND ${{CMAKE_COMMAND}} -E copy_directory
         ${{CMAKE_SOURCE_DIR}}/config
-        $<TARGET_FILE_DIR:application_template>/config
+        $<TARGET_FILE_DIR:{project_name}>/config
     )
 else()
     # Linux-specific GLEW handling
@@ -215,11 +227,11 @@ else()
     pkg_check_modules(GLEW REQUIRED glew)
     
     # Add GLEW include directories and link libraries for Linux
-    target_include_directories(application_template PRIVATE
+    target_include_directories({project_name} PRIVATE
         ${{GLEW_INCLUDE_DIRS}}
     )
     
-    target_link_libraries(application_template PRIVATE
+    target_link_libraries({project_name} PRIVATE
         ${{GLEW_LIBRARIES}}
         GL
         X11
@@ -230,21 +242,21 @@ else()
     # Alternative method if pkg-config doesn't work:
     # find_library(GLEW_LIBRARY NAMES GLEW glew)
     # if(GLEW_LIBRARY)
-    #     target_link_libraries(application_template PRIVATE ${{GLEW_LIBRARY}})
+    #     target_link_libraries({project_name} PRIVATE ${{GLEW_LIBRARY}})
     # endif()
     
     # Copy assets for Linux (create the directories first)
-    add_custom_command(TARGET application_template POST_BUILD
+    add_custom_command(TARGET {project_name} POST_BUILD
         COMMAND ${{CMAKE_COMMAND}} -E make_directory
-        $<TARGET_FILE_DIR:application_template>/assets
+        $<TARGET_FILE_DIR:{project_name}>/assets
         COMMAND ${{CMAKE_COMMAND}} -E make_directory
-        $<TARGET_FILE_DIR:application_template>/config
+        $<TARGET_FILE_DIR:{project_name}>/config
         COMMAND ${{CMAKE_COMMAND}} -E copy_directory
         ${{CMAKE_SOURCE_DIR}}/assets
-        $<TARGET_FILE_DIR:application_template>/assets
+        $<TARGET_FILE_DIR:{project_name}>/assets
         COMMAND ${{CMAKE_COMMAND}} -E copy_directory
         ${{CMAKE_SOURCE_DIR}}/config
-        $<TARGET_FILE_DIR:application_template>/config
+        $<TARGET_FILE_DIR:{project_name}>/config
     )
 endif()
 
@@ -261,9 +273,6 @@ set_source_files_properties(
 """
     
     tests_cmake = """
-
-# Tests [testing/CMakeLists.txt]
-
 project(tests LANGUAGES CXX)
 
 # Use FetchContent for Catch2
@@ -322,8 +331,11 @@ set(UTIL_SOURCES
 # Add executable
 add_executable(tests ${TEST_SOURCES} ${UTIL_SOURCES})
 
-# Set C++ standard
+# Set specific output directories for this target
 set_target_properties(tests PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/tests
+    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/tests
+    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/tests
     CXX_STANDARD 23
     CXX_STANDARD_REQUIRED ON
 )

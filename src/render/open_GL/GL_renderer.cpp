@@ -165,10 +165,10 @@ namespace AT::render::open_GL {
     }
 
 
-    void GL_renderer::imgui_create_fonts()      { ImGui_ImplOpenGL3_CreateFontsTexture(); }
+    void GL_renderer::imgui_create_fonts()      { /* Texture handling was made automatic, no need to call this anymore: ImGui_ImplOpenGL3_CreateFontsTexture(); */ }
 
 
-    void GL_renderer::imgui_destroy_fonts()     { ImGui_ImplOpenGL3_DestroyFontsTexture(); }
+    void GL_renderer::imgui_destroy_fonts()     { /* Texture handling was made automatic, no need to call this anymore: ImGui_ImplOpenGL3_DestroyFontsTexture(); */ }
 
     // ================================================ utility ================================================
 

@@ -3,7 +3,6 @@ import subprocess
 import scripts.utils as utils
 
 
-
 def initialize_submodules():
     """Initialize and update all submodules with SSH/HTTPS fallback"""
     
@@ -23,6 +22,12 @@ def initialize_submodules():
         except Exception as e:
             utils.print_c(f"Failed to convert URLs: {str(e)}", "red")
             return False
+
+    # First, try to reset any submodules with local changes
+    try:
+        subprocess.run(["git", "submodule", "foreach", "--recursive", "git", "reset", "--hard"], check=False)  # Don't fail if some submodules don't exist
+    except Exception as e:
+        utils.print_c(f"Note: Some submodules couldn't be reset: {str(e)}", "yellow")
 
     # Initialize submodules
     try:
@@ -46,14 +51,21 @@ def update_submodule(submodule_path, branch="main"):
         # Use default branch if specified branch doesn't exist
         if branch_check.returncode != 0:
             utils.print_c(f"Branch '{branch}' not found, trying default branch", "yellow")
-            result = subprocess.run(["git", "symbolic-ref", "refs/remotes/origin/HEAD"], cwd=submodule_path, stdout=subprocess.PIPE, text=True, stderr=subprocess.DEVNULL )
+            result = subprocess.run(["git", "symbolic-ref", "refs/remotes/origin/HEAD"], cwd=submodule_path, stdout=subprocess.PIPE, text=True, stderr=subprocess.DEVNULL)
             default_branch = result.stdout.strip().split('/')[-1] if result.returncode == 0 else "main"
             branch = default_branch
             utils.print_c(f"Using branch: {branch}", "yellow")
         
-        # Checkout and update the branch
-        subprocess.run(["git", "checkout", branch], cwd=submodule_path, check=True)
-        subprocess.run(["git", "pull", "origin", branch], cwd=submodule_path, check=True)
+        # This avoids the "leaving commits behind" warning
+        subprocess.run(["git", "reset", "--hard", f"origin/{branch}"], cwd=submodule_path, check=True)
+        
+        # Only checkout if we're not already on the branch (optional, but cleaner)
+        current_branch_result = subprocess.run(["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd=submodule_path, stdout=subprocess.PIPE, text=True, check=True)
+        current_branch = current_branch_result.stdout.strip()
+        
+        if current_branch != branch:
+            subprocess.run(["git", "checkout", "-B", branch, f"origin/{branch}"], cwd=submodule_path, check=True)
+        
         utils.print_c(f"Successfully updated {submodule_path} to branch '{branch}'.", "green")
         return True
 

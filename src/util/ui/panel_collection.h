@@ -140,7 +140,7 @@ namespace AT::UI {
 	void spinner(const char* label, f32 radius, int thickness, const ImU32& color);
 
 	// this is an adapted version from [alexsr] from [https://github.com/ocornut/imgui/issues/1901]
-	void loading_indicator_circle(const char* label, const f32 indicator_radius = 20, const int circle_count = 10, const f32 speed = 7.f, const ImVec4& main_color = ImGui::GetColorU32(ImGuiCol_ButtonHovered), const ImVec4& backdrop_color = ImGui::GetColorU32(ImGuiCol_FrameBg));
+	void loading_indicator_circle(const char* label, const f32 indicator_radius = 20, const int circle_count = 10, const f32 speed = 7.f, const ImVec4& main_color = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered), const ImVec4& backdrop_color = ImGui::GetStyleColorVec4(ImGuiCol_FrameBg));
 
 	// ============================================================================================================
 	// TEXT

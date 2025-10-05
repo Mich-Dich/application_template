@@ -152,11 +152,12 @@ gmake config=${make_config}_x64 -j -k
 """
     else:
         build_commands = """
-echo "------ Generating build files ------"
+echo -e "${BLUE}------ Generating build files ------${NC}"
 cmake -B build -DCMAKE_BUILD_TYPE=$build_config
 
-echo "------ Building main project ------"
-cmake --build build --config $build_config
+echo ""
+echo -e "${BLUE}------ Building main project ------${NC}"
+cmake --build build --config $build_config --parallel 32
 """
 
     # Create build.sh
@@ -172,11 +173,6 @@ BLUE='\\033[0;34m'
 WHITE='\\033[1;37m'
 CYAN='\\033[0;36m'
 NC='\\033[0m' # No Color
-
-# Icons
-CHECK_MARK="✓"
-X_MARK="✗"
-ARROW_RIGHT="→"
 
 build_config="{build_config}"
 timestamp=$(date '+%Y-%m-%d-%H:%M:%S')
@@ -250,20 +246,20 @@ build_plugin() {{
     echo -e "    ${{BLUE}}Configuring CMake...${{NC}}"
     cd "$build_dir"
     if ! cmake .. -DCMAKE_BUILD_TYPE=$build_config; then
-        echo -e "    ${{RED}}${{X_MARK}} CMake configuration failed for $plugin_name${{NC}}"
+        echo -e "    ${{RED}} CMake configuration failed for $plugin_name${{NC}}"
         cd - > /dev/null
         return 1
     fi
     
     echo -e "    ${{BLUE}}Compiling...${{NC}}"
     if ! make -j$(nproc); then
-        echo -e "    ${{RED}}${{X_MARK}} Compilation failed for $plugin_name${{NC}}"
+        echo -e "    ${{RED}} Compilation failed for $plugin_name${{NC}}"
         cd - > /dev/null
         return 1
     fi
     cd - > /dev/null
     
-    echo -e "    ${{GREEN}}${{CHECK_MARK}} Successfully built: $plugin_name${{NC}}"
+    echo -e "    ${{GREEN}} Successfully built: $plugin_name${{NC}}"
     return 0
 }}
 
@@ -277,14 +273,14 @@ if [ -d "./plugins" ]; then
     for plugin_dir in ./plugins/*; do
         if [ -d "$plugin_dir" ] && [ -f "$plugin_dir/CMakeLists.txt" ]; then
             if needs_rebuild "$plugin_dir"; then
-                echo -e "  ${{YELLOW}}${{ARROW_RIGHT}} Rebuilding required${{NC}}"
+                echo -e "  ${{YELLOW}}Rebuilding required${{NC}}"
                 if build_plugin "$plugin_dir"; then
                     ((plugins_rebuilt++))
                 else
                     ((plugins_failed++))
                 fi
             else
-                echo -e "  ${{GREEN}}${{CHECK_MARK}} Up to date${{NC}}"
+                echo -e "  ${{GREEN}} Up to date${{NC}}"
             fi
             echo ""  # Empty line for readability
         fi
@@ -296,13 +292,13 @@ fi
 # Summary
 echo -e "${{BLUE}}------ Build Summary ------${{NC}}"
 if [ $plugins_rebuilt -gt 0 ]; then
-    echo -e "${{GREEN}}${{CHECK_MARK}} Successfully rebuilt $plugins_rebuilt plugin(s)${{NC}}"
+    echo -e "${{GREEN}} Successfully rebuilt $plugins_rebuilt plugin(s)${{NC}}"
 fi
 if [ $plugins_failed -gt 0 ]; then
-    echo -e "${{RED}}${{X_MARK}} Failed to build $plugins_failed plugin(s)${{NC}}"
+    echo -e "${{RED}} Failed to build $plugins_failed plugin(s)${{NC}}"
 fi
 if [ $plugins_rebuilt -eq 0 ] && [ $plugins_failed -eq 0 ]; then
-    echo -e "${{GREEN}}${{CHECK_MARK}} All plugins are up to date${{NC}}"
+    echo -e "${{GREEN}} All plugins are up to date${{NC}}"
 fi
 
 echo ""
@@ -348,8 +344,8 @@ echo -e "${{GREEN}}------ Done ------${{NC}}"
 
     # create launch.json
     launch_json_path = os.path.join(vscode_dir, "launch.json")
-    program_path = os.path.join("${workspaceFolder}", "bin", output_dir, f"{application_name}", f"{application_name}")
-    cwd_path = os.path.join("${workspaceFolder}", "bin", output_dir)
+    program_path = os.path.join("${workspaceFolder}", "build", "bin", output_dir, f"{application_name}", f"{application_name}")
+    cwd_path = os.path.join("${workspaceFolder}", "build", "bin", output_dir)
 
     launch_data = {
         "version": "0.2.0",

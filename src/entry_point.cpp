@@ -1,7 +1,7 @@
 
 #include "util/pch.h"
 
-#if 0
+#if 1
 
 #include "util/timing/instrumentor.h"
 #include "util/crash_handler.h"
@@ -52,37 +52,37 @@ int MAIN_FUNC {
 #else       // Test plugin system
 
 
-#include "util/crash_handler.h"
-#include "util/system.h"
-#include "plugins/plugin_manager.h"
+// #include "util/crash_handler.h"
+// #include "util/system.h"
+// #include "plugins/plugin_manager.h"
 
-#include "plugins/interface_wrapper/test_plugin.h"
+// #include "plugins/interface_wrapper/test_plugin.h"
 
-int main() {
+// int main() {
 
-    AT::crash_handler::attach();
-    AT::logger::init("[$B$T:$J$E] [$B$L$X $Q - $I:$P:$G$E] $C$Z", true, AT::util::get_executable_path() / "logs", "application.log", true);
-    AT::logger::set_buffer_threshold(AT::logger::severity::Warn);
-    AT::logger::register_label_for_thread("main");
-    AT::crash_handler::subscribe(AT::logger::shutdown);
+//     AT::crash_handler::attach();
+//     AT::logger::init("[$B$T:$J$E] [$B$L$X $Q - $I:$P:$G$E] $C$Z", true, AT::util::get_executable_path() / "logs", "application.log", true);
+//     AT::logger::set_buffer_threshold(AT::logger::severity::Warn);
+//     AT::logger::register_label_for_thread("main");
+//     AT::crash_handler::subscribe(AT::logger::shutdown);
     
-    try {
+//     try {
 
-        // Load plugin using the clean interface
-        VALIDATE(AT::plugins::test_plugin::load_plugin(), return EXIT_FAILURE, "", "Failed to load plugin");
+//         // Load plugin using the clean interface
+//         VALIDATE(AT::plugins::test_plugin::load_plugin(), return EXIT_FAILURE, "", "Failed to load plugin");
         
-        // Call functions using the clean static interface
-        LOG(Trace, "Size: " << AT::plugins::test_plugin::calc_size());
-        LOG(Trace, "Processed: " << AT::plugins::test_plugin::process_data("hello", 1));
-        AT::plugins::test_plugin::initialize(3.14f, true);
+//         // Call functions using the clean static interface
+//         LOG(Trace, "Size: " << AT::plugins::test_plugin::calc_size());
+//         LOG(Trace, "Processed: " << AT::plugins::test_plugin::process_data("hello", 1));
+//         AT::plugins::test_plugin::initialize(3.14f, true);
         
-    } catch (const std::exception& e) {
-        std::cout << "Error: " << e.what() << "\n";
-    }
+//     } catch (const std::exception& e) {
+//         std::cout << "Error: " << e.what() << "\n";
+//     }
 
-    AT::logger::shutdown();
-    AT::crash_handler::detach();
-    return EXIT_SUCCESS;
-}
+//     AT::logger::shutdown();
+//     AT::crash_handler::detach();
+//     return EXIT_SUCCESS;
+// }
 
 #endif

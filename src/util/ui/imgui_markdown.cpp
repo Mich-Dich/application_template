@@ -68,8 +68,8 @@ namespace AT::UI {
     // so to work around this we render using our own wrapping for the first line
 
     FORCEINLINE static void render_text_wrapped(const char* text, const char* text_end) {
-        float scale = ImGui::GetIO().FontGlobalScale;
-        float width_left = ImGui::GetContentRegionAvail().x;
+        f32 scale = ImGui::GetIO().FontGlobalScale;
+        f32 width_left = ImGui::GetContentRegionAvail().x;
         const char* endLine = ImGui::GetFont()->CalcWordWrapPositionA(scale, text, text_end, width_left);
         ImGui::TextUnformatted(text, endLine);
         width_left = ImGui::GetContentRegionAvail().x;
@@ -82,13 +82,13 @@ namespace AT::UI {
         }
     }
     
-    FORCEINLINE static float calculate_text_height(const char* text, const char* text_end) {
-        float scale = ImGui::GetIO().FontGlobalScale;
-        float line_height = ImGui::GetTextLineHeight();
-        float spacing = ImGui::GetTextLineHeightWithSpacing() - line_height;
-        float width_left = ImGui::GetContentRegionAvail().x;
+    FORCEINLINE static f32 calculate_text_height(const char* text, const char* text_end) {
+        f32 scale = ImGui::GetIO().FontGlobalScale;
+        f32 line_height = ImGui::GetTextLineHeight();
+        f32 spacing = ImGui::GetTextLineHeightWithSpacing() - line_height;
+        f32 width_left = ImGui::GetContentRegionAvail().x;
 
-        float total_height = line_height + spacing;
+        f32 total_height = line_height + spacing;
         const char* endLine = ImGui::GetFont()->CalcWordWrapPositionA(scale, text, text_end, width_left);
         while (endLine < text_end) {
             text = endLine;
@@ -178,9 +178,8 @@ namespace AT::UI {
         ImVec2 text_pos = ImGui::GetCursorScreenPos();
         ImVec2 text_size = ImGui::CalcTextSize(START, END);
         ImGui::GetWindowDrawList()->AddRectFilled(
-            text_pos - ImVec2(2),
-            ImVec2(text_pos.x + text_size.x + 2,
-                text_pos.y + text_size.y + 2),
+            text_pos - ImVec2(2, 2),
+            ImVec2(text_pos.x + text_size.x + 2, text_pos.y + text_size.y + 2),
             background_color,
             ImGui::GetStyle().FrameRounding
         );
@@ -234,7 +233,7 @@ namespace AT::UI {
 
         ImGui::PushFont(FONT_MONOSPACE_DEFAULT);
         // Calculate the height of the wrapped text
-        float text_height = calculate_text_height(text_start, text_end);
+        f32 text_height = calculate_text_height(text_start, text_end);
         ImVec2 text_size = ImGui::CalcTextSize(text_start, text_end);
 
         // Draw the background rectangle with rounded corners
@@ -281,8 +280,9 @@ namespace AT::UI {
 
         //SCOPED_PROFILER(700, "markdown imgui conversion", AT::duration_precision::microseconds);
 
-        const float line_height = ImGui::GetTextLineHeight();
-        button_size = ImVec2(line_height + ((ImGui::GetTextLineHeightWithSpacing() - line_height) * 2));
+        const f32 line_height = ImGui::GetTextLineHeight();
+        const f32 height = line_height + ((ImGui::GetTextLineHeightWithSpacing() - line_height) * 2);
+        button_size = ImVec2(height, height);
 
         // bool started_child = false;
         const char* sub_section_begin = nullptr;
