@@ -436,9 +436,9 @@ TEST_CASE("Logger Basic Functionality", "[logger]") {
     SECTION("Basic Logging") {
         REQUIRE(AT::logger::init("$L: $C", false, test_dir, "test_basic.log"));
         
-        LOG_Info("Test info message");
-        LOG_Warn("Test warning message");
-        LOG_Error("Test error message");
+        LOG(Info, "Test info message");
+        LOG(Warn, "Test warning message");
+        LOG(Error, "Test error message");
         
         REQUIRE_NOTHROW(AT::logger::shutdown());
         
@@ -456,13 +456,13 @@ TEST_CASE("Logger Basic Functionality", "[logger]") {
     SECTION("Format Changes") {
         REQUIRE(AT::logger::init("$L: $C", false, test_dir, "test_format.log"));
         
-        LOG_Info("Message with initial format");
+        LOG(Info, "Message with initial format");
         
         AT::logger::set_format("$T $L: $C");
-        LOG_Info("Message with new format");
+        LOG(Info, "Message with new format");
         
         AT::logger::use_previous_format();
-        LOG_Info("Message with previous format");
+        LOG(Info, "Message with previous format");
         
         REQUIRE_NOTHROW(AT::logger::shutdown());
     }
@@ -471,10 +471,10 @@ TEST_CASE("Logger Basic Functionality", "[logger]") {
         REQUIRE(AT::logger::init("[$Q] $L: $C", false, test_dir, "test_thread_labels.log"));
         
         AT::logger::register_label_for_thread("MainThread");
-        LOG_Info("Message from labeled thread");
+        LOG(Info, "Message from labeled thread");
         
         AT::logger::unregister_label_for_thread();
-        LOG_Info("Message after unregistering");
+        LOG(Info, "Message after unregistering");
         
         REQUIRE_NOTHROW(AT::logger::shutdown());
     }
@@ -819,6 +819,166 @@ TEST_CASE("YAML Serializer - Non-Existing Keys", "[serializer][yaml]") {
 
     REQUIRE(loaded_existing == existing_value);
     REQUIRE(loaded_missing == 100); // Should remain unchanged
+}
+
+// ================ YAML Conformance Test Cases ================
+
+TEST_CASE("YAML Serializer - Standard Data Types and Formats", "[serializer][yaml][conformance]") {
+    std::filesystem::path test_file = std::filesystem::temp_directory_path() / "test_types.yml";
+    if (std::filesystem::exists(test_file)) std::filesystem::remove(test_file);
+
+    // Test various numeric and boolean representations
+    int decimal_val = 42, loaded_decimal = 0;
+    int hex_val = 0x12D4, loaded_hex = 0; // 4820 in decimal
+    int octal_val = 023332, loaded_octal = 0; // 9946 in decimal
+    float float_val = 1230.15f, loaded_float = 0.0f;
+    float sci_val = 12.3015e+05f, loaded_sci = 0.0f; // 1230150.0
+    bool bool_true = true, loaded_true = false;
+    bool bool_yes = true, loaded_yes = false;
+    bool bool_on = true, loaded_on = false;
+
+    // Serialize
+    {
+        AT::serializer::yaml(test_file, "type_data", AT::serializer::option::save_to_file)
+            .entry("decimal", decimal_val)
+            .entry("hex", hex_val)
+            .entry("octal", octal_val)
+            .entry("float", float_val)
+            .entry("scientific", sci_val)
+            .entry("bool_true", bool_true)
+            .entry("bool_yes", bool_yes)  // Test alternative boolean
+            .entry("bool_on", bool_on);   // Test alternative boolean
+    }
+
+    // Deserialize and verify
+    {
+        AT::serializer::yaml(test_file, "type_data", AT::serializer::option::load_from_file)
+            .entry("decimal", loaded_decimal)
+            .entry("hex", loaded_hex)
+            .entry("octal", loaded_octal)
+            .entry("float", loaded_float)
+            .entry("scientific", loaded_sci)
+            .entry("bool_true", loaded_true)
+            .entry("bool_yes", loaded_yes)
+            .entry("bool_on", loaded_on);
+    }
+
+    REQUIRE(loaded_decimal == decimal_val);
+    REQUIRE(loaded_hex == hex_val);
+    REQUIRE(loaded_octal == octal_val);
+    REQUIRE(loaded_float == Catch::Approx(float_val));
+    REQUIRE(loaded_sci == Catch::Approx(sci_val));
+    REQUIRE(loaded_true == bool_true);
+    REQUIRE(loaded_yes == bool_yes);
+    REQUIRE(loaded_on == bool_on);
+}
+
+
+TEST_CASE("YAML Serializer - String Formatting and Escapes", "[serializer][yaml][conformance]") {
+    std::filesystem::path test_file = std::filesystem::temp_directory_path() / "test_strings.yml";
+    if (std::filesystem::exists(test_file)) std::filesystem::remove(test_file);
+
+    // Test various string formats and escape sequences
+    std::string unquoted_string = "hello", loaded_unquoted;
+    std::string double_quoted_string = "Line1\nLine2\tTab\\Backslash", loaded_double_quoted;
+    std::string single_quoted_string = "Literal 'string'", loaded_single_quoted;
+    std::string block_string = "Line one\nLine two\n  Indented line", loaded_block;
+
+    // Serialize - Your API would need to support explicit string style control
+    {
+        AT::serializer::yaml(test_file, "string_data", AT::serializer::option::save_to_file)
+            .entry("unquoted", unquoted_string)
+            .entry("double_quoted", double_quoted_string)  // Should handle escapes
+            .entry("single_quoted", single_quoted_string)  // Should not escape
+            .entry("block_string", block_string);
+    }
+
+    // Deserialize and verify
+    {
+        AT::serializer::yaml(test_file, "string_data", AT::serializer::option::load_from_file)
+            .entry("unquoted", loaded_unquoted)
+            .entry("double_quoted", loaded_double_quoted)
+            .entry("single_quoted", loaded_single_quoted)
+            .entry("block_string", loaded_block);
+    }
+
+    REQUIRE(loaded_unquoted == unquoted_string);
+    REQUIRE(loaded_double_quoted == double_quoted_string); // Newlines/tabs preserved
+    REQUIRE(loaded_single_quoted == single_quoted_string);
+    REQUIRE(loaded_block == block_string); // Formatting preserved
+}
+
+
+TEST_CASE("YAML Serializer - Null and Special Values", "[serializer][yaml][conformance]") {
+
+    std::filesystem::path test_file = std::filesystem::temp_directory_path() / "test_null.yml";
+    
+    if (std::filesystem::exists(test_file)) std::filesystem::remove(test_file);
+
+    // Test null and special floating point values
+    std::string null_value, loaded_null;
+    float inf_value = std::numeric_limits<float>::infinity(), loaded_inf = 0.0f;
+    float neg_inf_value = -std::numeric_limits<float>::infinity(), loaded_neg_inf = 0.0f;
+    float nan_value = std::numeric_limits<float>::quiet_NaN(), loaded_nan = 0.0f;
+
+    // Serialize
+    {
+        AT::serializer::yaml(test_file, "null_data", AT::serializer::option::save_to_file)
+            .entry("null_key", null_value)          // Should serialize as null or ~
+            .entry("infinity", inf_value)           // Should become .inf
+            .entry("neg_infinity", neg_inf_value)   // Should become -.inf
+            .entry("not_a_number", nan_value);      // Should become .nan
+    }
+
+    // Deserialize and verify
+    {
+        AT::serializer::yaml(test_file, "null_data", AT::serializer::option::load_from_file)
+            .entry("null_key", loaded_null)
+            .entry("infinity", loaded_inf)
+            .entry("neg_infinity", loaded_neg_inf)
+            .entry("not_a_number", loaded_nan);
+    }
+
+    REQUIRE(loaded_null.empty()); // Should remain empty/null
+    REQUIRE(loaded_inf == std::numeric_limits<float>::infinity());
+    REQUIRE(loaded_neg_inf == -std::numeric_limits<float>::infinity());
+    REQUIRE(std::isnan(loaded_nan));
+}
+
+
+TEST_CASE("YAML Serializer - Norway Problem Edge Cases", "[serializer][yaml][security]") {
+    std::filesystem::path test_file = std::filesystem::temp_directory_path() / "test_norway.yml";
+    if (std::filesystem::exists(test_file)) std::filesystem::remove(test_file);
+
+    // The "Norway Problem": YAML 1.1 interpreters may incorrectly convert
+    // yes/no, on/off, true/false to booleans:cite[5]
+    std::string yes_str = "yes", loaded_yes;
+    std::string no_str = "no", loaded_no;
+    std::string on_str = "on", loaded_on;
+    std::string off_str = "off", loaded_off;
+
+    // Serialize
+    {
+        AT::serializer::yaml(test_file, "norway_data", AT::serializer::option::save_to_file)
+            .entry("yes_value", yes_str)
+            .entry("no_value", no_str)
+            .entry("on_value", on_str)
+            .entry("off_value", off_str);
+    }
+
+    // Deserialize and verify - these must remain strings, not become booleans
+    {
+        AT::serializer::yaml(test_file, "norway_data", AT::serializer::option::load_from_file)
+            .entry("yes_value", loaded_yes)
+            .entry("no_value", loaded_no)
+            .entry("on_value", loaded_on)
+            .entry("off_value", loaded_off);
+    }
+
+    REQUIRE(loaded_yes == yes_str);
+    REQUIRE(loaded_no == no_str);
+    REQUIRE(loaded_on == on_str);
+    REQUIRE(loaded_off == off_str);
 }
 
 // ==============================================================================================================================
@@ -1402,5 +1562,11 @@ Run the tests multiple times:
 
 build test and application (everything):
     clear; .vscode/build.sh
+
+
+
+
+
+    std::filesystem::path test_file = "./test_results/test_null.yml";
 
 */

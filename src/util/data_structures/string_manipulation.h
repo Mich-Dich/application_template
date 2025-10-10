@@ -3,6 +3,8 @@
 struct ImVec2;
 struct ImVec4;
 
+#include <iostream>
+
 #if defined(__GNUC__) || defined(__clang__)
     #include <cxxabi.h>  // Add this include for demangling
 #endif
@@ -93,14 +95,34 @@ namespace AT::util {
         return result;
     }
 
+
     template <typename T>
     T str_to_num(const std::string& str) {
 
+        if constexpr (std::is_floating_point_v<T>) {                // Handle special string values for floating-point types
+
+            std::string lower_str = str;
+            std::transform(lower_str.begin(), lower_str.end(), lower_str.begin(),[](unsigned char c) { return std::tolower(c); });
+            lower_str.erase(std::remove_if(lower_str.begin(), lower_str.end(), [](unsigned char c) { return std::isspace(c); }), lower_str.end());      // Remove any whitespace
+            
+            if (lower_str == "inf" || lower_str == "+inf" || lower_str == "infinity" || lower_str == "+infinity") {
+                return std::numeric_limits<T>::infinity();
+            }
+            else if (lower_str == "-inf" || lower_str == "-infinity") {
+                return -std::numeric_limits<T>::infinity();
+            }
+            else if (lower_str == "nan" || lower_str == "+nan" || lower_str == "-nan") {
+                return std::numeric_limits<T>::quiet_NaN();
+            }
+        }
+        
+        // Default conversion for normal numbers and non-floating-point types
         std::istringstream ss(str);
         T num{};
         ss >> num;
         return num;
     }
+
 
     template <typename T>
     std::string num_to_str(const T& num) {
@@ -195,7 +217,7 @@ namespace AT::util {
 
         else if constexpr (std::is_same_v<T, std::filesystem::path>) {
 
-            dest_string = src_value.string();
+            dest_string = src_value.generic_string();
             return;
         }
 
@@ -252,9 +274,7 @@ namespace AT::util {
 
         else if constexpr (std::is_convertible_v<T, std::string>) {
 
-            //LOG(Fatal, "called: convert_to_string() with string");
-            dest_string = src_value;
-            //std::replace(dest_string.begin(), dest_string.end(), ' ', '%');
+            dest_string = (src_value.empty())? "~" : src_value;
             std::replace(dest_string.begin(), dest_string.end(), '\n', '$');
             return;
         }
@@ -380,7 +400,7 @@ namespace AT::util {
 
         else if constexpr (std::is_convertible_v<T, std::string>) {
 
-            dest_value = src_string;                    // <= HERE
+            dest_value = (src_string == "~") ? "" : src_string;
             std::replace(dest_value.begin(), dest_value.end(), '$', '\n');
             return;
         }
