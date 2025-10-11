@@ -32,6 +32,8 @@ def write_file(target_dir, content):
 def apply_cmake_build_system(project_name):
 
     root_cmake = """
+# Root [./CMakeLists.txt]
+
 cmake_minimum_required(VERSION 3.15)
 project(application LANGUAGES CXX)
 
@@ -77,6 +79,7 @@ endif()
 add_compile_definitions(
     _CRT_SECURE_NO_WARNINGS
     NOMINMAX
+    IMGUI_DEFINE_MATH_OPERATORS  # Required for ImNodeFlow
 )
 
 # Multi-processor compilation
@@ -100,14 +103,20 @@ add_subdirectory(vendor/glfw)
 # Then build ImGui (which depends on GLFW)
 add_subdirectory(vendor/imgui)
 
+# Build ImNodeFlow (depends on ImGui)
+add_subdirectory(vendor/ImNodeFlow)
+
 # add the tests
 add_subdirectory(testing)
 
 # Create your main application project
 add_subdirectory(src)
+
 """
 
     src_cmake = f"""
+# Main project [src/CMakeLists.txt]
+
 project({project_name} LANGUAGES CXX)
 
 # Find required packages
@@ -119,7 +128,7 @@ find_package(Qt5 COMPONENTS Core Widgets REQUIRED)  # For Qt5
 file(GLOB_RECURSE SOURCES_CONAN "*.cpp" "*.h")
 file(GLOB IMPLOT_SOURCES "../vendor/implot/*.h" "../vendor/implot/*.cpp")
 
-# Add ImGui OpenGL3 backend files - THESE WERE MISSING
+# Add ImGui OpenGL3 backend files
 file(GLOB IMGUI_OPENGL3_SOURCES
     "../vendor/imgui/backends/imgui_impl_opengl3.h"
     "../vendor/imgui/backends/imgui_impl_opengl3.cpp"
@@ -142,7 +151,7 @@ set_target_properties({project_name} PROPERTIES
 # Precompiled headers (requires CMake 3.16+)
 target_precompile_headers({project_name} PRIVATE util/pch.h)
 
-# Include directories
+# Include directories - ADD IMNODEFLOW
 target_include_directories({project_name} PRIVATE
     ${{CMAKE_CURRENT_SOURCE_DIR}}
     ${{CMAKE_CURRENT_SOURCE_DIR}}/assets
@@ -153,6 +162,8 @@ target_include_directories({project_name} PRIVATE
     ${{CMAKE_CURRENT_SOURCE_DIR}}/../vendor/imgui
     ${{CMAKE_CURRENT_SOURCE_DIR}}/../vendor/imgui/backends
     ${{CMAKE_CURRENT_SOURCE_DIR}}/../vendor/implot
+    ${{CMAKE_CURRENT_SOURCE_DIR}}/../vendor/ImNodeFlow/include
+    ${{CMAKE_CURRENT_SOURCE_DIR}}/../vendor/ImNodeFlow/src
     ${{CMAKE_CURRENT_SOURCE_DIR}}/../vendor/stb_image
     ${{Qt5Core_INCLUDE_DIRS}}
     ${{Qt5Widgets_INCLUDE_DIRS}}
@@ -162,6 +173,7 @@ target_include_directories({project_name} PRIVATE
 target_compile_definitions({project_name} PRIVATE 
     GLFW_INCLUDE_NONE
     GLEW_STATIC
+    IMGUI_DEFINE_MATH_OPERATORS  # REQUIRED for ImNodeFlow
 )
 
 # Configuration-specific definitions
@@ -171,14 +183,16 @@ target_compile_definitions({project_name} PRIVATE
     $<$<CONFIG:Release>:RELEASE>
 )
 
-# Link libraries
+# Link libraries - ADD IMNODEFLOW
 target_link_libraries({project_name} PRIVATE
     imgui
+    ImNodeFlow  # ADD THIS
     glfw
     OpenGL::GL
     Qt5::Core
     Qt5::Widgets
 )
+
 
 # Platform-specific linking
 if(WIN32)
@@ -239,12 +253,6 @@ else()
         dl
     )
     
-    # Alternative method if pkg-config doesn't work:
-    # find_library(GLEW_LIBRARY NAMES GLEW glew)
-    # if(GLEW_LIBRARY)
-    #     target_link_libraries({project_name} PRIVATE ${{GLEW_LIBRARY}})
-    # endif()
-    
     # Copy assets for Linux (create the directories first)
     add_custom_command(TARGET {project_name} POST_BUILD
         COMMAND ${{CMAKE_COMMAND}} -E make_directory
@@ -260,16 +268,17 @@ else()
     )
 endif()
 
-# Disable PCH for specific files (similar to your Premake flags)
+# Disable PCH for specific files - ADD IMNODEFLOW FILES IF NEEDED
 set_source_files_properties(
     ../vendor/implot/implot.cpp
     ../vendor/implot/implot_items.cpp
     ../vendor/implot/implot_demo.cpp
     ../vendor/imgui/backends/imgui_impl_glfw.cpp
-    ../vendor/imgui/backends/imgui_impl_opengl3.cpp  # ADD THIS
+    ../vendor/imgui/backends/imgui_impl_opengl3.cpp
     PROPERTIES
     SKIP_PRECOMPILE_HEADERS ON
 )
+
 """
     
     tests_cmake = """
@@ -476,6 +485,7 @@ set_source_files_properties(
     PROPERTIES
     SKIP_PRECOMPILE_HEADERS ON
 )
+
 """
 
     imgui_cmake = """
@@ -526,6 +536,55 @@ elseif(UNIX)
 endif()
 """
 
+    imNodeFlow_cmake = """
+# ImNodeFlow [vendor/ImNodeFlow/CMakeLists.txt]
+
+project(ImNodeFlow LANGUAGES CXX)
+
+# Set C++ standard
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# List ImNodeFlow source files
+file(GLOB IMNODEFLOW_SOURCES 
+    "src/*.cpp"
+)
+
+# Create ImNodeFlow library
+add_library(ImNodeFlow STATIC
+    ${IMNODEFLOW_SOURCES}
+)
+
+# Include directories - FIXED: Check both possible locations
+target_include_directories(ImNodeFlow PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}  # Also include the root directory
+    ${CMAKE_CURRENT_SOURCE_DIR}/../imgui
+)
+
+# Link dependencies
+target_link_libraries(ImNodeFlow PUBLIC imgui)
+
+# Set output directories
+set_target_properties(ImNodeFlow PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ImNodeFlow
+    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/ImNodeFlow
+    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/ImNodeFlow
+)
+
+# Add required definitions
+target_compile_definitions(ImNodeFlow PUBLIC 
+    IMGUI_DEFINE_MATH_OPERATORS
+)
+
+# Disable PCH for ImNodeFlow files if needed
+set_source_files_properties(
+    ${IMNODEFLOW_SOURCES}
+    PROPERTIES
+    SKIP_PRECOMPILE_HEADERS ON
+)
+
+"""
 
     # Write files to their respective locations
     try:
@@ -534,6 +593,7 @@ endif()
         write_file("./src/CMakeLists.txt", src_cmake)
         write_file("./testing/CMakeLists.txt", tests_cmake)
         write_file("./vendor/imgui/CMakeLists.txt", imgui_cmake)
+        write_file("./vendor/ImNodeFlow/CMakeLists.txt", imNodeFlow_cmake)
         utils.print_c(f"CMake build system successfully applied for project: {project_name}", "green")
         
     except Exception as e:

@@ -1134,7 +1134,7 @@ namespace AT::UI {
 		ImGui::TableSetColumnIndex(1);
 	
 		std::string key       = std::string("picker_") + label.data();
-		auto&      state      = g_picker_states[key];
+		auto&      	state     = g_picker_states[key];
 		const char* popup_id  = (key + "_popup").c_str();
 		std::string btn_id    = "Pick##btn_" + key;
 	
@@ -1152,7 +1152,7 @@ namespace AT::UI {
 	
 		if (ImGui::BeginPopup(popup_id, ImGuiWindowFlags_NoMove)) {
 
-			ImGui::ColorPicker4(("##picker_" + key).c_str(), &value.x, ImGuiColorEditFlags_PickerHueWheel | ImGuiColorEditFlags_NoSidePreview | ImGuiColorEditFlags_NoSmallPreview );
+			changed = ImGui::ColorPicker4(("##picker_" + key).c_str(), &value.x, ImGuiColorEditFlags_PickerHueWheel | ImGuiColorEditFlags_NoSidePreview | ImGuiColorEditFlags_NoSmallPreview );
 			if (state.just_opened)
 				state.just_opened = false;
 

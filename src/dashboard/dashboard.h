@@ -6,6 +6,7 @@ namespace AT {
 
     class event;
 
+
     // =======================================================================
     //  dashboard
     // =======================================================================
@@ -89,7 +90,7 @@ namespace AT {
 
     private:
 
-        // No private data members yet.
-        // You may want to add: persistent UI state, ImGui configuration, cached panel data, ...
+        bool m_firstTime = true;
+                
     };
 }

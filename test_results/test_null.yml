@@ -1,5 +1,0 @@
-null_data:
-  null_key: ~
-  infinity: inf
-  neg_infinity: -inf
-  not_a_number: nan
