@@ -15,6 +15,9 @@
 #include "../src/imgui_bezier_math.h"
 #include "../src/context_wrapper.h"
 
+// import application util to enable basic functionality like serialization
+#include "util/util.h"
+
 //#define ConnectionFilter_None       [](ImFlow::Pin* out, ImFlow::Pin* in){ return true; }
 //#define ConnectionFilter_SameType   [](ImFlow::Pin* out, ImFlow::Pin* in){ return out->getDataType() == in->getDataType(); }
 //#define ConnectionFilter_Numbers    [](ImFlow::Pin* out, ImFlow::Pin* in){ return out->getDataType() == typeid(double) || out->getDataType() == typeid(float) || out->getDataType() == typeid(int); }
@@ -47,6 +50,11 @@ namespace ImFlow
      */
     inline static bool smart_bezier_collider(const ImVec2& p, const ImVec2& p1, const ImVec2& p2, float radius);
 
+    /**
+     * @brief short hand for nodes to set the typename
+     */
+    #define SET_NODE_TYPE_NAME(nodeName)    std::string getTypeName() const override { return #nodeName; }
+
     // -----------------------------------------------------------------------------------------------------------------
     // CLASSES PRE-DEFINITIONS
 
@@ -54,6 +62,11 @@ namespace ImFlow
     template<typename T> class OutPin;
     class Pin; class BaseNode;
     class ImNodeFlow; class ConnectionFilter;
+
+    /**
+     * @brief shorthand for serialization
+     */
+    using NodeFactory = std::function<std::shared_ptr<BaseNode>(const ImVec2& pos)>;
 
     // -----------------------------------------------------------------------------------------------------------------
     // PIN'S PROPERTIES
@@ -527,6 +540,18 @@ namespace ImFlow
             return {m_boxSelectStartGrid, m_boxSelectEnd}; 
         }
 
+        /**
+         * @brief Save the current graph to file
+         * @param filename Path to save file
+         */
+        void save(const std::filesystem::path& filename);
+
+        /**
+         * @brief Load graph from file
+         * @param filename Path to load file
+         */
+        void load(const std::filesystem::path& filename, std::unordered_map<std::string, NodeFactory>& node_factories);
+        
     private:
     
         void handleBoxSelection();
@@ -963,6 +988,42 @@ namespace ImFlow
          * @brief <BR>Update the isSelected status of the node
          */
         void updatePublicStatus() { m_selected = m_selectedNext; }
+
+        /**
+         * @brief Get node type name for serialization
+         */
+        virtual std::string getTypeName() const { return "BaseNode"; }
+        
+        /**
+         * @brief Serialize pin connections
+         */
+        virtual void serializePins(AT::serializer::yaml& yaml) {
+            // To be implemented by derived classes if they have custom pin serialization
+        }
+        
+        /**
+         * @brief Serialize node data
+         * @param yaml YAML serializer instance
+         */
+        virtual void serialize(AT::serializer::yaml& yaml) {
+            ImVec2 position = getPos();
+            std::string title = getName();
+            bool select = isSelected();
+            std::string type_name = getTypeName();
+            
+            yaml.entry("position_x", position.x)
+                .entry("position_y", position.y)
+                .entry("title", title)
+                .entry("selected", select)
+                .entry("type", type_name);
+                
+            if (yaml.get_option() == AT::serializer::option::load_from_file) {
+                setPos(position);
+                setTitle(title);
+                selected(select);
+            }
+        }
+        
     private:
         NodeUID m_uid = 0;
         std::string m_title;

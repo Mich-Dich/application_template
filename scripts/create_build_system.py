@@ -542,7 +542,7 @@ endif()
 project(ImNodeFlow LANGUAGES CXX)
 
 # Set C++ standard
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # List ImNodeFlow source files
@@ -555,11 +555,14 @@ add_library(ImNodeFlow STATIC
     ${IMNODEFLOW_SOURCES}
 )
 
-# Include directories - FIXED: Check both possible locations
+# Include directories
 target_include_directories(ImNodeFlow PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${CMAKE_CURRENT_SOURCE_DIR}  # Also include the root directory
     ${CMAKE_CURRENT_SOURCE_DIR}/../imgui
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../src
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../vendor/glm
+    ${CMAKE_CURRENT_SOURCE_DIR}/../implot
 )
 
 # Link dependencies

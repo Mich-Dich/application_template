@@ -91,6 +91,8 @@ namespace AT {
     private:
 
         bool m_firstTime = true;
-                
+        std::filesystem::path m_currentFile;
+        bool m_unsavedChanges = false;
+        
     };
 }

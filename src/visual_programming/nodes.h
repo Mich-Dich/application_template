@@ -2,6 +2,7 @@
 
 #include <ImNodeFlow.h>
 #include "util/ui/panel_collection.h"
+#include "util/util.h"
 
 namespace AT {
     
@@ -30,21 +31,36 @@ namespace AT {
         style.colors.subGrid = IM_COL32(55, 60, 70, 30);
         style.grid_size = 100.0f;
         style.grid_subdivisions = 10.0f;
-        // editor.update();
     }
 
     // Execution-only node (like a Begin node)
     class BeginNode : public ImFlow::BaseNode {
     public:
+
         BeginNode() {
 
             setTitle("Begin");
             setStyle(createCustomNodeStyle(IM_COL32(90, 191, 93, 255)));
-            
-            // Only has execution output
-            addOUT<Execution>("Execute", ImFlow::PinStyle::execution())->behaviour([]() { return Execution{}; });
+            addOUT<Execution>("Execute", ImFlow::PinStyle::execution())->behaviour([]() { return Execution{}; });   // Only has execution output
         }
         
+        SET_NODE_TYPE_NAME(BeginNode)
+        
+        void serialize(AT::serializer::yaml& yaml) override {
+            BaseNode::serialize(yaml); // Call base serialization
+            
+            // BeginNode specific serialization
+            std::string custom_data = "begin_node_data";
+            yaml.entry("custom_data", custom_data);
+            
+            if (yaml.get_option() == AT::serializer::option::load_from_file) {
+                // Load BeginNode specific data
+                // custom_data is available here if needed
+
+                // setPos(position);
+                // setTitle(title);
+            }
+        }
     };
     
     // Base math operation node
@@ -73,6 +89,20 @@ namespace AT {
             ImGui::InputFloat("A", &m_valueA);
             ImGui::InputFloat("B", &m_valueB);
             ImGui::PopItemWidth();
+        }
+        
+        SET_NODE_TYPE_NAME(MathNode)
+        
+        void serialize(AT::serializer::yaml& yaml) override {
+            BaseNode::serialize(yaml);
+            
+            yaml.entry("value_a", m_valueA)
+                .entry("value_b", m_valueB)
+                .entry("result", m_result);
+                
+            if (yaml.get_option() == AT::serializer::option::load_from_file) {
+                // Values are automatically loaded by the entry calls above
+            }
         }
         
         // Helper method to get the result pin
@@ -156,7 +186,21 @@ namespace AT {
             float result = calculateResult(getInVal<float>("A"), getInVal<float>("B"));
             ImGui::Text("Result: %.4f", result);
         }
+
+        SET_NODE_TYPE_NAME(MultiOperationNode)
         
+        void serialize(AT::serializer::yaml& yaml) override {
+            BaseNode::serialize(yaml);
+            
+            yaml.entry("operation", reinterpret_cast<int&>(m_operation))
+                .entry("value_a", m_valueA)
+                .entry("value_b", m_valueB);
+                
+            if (yaml.get_option() == AT::serializer::option::load_from_file) {
+                updateBehaviour(); // Update the behaviour after loading
+            }
+        }
+
     private:
         void updateBehaviour() {
             m_resultPin->behaviour([this]() { 
@@ -267,6 +311,15 @@ namespace AT {
             if (m_showPreview) {
                 drawPreview();
             }
+        }
+        
+        SET_NODE_TYPE_NAME(PlotterNode)
+        
+        void serialize(AT::serializer::yaml& yaml) override {
+            BaseNode::serialize(yaml);
+            
+            yaml.entry("plot_type", reinterpret_cast<int&>(m_plotType))
+                .entry("show_preview", m_showPreview);
         }
         
     private:
@@ -416,288 +469,294 @@ namespace AT {
     };
     
 
-class CommentNode : public ImFlow::BaseNode {
-public:
+    class CommentNode : public ImFlow::BaseNode {
+    public:
 
-    CommentNode() {
-        setTitle("Comment");
-        setStyle(createCustomNodeStyle(IM_COL32(200, 160, 60, 255), "Comment"));
-        
-        m_commentText = "Double click to edit comment...";
-        m_isEditing = false;
-        
-        // Initialize colors
-        m_headerColor = IM_COL32(200, 160, 60, 180);
-        m_bgColor = IM_COL32(200, 160, 60, 50);
-        m_borderColor = IM_COL32(200, 160, 60, 200);
-        
-        // Set initial size
-        m_customSize = ImVec2(200, 100);
-        m_padding = 20.0f;
-    }
-    
+        CommentNode() {
+            setTitle("Comment");
+            setStyle(createCustomNodeStyle(IM_COL32(200, 160, 60, 255), "Comment"));
+            
+            m_commentText = "Double click to edit comment...";
+            m_isEditing = false;
+            
+            setColor(ImVec4(0.f, 0.f, 0.f, 1.0f));
 
-    void draw() override { /* No content in the main body */ }
-    
-
-    bool usesCustomDrawing() const override { return true; }
-    
-    
-    bool usesCustomHover() const override { return true; }
-    
-
-    bool customIsHovered() const override {
-        auto handler = getHandler();
-        if (!handler) return false;
-        
-        ImVec2 pos = getPos();
-        ImVec2 size = getSize();
-        
-        return ImGui::IsMouseHoveringRect(handler->grid2screen(pos), handler->grid2screen(pos + size));
-    }
-    
-
-    void updateCommentBounds() {
-
-        if (m_containedNodes.empty()) {
-            // If no contained nodes, use default size
+            // Set initial size
             m_customSize = ImVec2(200, 100);
-            return;
+            m_padding = 20.0f;
         }
         
-        // Calculate bounds that encompass all contained nodes
-        float minX = FLT_MAX, minY = FLT_MAX;
-        float maxX = -FLT_MAX, maxY = -FLT_MAX;
-        
-        auto handler = getHandler();
-        if (!handler) return;
-        
-        for (auto nodeId : m_containedNodes) {
-            auto& nodes = handler->getNodes();
-            auto it = nodes.find(nodeId);
-            if (it != nodes.end()) {
-                auto node = it->second;
-                ImVec2 nodePos = node->getPos();
-                ImVec2 nodeSize = node->getFullSize();
-                
-                minX = std::min(minX, nodePos.x);
-                minY = std::min(minY, nodePos.y);
-                maxX = std::max(maxX, nodePos.x + nodeSize.x);
-                maxY = std::max(maxY, nodePos.y + nodeSize.y);
-            }
-        }
-        
-        // Add padding around the contained nodes
-        ImVec2 newPos = ImVec2(minX - 10.f - m_padding, minY - 30.f - m_padding);
-        ImVec2 newSize = ImVec2((maxX - minX) + (2 * m_padding), (maxY - minY) + 30.f + (2 * m_padding));
-        
-        // Update our position and size
-        setPos(newPos);
-        m_customSize = newSize;
-    }
-    
-    // Override getSize to return our custom size
-    const ImVec2& getSize() const override { return m_customSize; }
-    
-    // Override getVisualSize for bounds calculation
-    ImVec2 getVisualSize() const override { return m_customSize; }
-    
 
-    void addContainedNode(ImFlow::NodeUID nodeId) { m_containedNodes.insert(nodeId); }
-    
+        void draw() override { /* No content in the main body */ }
+        
 
-    void removeContainedNode(ImFlow::NodeUID nodeId) { m_containedNodes.erase(nodeId); }
-    
+        bool usesCustomDrawing() const override { return true; }
+        
+        
+        bool usesCustomHover() const override { return true; }
+        
 
-    void clearContainedNodes() { m_containedNodes.clear(); }
-    
-
-    const std::set<ImFlow::NodeUID>& getContainedNodes() const { return m_containedNodes; }
-    
-
-    void customDraw(ImDrawList* draw_list, const ImVec2& offset) override {
-        
-        auto handler = getHandler();
-        if (!handler) return;
-        
-        updateCommentBounds();
-        ImVec2 screenPos = handler->grid2screen(getPos());
-        ImVec2 size = getSize();
-        
-        // Draw main comment box (semi-transparent background with border)
-        ImU32 bgColor = m_bgColor;
-        ImU32 borderColor = m_borderColor;
-        ImU32 headerBgColor = m_headerColor;
-        
-        // Main box
-        draw_list->AddRectFilled(screenPos, screenPos + size, bgColor, 2.0f);
-        draw_list->AddRect(screenPos, screenPos + size, borderColor, 2.0f, 0, 1.5f);
-        
-        // Header box (for comment text)
-        float headerHeight = 25.0f;
-        ImVec2 headerSize = ImVec2(size.x, headerHeight);
-        draw_list->AddRectFilled(screenPos, screenPos + headerSize, headerBgColor, 3.0f, ImDrawFlags_RoundCornersTop);
-        
-        // Draw comment text
-        ImGui::SetCursorScreenPos(screenPos + ImVec2(5.0f, 5.0f));
-        ImGui::PushItemWidth(size.x - 35.0f); // Leave space for settings button
-        
-        if (m_isEditing) {
-            char buffer[256];
-            strncpy(buffer, m_commentText.c_str(), sizeof(buffer));
-            if (ImGui::InputText("##CommentText", buffer, sizeof(buffer), ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll)) {
-                m_commentText = buffer;
-                m_isEditing = false;
-            }
-            // Stop editing if click outside
-            if (ImGui::IsMouseClicked(0) && !ImGui::IsItemHovered()) {
-                m_isEditing = false;
-            }
-        } else {
-            ImGui::TextUnformatted(m_commentText.c_str());
-            // Double click to edit
-            if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
-                m_isEditing = true;
-            }
-        }
-        
-        ImGui::PopItemWidth();
-        
-        // Draw settings button in top-right corner
-        ImVec2 settingsButtonPos = screenPos + ImVec2(size.x - 25.0f, 5.0f);
-        ImVec2 settingsButtonSize = ImVec2(20.0f, 15.0f);
-        
-        // Settings button
-        ImU32 buttonColor = IM_COL32(255, 255, 255, 150);
-        if (ImGui::IsMouseHoveringRect(settingsButtonPos, settingsButtonPos + settingsButtonSize)) {
-            buttonColor = IM_COL32(255, 255, 255, 200);
-        }
-        
-        // Draw gear icon (simplified as 3 dots)
-        draw_list->AddCircleFilled(settingsButtonPos + ImVec2(5.0f, 3.0f), 1.5f, buttonColor);
-        draw_list->AddCircleFilled(settingsButtonPos + ImVec2(10.0f, 3.0f), 1.5f, buttonColor);
-        draw_list->AddCircleFilled(settingsButtonPos + ImVec2(15.0f, 3.0f), 1.5f, buttonColor);
-        
-        // Button interaction
-        ImGui::SetCursorScreenPos(settingsButtonPos);
-        ImGui::InvisibleButton("##SettingsButton", settingsButtonSize);
-        if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(0)) {
-            m_showSettings = true;
-        }
-        
-        // Settings window
-        if (m_showSettings) {
-            drawSettingsWindow(screenPos, size);
-        }
-    }
-    
-    void drawSettingsWindow(const ImVec2& screenPos, const ImVec2& size) {
-        // Position the settings window near the comment
-        ImVec2 windowPos = screenPos + ImVec2(size.x + 5.0f, 0.0f);
-        ImGui::SetNextWindowPos(windowPos, ImGuiCond_Appearing);
-        ImGui::SetNextWindowSize(ImVec2(250, 0), ImGuiCond_Appearing);
-        
-        ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(40, 40, 40, 255));
-        ImGui::PushStyleColor(ImGuiCol_TitleBg, IM_COL32(60, 60, 60, 255));
-        ImGui::PushStyleColor(ImGuiCol_TitleBgActive, IM_COL32(80, 80, 80, 255));
-        
-        if (ImGui::Begin("Comment Settings", &m_showSettings, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize)) {
-            // Color pickers
-            ImGui::Text("Colors:");
-            ImGui::Separator();
+        bool customIsHovered() const override {
+            auto handler = getHandler();
+            if (!handler) return false;
             
-            // Convert ImU32 to ImVec4 for color picker
-            ImVec4 headerColorVec = ImColor(m_headerColor);
-            ImVec4 bgColorVec = ImColor(m_bgColor);
-            ImVec4 borderColorVec = ImColor(m_borderColor);
+            ImVec2 pos = getPos();
+            ImVec2 size = getSize();
             
-            if (ImGui::ColorEdit4("Header Color", (float*)&headerColorVec, ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_AlphaPreview)) {
-                m_headerColor = ImColor(headerColorVec);
+            return ImGui::IsMouseHoveringRect(handler->grid2screen(pos), handler->grid2screen(pos + size));
+        }
+        
+
+        void updateCommentBounds() {
+
+            if (m_containedNodes.empty()) {
+                // If no contained nodes, use default size
+                m_customSize = ImVec2(200, 100);
+                return;
             }
             
-            if (ImGui::ColorEdit4("Background Color", (float*)&bgColorVec, ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_AlphaPreview)) {
-                m_bgColor = ImColor(bgColorVec);
+            // Calculate bounds that encompass all contained nodes
+            float minX = FLT_MAX, minY = FLT_MAX;
+            float maxX = -FLT_MAX, maxY = -FLT_MAX;
+            
+            auto handler = getHandler();
+            if (!handler) return;
+            
+            for (auto nodeId : m_containedNodes) {
+                auto& nodes = handler->getNodes();
+                auto it = nodes.find(nodeId);
+                if (it != nodes.end()) {
+                    auto node = it->second;
+                    ImVec2 nodePos = node->getPos();
+                    ImVec2 nodeSize = node->getFullSize();
+                    
+                    minX = std::min(minX, nodePos.x);
+                    minY = std::min(minY, nodePos.y);
+                    maxX = std::max(maxX, nodePos.x + nodeSize.x);
+                    maxY = std::max(maxY, nodePos.y + nodeSize.y);
+                }
             }
             
-            if (ImGui::ColorEdit4("Border Color", (float*)&borderColorVec, ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_AlphaPreview)) {
-                m_borderColor = ImColor(borderColorVec);
+            // Add padding around the contained nodes
+            ImVec2 newPos = ImVec2(minX - 10.f - m_padding, minY - 30.f - m_padding);
+            ImVec2 newSize = ImVec2((maxX - minX) + (2 * m_padding), (maxY - minY) + 30.f + (2 * m_padding));
+            
+            // Update our position and size
+            setPos(newPos);
+            m_customSize = newSize;
+        }
+        
+        // Override getSize to return our custom size
+        const ImVec2& getSize() const override { return m_customSize; }
+        
+        // Override getVisualSize for bounds calculation
+        ImVec2 getVisualSize() const override { return m_customSize; }
+        
+
+        void addContainedNode(ImFlow::NodeUID nodeId) { m_containedNodes.insert(nodeId); }
+        
+
+        void removeContainedNode(ImFlow::NodeUID nodeId) { m_containedNodes.erase(nodeId); }
+        
+
+        void clearContainedNodes() { m_containedNodes.clear(); }
+        
+
+        const std::set<ImFlow::NodeUID>& getContainedNodes() const { return m_containedNodes; }
+        
+
+        void customDraw(ImDrawList* draw_list, const ImVec2& offset) override {
+            
+            auto handler = getHandler();
+            if (!handler) return;
+            
+            updateCommentBounds();
+            ImVec2 screenPos = handler->grid2screen(getPos());
+            ImVec2 size = getSize();
+            
+            // Draw main comment box (semi-transparent background with border)
+            ImU32 bgColor = m_bgColor;
+            ImU32 borderColor = m_borderColor;
+            ImU32 headerBgColor = m_headerColor;
+            
+            // Main box
+            draw_list->AddRectFilled(screenPos, screenPos + size, bgColor, 2.0f);
+            draw_list->AddRect(screenPos, screenPos + size, borderColor, 2.0f, 0, 0.0f);
+            
+            // Header box (for comment text)
+            float headerHeight = 25.0f;
+            ImVec2 headerSize = ImVec2(size.x, headerHeight);
+            draw_list->AddRectFilled(screenPos, screenPos + headerSize, headerBgColor, 3.0f, ImDrawFlags_RoundCornersTop);
+            
+            // Draw comment text
+            ImGui::SetCursorScreenPos(screenPos + ImVec2(5.0f, 5.0f));
+            ImGui::PushItemWidth(size.x - 35.0f); // Leave space for settings button
+            
+            if (m_isEditing) {
+                char buffer[256];
+                strncpy(buffer, m_commentText.c_str(), sizeof(buffer));
+                if (ImGui::InputText("##CommentText", buffer, sizeof(buffer), ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll)) {
+                    m_commentText = buffer;
+                    m_isEditing = false;
+                }
+                // Stop editing if click outside
+                if (ImGui::IsMouseClicked(0) && !ImGui::IsItemHovered()) {
+                    m_isEditing = false;
+                }
+            } else {
+                ImGui::TextUnformatted(m_commentText.c_str());
+                // Double click to edit
+                if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
+                    m_isEditing = true;
+                }
+            }
+            
+            ImGui::PopItemWidth();
+            
+            // Draw settings button in top-right corner
+            ImVec2 settingsButtonPos = screenPos + ImVec2(size.x - 25.0f, 5.0f);
+            ImGui::SetCursorScreenPos(settingsButtonPos);
+            
+            // Style the settings button to be subtle
+            ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(0, 0, 0, 0));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(255, 255, 255, 30));
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, IM_COL32(255, 255, 255, 50));
+            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 200));
+            
+            if (ImGui::Button("...", ImVec2(20.0f, 15.0f))) {
+                m_showSettings = !m_showSettings;
+            }
+            
+            ImGui::PopStyleColor(4);
+            
+            // Settings tooltip
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("Comment Settings");
+            }
+            
+            // Draw settings window if open
+            if (m_showSettings) {
+                drawSettingsWindow(screenPos, size);
+            }
+        }
+        
+        void drawSettingsWindow(const ImVec2& screenPos, const ImVec2& size) {
+
+            // Position the settings window near the comment
+            ImVec2 settingsPos = screenPos + ImVec2(size.x + 5.0f, 0.0f);
+            ImGui::SetNextWindowPos(settingsPos, ImGuiCond_Appearing);
+            ImGui::SetNextWindowSize(ImVec2(200, 0), ImGuiCond_Appearing);
+            
+            ImGui::Begin("Comment Settings", &m_showSettings, 
+                        ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | 
+                        ImGuiWindowFlags_AlwaysAutoResize);
+            
+            // Color picker for the main color
+            ImGui::Text("Comment Color");
+            ImVec4 color = ImColor(m_headerColor);
+            if (ImGui::ColorEdit4("##CommentColor", (float*)&color, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar)) {
+                setColor(color);
             }
             
             ImGui::Spacing();
-            ImGui::Text("Layout:");
             ImGui::Separator();
+            ImGui::Spacing();
             
             // Padding slider
-            if (ImGui::SliderFloat("Padding", &m_padding, 5.0f, 50.0f, "%.0f px")) {
-                // Update bounds when padding changes
+            ImGui::Text("Padding");
+            ImGui::SetNextItemWidth(150.0f);
+            if (ImGui::SliderFloat("##Padding", &m_padding, 5.0f, 50.0f, "%.0f px")) {
+                // Padding changed, update bounds
                 updateCommentBounds();
             }
             
             ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Spacing();
             
-            // Reset to defaults button
-            if (ImGui::Button("Reset to Defaults")) {
-                resetToDefaults();
+            // Quick color presets
+            ImGui::Text("Presets:");
+            ImGui::BeginGroup();
+            if (ImGui::ColorButton("White", ImVec4(0.78f, 0.63f, 0.24f, 1.0f))) {
+                setColor(ImVec4(1.f, 1.f, 1.f, 1.0f));
             }
-            
             ImGui::SameLine();
+            if (ImGui::ColorButton("Black", ImVec4(0.78f, 0.63f, 0.24f, 1.0f))) {
+                setColor(ImVec4(0.f, 0.f, 0.f, 1.0f));
+            }
+            ImGui::SameLine();
+            if (ImGui::ColorButton("Amber", ImVec4(0.78f, 0.63f, 0.24f, 1.0f))) {
+                setColor(ImVec4(0.78f, 0.63f, 0.24f, 1.0f));
+            }
+            ImGui::SameLine();
+            if (ImGui::ColorButton("Blue", ImVec4(0.2f, 0.4f, 0.8f, 1.0f))) {
+                setColor(ImVec4(0.2f, 0.4f, 0.8f, 1.0f));
+            }
+            ImGui::SameLine();
+            if (ImGui::ColorButton("Green", ImVec4(0.2f, 0.7f, 0.3f, 1.0f))) {
+                setColor(ImVec4(0.2f, 0.7f, 0.3f, 1.0f));
+            }
+            ImGui::EndGroup();
             
-            // Close button
-            if (ImGui::Button("Close")) {
-                m_showSettings = false;
+            ImGui::End();
+        }
+        
+        void setColor(const ImVec4& color) {
+            // Convert ImVec4 to ImU32 and set all color components
+            m_headerColor = ImColor(color.x, color.y, color.z, color.w * 0.7f); // Header is less transparent
+            m_bgColor = ImColor(color.x, color.y, color.z, color.w * 0.2f);     // Background is more transparent
+            m_borderColor = ImColor(color.x, color.y, color.z, color.w);        // Border uses full alpha
+        }
+        
+
+        void setCommentText(const std::string& text) { m_commentText = text; }
+        
+        
+        const std::string& getCommentText() const { return m_commentText; }
+            
+        SET_NODE_TYPE_NAME(CommentNode)
+        
+        void serialize(AT::serializer::yaml& yaml) override {
+            BaseNode::serialize(yaml);
+            
+            yaml.entry("comment_text", m_commentText)
+                .entry("padding", m_padding)
+                .entry("custom_size_x", m_customSize.x)
+                .entry("custom_size_y", m_customSize.y);
+                
+            // Serialize contained nodes
+            std::vector<ImFlow::NodeUID> contained_nodes(m_containedNodes.begin(), m_containedNodes.end());
+            yaml.entry("contained_nodes", contained_nodes);
+            
+            if (yaml.get_option() == AT::serializer::option::load_from_file) {
+                // Contained nodes will be reconnected after all nodes are loaded
+                m_containedNodes.clear();
+                for (auto node_id : contained_nodes) {
+                    m_containedNodes.insert(node_id);
+                }
             }
         }
-        ImGui::End();
         
-        ImGui::PopStyleColor(3);
-        
-        // Close settings if clicked outside
-        if (ImGui::IsMouseClicked(0) && !ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow) && 
-            !ImGui::IsMouseHoveringRect(screenPos, screenPos + size)) {
-            m_showSettings = false;
+        void serializePins(AT::serializer::yaml& yaml) override {
+            // Comment nodes don't have pins, but we need to update bounds after loading
+            if (yaml.get_option() == AT::serializer::option::load_from_file) {
+                updateCommentBounds();
+            }
         }
-    }
-    
-    void resetToDefaults() {
-        m_headerColor = IM_COL32(200, 160, 60, 180);
-        m_bgColor = IM_COL32(200, 160, 60, 50);
-        m_borderColor = IM_COL32(200, 160, 60, 200);
-        m_padding = 20.0f;
-        updateCommentBounds();
-    }
-    
 
-    void setCommentText(const std::string& text) { m_commentText = text; }
-    
-    
-    const std::string& getCommentText() const { return m_commentText; }
-    
-    // Getter methods for settings (useful for serialization)
-    ImU32 getHeaderColor() const { return m_headerColor; }
-    ImU32 getBgColor() const { return m_bgColor; }
-    ImU32 getBorderColor() const { return m_borderColor; }
-    float getPadding() const { return m_padding; }
-    
-    // Setter methods for settings (useful for deserialization)
-    void setHeaderColor(ImU32 color) { m_headerColor = color; }
-    void setBgColor(ImU32 color) { m_bgColor = color; }
-    void setBorderColor(ImU32 color) { m_borderColor = color; }
-    void setPadding(float padding) { m_padding = padding; updateCommentBounds(); }
-    
-private:
-    std::set<ImFlow::NodeUID> m_containedNodes;
-    std::string m_commentText;
-    bool m_isEditing = false;
-    bool m_showSettings = false;
-    ImVec2 m_customSize;  // Custom size for comment node
-    
-    // Customizable properties
-    ImU32 m_headerColor;
-    ImU32 m_bgColor;
-    ImU32 m_borderColor;
-    float m_padding;
-};
-
+    private:
+        std::set<ImFlow::NodeUID> m_containedNodes;
+        std::string m_commentText;
+        bool m_isEditing = false;
+        bool m_showSettings = false;
+        ImVec2 m_customSize;  // Custom size for comment node
+        
+        // Color settings
+        ImU32 m_headerColor;
+        ImU32 m_bgColor;
+        ImU32 m_borderColor;
+        f32 m_padding = 20.0f;
+    };
 
     // Specific math operation nodes (AddNode, MultiplyNode, SubtractNode remain the same...)
     class AddNode : public MathNode {
@@ -712,7 +771,11 @@ private:
         void draw() override {
             MathNode::draw();
         }
+
+        SET_NODE_TYPE_NAME(AddNode)
+
     };
+
     
     class MultiplyNode : public MathNode {
     public:
@@ -726,8 +789,12 @@ private:
         void draw() override {
             MathNode::draw();
         }
+
+        SET_NODE_TYPE_NAME(MultiplyNode)
+
     };
     
+
     class SubtractNode : public MathNode {
     public:
         SubtractNode() : MathNode("Subtract") {
@@ -740,5 +807,9 @@ private:
         void draw() override {
             MathNode::draw();
         }
+
+        SET_NODE_TYPE_NAME(SubtractNode)
+        
     };
+
 }

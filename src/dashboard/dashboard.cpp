@@ -336,6 +336,99 @@ namespace AT {
             m_firstTime = false;
         }
 
+
+        // Add menu bar with save/load options
+        if (ImGui::BeginMainMenuBar()) {
+            if (ImGui::BeginMenu("File")) {
+                if (ImGui::MenuItem("New")) {
+                    if (m_unsavedChanges) {
+                        // TODO: Add confirmation dialog
+                    }
+                    m_editor = ImFlow::ImNodeFlow{}; // Reset editor
+                    m_firstTime = true;
+                    m_unsavedChanges = false;
+                    m_currentFile.clear();
+                }
+                
+                if (ImGui::MenuItem("Open", "Ctrl+O")) {
+                    // TODO: Implement file dialog      For now, use a fixed path
+                    std::filesystem::path open_path = util::get_executable_path() / "visual_programming_test" / "saved_graph.yaml";
+                    VALIDATE(std::filesystem::exists(open_path), , "Loading file [" << open_path.string().c_str() << "]", "File [" << open_path.string().c_str() << "] does not exist");
+                    if (std::filesystem::exists(open_path)) {
+
+                        // Node factory function type
+                        std::unordered_map<std::string, ImFlow::NodeFactory> node_factories = {
+                            {"BeginNode", [this](const ImVec2& pos)             { return m_editor.addNode<BeginNode>(pos); }},
+                            {"AddNode", [this](const ImVec2& pos)               { return m_editor.addNode<AddNode>(pos); }},
+                            {"MultiplyNode", [this](const ImVec2& pos)          { return m_editor.addNode<MultiplyNode>(pos); }},
+                            {"SubtractNode", [this](const ImVec2& pos)          { return m_editor.addNode<SubtractNode>(pos); }},
+                            {"MultiOperationNode", [this](const ImVec2& pos)    { return m_editor.addNode<MultiOperationNode>(pos); }},
+                            {"PlotterNode", [this](const ImVec2& pos)           { return m_editor.addNode<PlotterNode>(pos); }},
+                            {"CommentNode", [this](const ImVec2& pos)           { return m_editor.addNode<CommentNode>(pos); }}
+                        };
+                        m_editor.load(open_path, node_factories);
+                        m_currentFile = open_path;
+                        m_unsavedChanges = false;
+                    }
+                }
+                
+                if (ImGui::MenuItem("Save", "Ctrl+S", false, !m_currentFile.empty())) {
+                    m_editor.save(m_currentFile);
+                    m_unsavedChanges = false;
+                }
+                
+                if (ImGui::MenuItem("Save As...", "Ctrl+Shift+S")) {
+                    // TODO: Implement file dialog      For now, use a fixed path
+                    std::filesystem::path save_path = util::get_executable_path() / "visual_programming_test" / "saved_graph.yaml";
+                    m_editor.save(save_path);
+                    m_currentFile = save_path;
+                    m_unsavedChanges = false;
+                }
+                
+                ImGui::Separator();
+                
+                if (ImGui::MenuItem("Quit", "Alt+F4")) {
+                    application::get().close_application();
+                }
+                
+                ImGui::EndMenu();
+            }
+            
+            if (ImGui::BeginMenu("Edit")) {
+                if (ImGui::MenuItem("Select All", "Ctrl+A")) {
+                    // Select all nodes
+                    auto& nodes = m_editor.getNodes();
+                    for (auto& [id, node] : nodes) {
+                        node->selected(true);
+                    }
+                }
+                
+                if (ImGui::MenuItem("Delete Selected", "Del")) {
+                    // Delete selected nodes
+                    auto& nodes = m_editor.getNodes();
+                    for (auto it = nodes.begin(); it != nodes.end(); ) {
+                        if (it->second->isSelected()) {
+                            it = nodes.erase(it);
+                            m_unsavedChanges = true;
+                        } else {
+                            ++it;
+                        }
+                    }
+                }
+                
+                ImGui::EndMenu();
+            }
+            
+            // Show current file and unsaved changes indicator
+            ImGui::SameLine(ImGui::GetWindowWidth() - 200);
+            std::string status = m_currentFile.empty() ? "Untitled" : m_currentFile.filename().string();
+            if (m_unsavedChanges) status += " *";
+            ImGui::Text("%s", status.c_str());
+            
+            ImGui::EndMainMenuBar();
+        }
+        
+
         ImGui::Begin("Node Editor");
         {
             ImVec2 available_size = ImGui::GetContentRegionAvail();

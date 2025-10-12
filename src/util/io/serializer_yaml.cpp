@@ -7,6 +7,16 @@
 
 namespace AT::serializer {
 
+	// add local logging override (only needed when debugging)
+	#if 1
+		#define LLOG(severity, message)										LOG(severity, message)
+		#define LVALIDATE(expr, command, message_success, message_failure)	VALIDATE(expr, command, message_success, message_failure)
+	#else
+		#define LLOG(severity, message)
+		#define LVALIDATE(expr, command, message_success, message_failure)
+	#endif
+
+
 	// ================================================== yaml ==================================================
 
 	yaml::yaml(const std::filesystem::path filename, const std::string& section_name, option option)
@@ -34,11 +44,13 @@ namespace AT::serializer {
 
 	}
 
+
 	yaml::~yaml() {
 
 		if (m_option == option::save_to_file)
 			serialize();
 	}
+
 
 	void yaml::serialize() {
 
@@ -89,12 +101,13 @@ namespace AT::serializer {
 		ostream.close();
 	}
 
+
 	yaml& yaml::deserialize() {
 
 		ASSERT(!m_name.empty(), "", "name of section to find is empty");
 
 		m_istream = std::ifstream(m_filename);
-		VALIDATE(m_istream.is_open(), return *this, "", "file-stream is not open");
+		LVALIDATE(m_istream.is_open(), return *this, "", "file-stream is not open");
 
 		const u32 SECTION_INDENTATION = 0;
 		bool found_section = false;
@@ -136,6 +149,7 @@ namespace AT::serializer {
 		return *this;
 	}
 
+
 	void yaml::extract_key_value(std::string& key, std::string& value, std::string& line) {
 
 		std::istringstream iss(line);
@@ -148,6 +162,7 @@ namespace AT::serializer {
 		if (!value.empty() && value.front() == ' ')
 			value.erase(0, 1);
 	}
+
 
 	yaml& yaml::sub_section(const std::string& section_name, std::function<void(serializer::yaml&)> sub_section_function) {
 
@@ -185,6 +200,8 @@ namespace AT::serializer {
 				if ((util::measure_indentation(line, NUM_OF_INDENTING_SPACES) != 0) || (line.back() != ':'))
 					continue;
 
+				LLOG(Debug, "line: [" << line << "]")
+				
 				// remove leading and trailing whitespace
 				auto trimmed = line;
 				trimmed.erase(trimmed.begin(), std::find_if(trimmed.begin(), trimmed.end(), [](unsigned char ch) {
@@ -202,10 +219,15 @@ namespace AT::serializer {
 					continue;
 
 				found_section = true;
+				LLOG(Debug, "Found Section [" << section_name << "]")
 
 				while (std::getline(file_content_buffer, line)) {
-
-					if (util::measure_indentation(line, NUM_OF_INDENTING_SPACES) < m_level_of_indention)	// exit inner loop after section is finished
+					
+					const auto line_indent = util::measure_indentation(line, NUM_OF_INDENTING_SPACES);
+					const bool exit_loop = line_indent <= 0;
+					LLOG(Trace, "Next Line [" << line << "] [relative indentation: " << line_indent <<
+						", exit inner loop: " << util::to_string(exit_loop) << "]")
+					if (exit_loop)	// exit inner loop after section is finished
 						break;		
 
 					line = line.substr(NUM_OF_INDENTING_SPACES);
@@ -221,11 +243,13 @@ namespace AT::serializer {
 					extract_key_value(key, value, line);
 					m_key_value_pares[key] = value;
 				}
+				LLOG(Debug, "Finished Section")
 
 				if (found_section)
 					break;
 			}
 
+			LVALIDATE(found_section, , "Found subsection [" << section_name << "] num of loaded pairs [" << m_key_value_pares.size() << "]", "Could NOT find subsection [" << section_name << "]")
 			if (found_section)
 				sub_section_function(*this);
 

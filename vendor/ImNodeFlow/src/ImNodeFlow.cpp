@@ -507,4 +507,183 @@ namespace ImFlow {
         }
     }
 
+
+    void ImNodeFlow::save(const std::filesystem::path& filename) {
+        AT::serializer::yaml file_serializer(filename, "node_editor", AT::serializer::option::save_to_file);
+        
+        // Save nodes
+        file_serializer.sub_section("nodes", [this](AT::serializer::yaml& yaml) {
+            std::vector<NodeUID> node_uids;
+            for (const auto& [uid, node] : m_nodes) {
+                node_uids.push_back(uid);
+            }
+            
+            yaml.entry(KEY_VALUE(node_uids));
+            
+            for (const auto& [uid, node] : m_nodes) {
+                yaml.sub_section(std::to_string(uid), [&node](AT::serializer::yaml& node_yaml) {
+                    node->serialize(node_yaml);
+                    node->serializePins(node_yaml);
+                });
+            }
+        });
+        
+        // Save links
+        file_serializer.sub_section("links", [this](AT::serializer::yaml& yaml) {
+            std::vector<std::tuple<NodeUID, std::string, NodeUID, std::string>> links_data;
+            
+            for (const auto& link_weak : m_links) {
+                if (auto link = link_weak.lock()) {
+                    Pin* left_pin = link->left();
+                    Pin* right_pin = link->right();
+                    
+                    if (left_pin && right_pin) {
+                        NodeUID left_node_uid = left_pin->getParent()->getUID();
+                        NodeUID right_node_uid = right_pin->getParent()->getUID();
+                        
+                        std::string left_pin_name = left_pin->getName();
+                        std::string right_pin_name = right_pin->getName();
+                        
+                        links_data.emplace_back(left_node_uid, left_pin_name, right_node_uid, right_pin_name);
+                    }
+                }
+            }
+            
+            yaml.vector("links_list", links_data, [](AT::serializer::yaml& link_yaml, u64 index) {
+                NodeUID from_node, to_node;
+                std::string from_pin, to_pin;
+                
+                link_yaml.entry("from_node", from_node)
+                    .entry("from_pin", from_pin)
+                    .entry("to_node", to_node)
+                    .entry("to_pin", to_pin);
+            });
+        });
+    }
+            
+    
+    void ImNodeFlow::load(const std::filesystem::path& filename, std::unordered_map<std::string, NodeFactory>& node_factories) {
+
+        // Clear current graph
+        m_nodes.clear();
+        m_links.clear();
+        
+        try {
+            AT::serializer::yaml file_serializer(filename, "node_editor", AT::serializer::option::load_from_file);
+            
+            std::unordered_map<NodeUID, std::shared_ptr<BaseNode>> loaded_nodes;
+            std::vector<std::tuple<NodeUID, std::string, NodeUID, std::string>> links_data;
+            
+            // Load nodes
+            file_serializer.sub_section("nodes", [&](AT::serializer::yaml& yaml) {
+                // Read node_count array to get all node UIDs
+                std::vector<NodeUID> node_uids;
+                yaml.entry(KEY_VALUE(node_uids));
+                VALIDATE(!node_uids.empty(), return, "Found [" << node_uids.size() << "] nodes in file", "Failed to read node_count from YAML file")
+                
+                for (NodeUID uid : node_uids) {
+                    std::string uid_str = std::to_string(uid);
+                    LOG(Info, "Loading node with UID [" << uid_str << "]");
+
+                    yaml.sub_section(uid_str, [&](AT::serializer::yaml& node_yaml) {        // Read basic node properties
+
+                        std::string node_type{};
+                        ImVec2 position{};
+                        std::string title{};
+                        bool select = false;
+                        
+                        node_yaml.entry("position_x", position.x)
+                            .entry("position_y", position.y)
+                            .entry("title", title)
+                            .entry("selected", select)
+                            .entry("type", node_type);
+
+                        VALIDATE(!node_type.empty(), , "Creating node: [" << node_type << "] at (" << position.x << ", " << position.y << ")", "Could not load node_type")
+                        
+                        // Create node based on type
+                        auto factory_it = node_factories.find(node_type);
+                        if (factory_it != node_factories.end()) {
+                            auto node = factory_it->second(position);
+                            if (node) {
+                                node->setUID(uid); // Set the original UID
+                                node->setTitle(title);
+                                node->selected(select);
+                                
+                                // Let node load any additional data
+                                node->serialize(node_yaml);
+                                node->serializePins(node_yaml);
+                                
+                                // Add to our temporary map and main nodes list
+                                loaded_nodes[uid] = node;
+                                m_nodes[uid] = node;
+                                
+                                LOG(Info, "Successfully created node: [" << title << "]");
+                            } else {
+                                LOG(Error, "Factory failed to create node of type: [" << node_type << "]");
+                            }
+                        } else {
+                            LOG(Error, "No factory found for node type: [" << node_type << "]");
+                        }
+                    });
+
+                }
+            });
+            
+            LOG(Info, "Successfully loaded [" << loaded_nodes.size() << "] nodes");
+            
+            // Load links
+            file_serializer.sub_section("links", [&](AT::serializer::yaml& yaml) {
+                // Read links list
+                std::vector<std::tuple<NodeUID, std::string, NodeUID, std::string>> links_data;
+                
+                // Use the vector reading approach that matches your YAML structure
+                yaml.vector("links_list", links_data, [](AT::serializer::yaml& link_yaml, u64 index) {
+                    NodeUID from_node, to_node;
+                    std::string from_pin, to_pin;
+                    
+                    link_yaml.entry("from_node", from_node)
+                            .entry("from_pin", from_pin)
+                            .entry("to_node", to_node)
+                            .entry("to_pin", to_pin);
+                });
+                
+                LOG(Info, "Found [" << links_data.size() << "] links in file");
+                
+                // Recreate links
+                for (const auto& link_data : links_data) {
+                    NodeUID from_uid = std::get<0>(link_data);
+                    std::string from_pin_name = std::get<1>(link_data);
+                    NodeUID to_uid = std::get<2>(link_data);
+                    std::string to_pin_name = std::get<3>(link_data);
+                    
+                    auto from_node_it = loaded_nodes.find(from_uid);
+                    auto to_node_it = loaded_nodes.find(to_uid);
+                    
+                    if (from_node_it != loaded_nodes.end() && to_node_it != loaded_nodes.end()) {
+                        Pin* from_pin = from_node_it->second->outPin(from_pin_name.c_str());
+                        Pin* to_pin = to_node_it->second->inPin(to_pin_name.c_str());
+                        
+                        if (from_pin && to_pin) {
+                            from_pin->createLink(to_pin);
+                            LOG(Info, "Created link from [" << from_node_it->second->getName() << "].[" << from_pin_name << "] to [" << to_node_it->second->getName() << "].[" << to_pin_name << "]");
+                        } else {
+                            if (!from_pin) LOG(Error, "Could not find output pin: [" << from_pin_name << "] on node [" << from_node_it->second->getName() << "]");
+                            if (!to_pin) LOG(Error, "Could not find input pin: [" << to_pin_name << "] on node [" << to_node_it->second->getName() << "]");
+                        }
+                    } else {
+                        if (from_node_it == loaded_nodes.end()) LOG(Error, "Source node not found [" << from_uid << "]");
+                        if (to_node_it == loaded_nodes.end()) LOG(Error, "Target node not found [" << to_uid << "]");
+                    }
+                }
+            });
+            
+            LOG(Info, "Graph loaded successfully with [" << m_nodes.size() << "] nodes and [" << m_links.size() << "] links");
+            
+        } catch (const std::exception& e) {
+            LOG(Error, "Exception during graph loading [" << e.what() << "]");
+        } catch (...) {
+            LOG(Error, "Unknown exception during graph loading");
+        }
+    }
+
 }
