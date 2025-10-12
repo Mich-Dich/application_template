@@ -186,86 +186,86 @@ set plugins_failed=0
 if exist "plugins" (
     echo Scanning plugins directory...
     
-    @REMfor /d %%i in (plugins\\*) do (
-    @REM    if exist "%%i\\CMakeLists.txt" (
-    @REM        set "plugin_dir=%%i"
-    @REM        set "plugin_name=%%~nxi"
-    @REM        
-    @REM        echo   Checking plugin: !plugin_name!
-    @REM        
-    @REM        REM Check if plugin needs rebuilding
-    @REM        set "needs_rebuild=0"
-    @REM        set "build_dir=!plugin_dir!\\build"
-    @REM        set "dll_file=!build_dir!\\!plugin_name!.dll"
-    @REM        
-    @REM        REM If no build directory exists
-    @REM        if not exist "!build_dir!\" (
-    @REM            echo     - No build directory found
-    @REM            set needs_rebuild=1
-    @REM        ) else (
-    @REM            REM If no .dll file exists
-    @REM            if not exist "!dll_file!" (
-    @REM                echo     - No .dll file found
+    @REM    for /d %%i in (plugins\\*) do (
+    @REM        if exist "%%i\\CMakeLists.txt" (
+    @REM            set "plugin_dir=%%i"
+    @REM            set "plugin_name=%%~nxi"
+    @REM            
+    @REM            echo   Checking plugin: !plugin_name!
+    @REM            
+    @REM            REM Check if plugin needs rebuilding
+    @REM            set "needs_rebuild=0"
+    @REM            set "build_dir=!plugin_dir!\\build"
+    @REM            set "dll_file=!build_dir!\\!plugin_name!.dll"
+    @REM            
+    @REM            REM If no build directory exists
+    @REM            if not exist "!build_dir!\" (
+    @REM                echo     - No build directory found
     @REM                set needs_rebuild=1
     @REM            ) else (
-    @REM                REM Get timestamp of .dll file
-    @REM                for %%f in ("!dll_file!") do set dll_time=%%~tf
-    @REM                
-    @REM                REM Find newest source file
-    @REM                set newest_source_time=0
-    @REM                set newest_source_file=
-    @REM                
-    @REM                for /r "!plugin_dir!" %%f in (*.cpp *.h *.hpp CMakeLists.txt) do (
-    @REM                    for %%t in ("%%f") do (
-    @REM                        REM Compare timestamps - this is a simplified check
-    @REM                        if "%%~tf" gtr "!dll_time!" (
-    @REM                            set needs_rebuild=1
-    @REM                            echo     - Source files are newer than .dll file
-    @REM                            goto :check_done
+    @REM                REM If no .dll file exists
+    @REM                if not exist "!dll_file!" (
+    @REM                    echo     - No .dll file found
+    @REM                    set needs_rebuild=1
+    @REM                ) else (
+    @REM                    REM Get timestamp of .dll file
+    @REM                    for %%f in ("!dll_file!") do set dll_time=%%~tf
+    @REM                    
+    @REM                    REM Find newest source file
+    @REM                    set newest_source_time=0
+    @REM                    set newest_source_file=
+    @REM                    
+    @REM                    for /r "!plugin_dir!" %%f in (*.cpp *.h *.hpp CMakeLists.txt) do (
+    @REM                        for %%t in ("%%f") do (
+    @REM                            REM Compare timestamps - this is a simplified check
+    @REM                            if "%%~tf" gtr "!dll_time!" (
+    @REM                                set needs_rebuild=1
+    @REM                                echo     - Source files are newer than .dll file
+    @REM                                goto :check_done
+    @REM                            )
     @REM                        )
     @REM                    )
     @REM                )
     @REM            )
-    @REM        )
-    @REM        
-    @REM        :check_done
-    @REM        if !needs_rebuild! equ 1 (
-    @REM            echo   Rebuilding required
-    @REM            echo   Building plugin: !plugin_name!
     @REM            
-    @REM            REM Create build directory
-    @REM            if not exist "!build_dir!\" mkdir "!build_dir!"
-    @REM            
-    @REM            REM Build the plugin
-    @REM            echo     Configuring CMake...
-    @REM            cd "!build_dir!"
-    @REM            cmake .. -DCMAKE_BUILD_TYPE=%build_config%
-    @REM            if !errorlevel! neq 0 (
-    @REM                echo     CMake configuration failed for !plugin_name!
-    @REM                set /a plugins_failed+=1
+    @REM            :check_done
+    @REM            if !needs_rebuild! equ 1 (
+    @REM                echo   Rebuilding required
+    @REM                echo   Building plugin: !plugin_name!
+    @REM                
+    @REM                REM Create build directory
+    @REM                if not exist "!build_dir!\" mkdir "!build_dir!"
+    @REM                
+    @REM                REM Build the plugin
+    @REM                echo     Configuring CMake...
+    @REM                cd "!build_dir!"
+    @REM                cmake .. -DCMAKE_BUILD_TYPE=%build_config%
+    @REM                if !errorlevel! neq 0 (
+    @REM                    echo     CMake configuration failed for !plugin_name!
+    @REM                    set /a plugins_failed+=1
+    @REM                    cd "!project_root!"
+    @REM                    goto :next_plugin
+    @REM                )
+    @REM                
+    @REM                echo     Compiling...
+    @REM                cmake --build . --config %build_config%
+    @REM                if !errorlevel! neq 0 (
+    @REM                    echo     Compilation failed for !plugin_name!
+    @REM                    set /a plugins_failed+=1
+    @REM                    cd "!project_root!"
+    @REM                    goto :next_plugin
+    @REM                )
     @REM                cd "!project_root!"
-    @REM                goto :next_plugin
+    @REM                
+    @REM                echo     Successfully built: !plugin_name!
+    @REM                set /a plugins_rebuilt+=1
+    @REM            ) else (
+    @REM                echo   Plugin is up to date
     @REM            )
-    @REM            
-    @REM            echo     Compiling...
-    @REM            cmake --build . --config %build_config%
-    @REM            if !errorlevel! neq 0 (
-    @REM                echo     Compilation failed for !plugin_name!
-    @REM                set /a plugins_failed+=1
-    @REM                cd "!project_root!"
-    @REM                goto :next_plugin
-    @REM            )
-    @REM            cd "!project_root!"
-    @REM            
-    @REM            echo     Successfully built: !plugin_name!
-    @REM            set /a plugins_rebuilt+=1
-    @REM        ) else (
-    @REM            echo   Plugin is up to date
+    @REM            echo.
     @REM        )
-    @REM        echo.
+    @REM        :next_plugin
     @REM    )
-    @REM    :next_plugin
-    @REM)
 ) else (
     echo No plugins directory found
 )
