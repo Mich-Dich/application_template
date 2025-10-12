@@ -361,8 +361,8 @@ Common workflows:
 
 
         else:       # Default is CMake
-            utils.print_c(f"\nCreating Build files using [cmake -B build {build_config}]", "blue")
             build_config = "-DCMAKE_BUILD_TYPE=" + build_config
+            utils.print_c(f"\nCreating Build files using [cmake -B build {build_config}]", "blue")
             cmake_result = subprocess.run(["cmake", "-B", "build", build_config])
             if cmake_result.returncode != 0:
                 utils.print_c("CMake configuration failed!", "red")

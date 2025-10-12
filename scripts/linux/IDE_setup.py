@@ -115,7 +115,7 @@ def prompt_build_config():
             print("Please enter a valid number.")
 
 
-def setup_vscode_configs(project_root, build_config, application_name, clean_art_on_build, use_premake=True):
+def setup_vscode_configs(project_root, build_config, application_name, clean_art_on_build, use_premake=False):
     vscode_dir = os.path.join(project_root, ".vscode")
     os.makedirs(vscode_dir, exist_ok=True)
 
@@ -310,16 +310,7 @@ echo -e "${{GREEN}}------ Done ------${{NC}}"
         f.write(build_script_content)
     os.chmod(build_script_path, os.stat(build_script_path).st_mode | stat.S_IEXEC)
 
-
-
-
-
-
-
-
-
-
-    
+   
 
     # create tasks.json
     tasks_json_path = os.path.join(vscode_dir, "tasks.json")
