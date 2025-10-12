@@ -5,6 +5,7 @@
 namespace AT {
 
     class event;
+    class visual_programming_editor;
 
 
     // =======================================================================
@@ -90,9 +91,7 @@ namespace AT {
 
     private:
 
-        bool m_firstTime = true;
-        std::filesystem::path m_currentFile;
-        bool m_unsavedChanges = false;
+        std::unique_ptr<visual_programming_editor> m_visual_editor;
         
     };
 }

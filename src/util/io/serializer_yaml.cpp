@@ -8,12 +8,12 @@
 namespace AT::serializer {
 
 	// add local logging override (only needed when debugging)
-	#if 1
+	#if 0
 		#define LLOG(severity, message)										LOG(severity, message)
 		#define LVALIDATE(expr, command, message_success, message_failure)	VALIDATE(expr, command, message_success, message_failure)
 	#else
 		#define LLOG(severity, message)
-		#define LVALIDATE(expr, command, message_success, message_failure)
+		#define LVALIDATE(expr, command, message_success, message_failure)	if (!(expr)) { command; }
 	#endif
 
 

@@ -10,7 +10,7 @@ namespace AT {
     struct Execution {};
 
     // Custom style creator functions
-    static std::shared_ptr<ImFlow::NodeStyle> createCustomNodeStyle(ImU32 header_color, const char* title = "Node") {
+    static std::shared_ptr<ImFlow::NodeStyle> create_custom_node_style(ImU32 header_color, const char* title = "Node") {
         auto style = std::make_shared<ImFlow::NodeStyle>(
             header_color, 
             ImColor(250, 250, 250, 255), 
@@ -23,15 +23,6 @@ namespace AT {
         return style;
     }
 
-    // Custom background style
-    static void setupCustomBackground(ImFlow::ImNodeFlow& editor) {
-        auto& style = editor.getStyle();
-        style.colors.background = IM_COL32(200, 44, 52, 255);
-        style.colors.grid = IM_COL32(65, 70, 80, 60);
-        style.colors.subGrid = IM_COL32(55, 60, 70, 30);
-        style.grid_size = 100.0f;
-        style.grid_subdivisions = 10.0f;
-    }
 
     // Execution-only node (like a Begin node)
     class BeginNode : public ImFlow::BaseNode {
@@ -40,7 +31,7 @@ namespace AT {
         BeginNode() {
 
             setTitle("Begin");
-            setStyle(createCustomNodeStyle(IM_COL32(90, 191, 93, 255)));
+            setStyle(create_custom_node_style(IM_COL32(90, 191, 93, 255)));
             addOUT<Execution>("Execute", ImFlow::PinStyle::execution())->behaviour([]() { return Execution{}; });   // Only has execution output
         }
         
@@ -70,7 +61,7 @@ namespace AT {
         MathNode(const std::string& title) {
             setTitle(title);
             // Use custom style with less rounded corners
-            setStyle(createCustomNodeStyle(IM_COL32(71, 142, 173, 255)));
+            setStyle(create_custom_node_style(IM_COL32(71, 142, 173, 255)));
             
             // Execution pins
             addIN<Execution>("Exec In", Execution{}, ImFlow::ConnectionFilter::SameType(), ImFlow::PinStyle::execution());
@@ -129,7 +120,7 @@ namespace AT {
 
         MultiOperationNode() {
             setTitle("Multi Operation");
-            setStyle(createCustomNodeStyle(IM_COL32(173, 126, 71, 255)));
+            setStyle(create_custom_node_style(IM_COL32(173, 126, 71, 255)));
             
             // Execution pins
             addIN<Execution>("Exec In", Execution{}, ImFlow::ConnectionFilter::SameType(), ImFlow::PinStyle::execution());
@@ -264,7 +255,7 @@ namespace AT {
 
         PlotterNode() {
             setTitle("Plotter");
-            setStyle(createCustomNodeStyle(IM_COL32(142, 68, 173, 255)));
+            setStyle(create_custom_node_style(IM_COL32(142, 68, 173, 255)));
             
             // Execution pins
             addIN<Execution>("Exec In", Execution{}, ImFlow::ConnectionFilter::SameType(), ImFlow::PinStyle::execution());
@@ -469,12 +460,12 @@ namespace AT {
     };
     
 
-    class CommentNode : public ImFlow::BaseNode {
+    class comment_node : public ImFlow::BaseNode {
     public:
 
-        CommentNode() {
+        comment_node() {
             setTitle("Comment");
-            setStyle(createCustomNodeStyle(IM_COL32(200, 160, 60, 255), "Comment"));
+            setStyle(create_custom_node_style(IM_COL32(200, 160, 60, 255), "Comment"));
             
             m_commentText = "Double click to edit comment...";
             m_isEditing = false;
@@ -552,19 +543,19 @@ namespace AT {
         // Override getVisualSize for bounds calculation
         ImVec2 getVisualSize() const override { return m_customSize; }
         
-
-        void addContainedNode(ImFlow::NodeUID nodeId) { m_containedNodes.insert(nodeId); }
+        //
+        void add_contained_node(ImFlow::NodeUID nodeId) { m_containedNodes.insert(nodeId); }
         
-
-        void removeContainedNode(ImFlow::NodeUID nodeId) { m_containedNodes.erase(nodeId); }
+        //
+        void remove_contained_node(ImFlow::NodeUID nodeId) { m_containedNodes.erase(nodeId); }
         
-
-        void clearContainedNodes() { m_containedNodes.clear(); }
+        //
+        void clear_contained_nodes() { m_containedNodes.clear(); }
         
-
-        const std::set<ImFlow::NodeUID>& getContainedNodes() const { return m_containedNodes; }
+        //
+        const std::set<ImFlow::NodeUID>& get_contained_nodes() const { return m_containedNodes; }
         
-
+        //
         void customDraw(ImDrawList* draw_list, const ImVec2& offset) override {
             
             auto handler = getHandler();
@@ -640,6 +631,7 @@ namespace AT {
             }
         }
         
+        //
         void drawSettingsWindow(const ImVec2& screenPos, const ImVec2& size) {
 
             // Position the settings window near the comment
@@ -701,6 +693,7 @@ namespace AT {
             ImGui::End();
         }
         
+        //
         void setColor(const ImVec4& color) {
             // Convert ImVec4 to ImU32 and set all color components
             m_headerColor = ImColor(color.x, color.y, color.z, color.w * 0.7f); // Header is less transparent
@@ -708,14 +701,15 @@ namespace AT {
             m_borderColor = ImColor(color.x, color.y, color.z, color.w);        // Border uses full alpha
         }
         
-
+        //
         void setCommentText(const std::string& text) { m_commentText = text; }
         
-        
+        //
         const std::string& getCommentText() const { return m_commentText; }
             
-        SET_NODE_TYPE_NAME(CommentNode)
-        
+        SET_NODE_TYPE_NAME(comment_node)
+                
+        //
         void serialize(AT::serializer::yaml& yaml) override {
             BaseNode::serialize(yaml);
             
@@ -729,33 +723,30 @@ namespace AT {
             yaml.entry("contained_nodes", contained_nodes);
             
             if (yaml.get_option() == AT::serializer::option::load_from_file) {
-                // Contained nodes will be reconnected after all nodes are loaded
-                m_containedNodes.clear();
-                for (auto node_id : contained_nodes) {
-                    m_containedNodes.insert(node_id);
-                }
+                for (const auto node : contained_nodes)
+                    m_containedNodes.insert(node);
             }
         }
-        
+
         void serializePins(AT::serializer::yaml& yaml) override {
             // Comment nodes don't have pins, but we need to update bounds after loading
             if (yaml.get_option() == AT::serializer::option::load_from_file) {
-                updateCommentBounds();
+                // Don't update bounds yet - wait for postLoadFixup
             }
         }
 
     private:
-        std::set<ImFlow::NodeUID> m_containedNodes;
-        std::string m_commentText;
-        bool m_isEditing = false;
-        bool m_showSettings = false;
-        ImVec2 m_customSize;  // Custom size for comment node
-        
-        // Color settings
-        ImU32 m_headerColor;
-        ImU32 m_bgColor;
-        ImU32 m_borderColor;
-        f32 m_padding = 20.0f;
+        std::set<ImFlow::NodeUID>       m_containedNodes;
+        std::string                     m_commentText;
+        bool                            m_isEditing = false;
+        bool                            m_showSettings = false;
+        ImVec2                          m_customSize;  // Custom size for comment node
+
+        // appearance settings
+        ImU32                           m_headerColor;
+        ImU32                           m_bgColor;
+        ImU32                           m_borderColor;
+        f32                             m_padding = 20.0f;
     };
 
     // Specific math operation nodes (AddNode, MultiplyNode, SubtractNode remain the same...)
@@ -810,6 +801,46 @@ namespace AT {
 
         SET_NODE_TYPE_NAME(SubtractNode)
         
+    };
+
+
+    // Define all available nodes with categories
+    struct NodeDefinition {
+        const char* name;
+        const char* category;
+        std::function<void(ImFlow::ImNodeFlow& editor)> creator;
+        const char* description;
+    };
+
+    
+    static std::vector<NodeDefinition> node_list = {
+        {"Begin", "Execution",
+            [](ImFlow::ImNodeFlow& editor) { editor.placeNode<BeginNode>(); },
+            "Start execution flow"},
+        
+        {"Add", "Math Operations",
+            [](ImFlow::ImNodeFlow& editor) { editor.placeNode<AddNode>(); },
+            "A + B"},
+        
+        {"Multiply", "Math Operations",
+            [](ImFlow::ImNodeFlow& editor) { editor.placeNode<MultiplyNode>(); },
+            "A × B"},
+        
+        {"Subtract", "Math Operations", 
+            [](ImFlow::ImNodeFlow& editor) { editor.placeNode<SubtractNode>(); }, 
+            "A - B"},
+        
+        {"Multi Operation", "Math Operations", 
+            [](ImFlow::ImNodeFlow& editor) { editor.placeNode<MultiOperationNode>(); },
+            "16 math operations in one node"},
+        
+        {"Plotter", "Visualization", 
+            [](ImFlow::ImNodeFlow& editor) { editor.placeNode<PlotterNode>(); },
+            "Create various types of plots and charts"},
+
+        {"Comment", "Organization",
+            [](ImFlow::ImNodeFlow& editor) { editor.placeNode<comment_node>(); },
+            "Group nodes with a comment box"},
     };
 
 }

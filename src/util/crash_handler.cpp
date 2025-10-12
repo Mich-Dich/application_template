@@ -101,7 +101,7 @@ namespace AT::crash_handler {
 		std::cout << "signal caught => terminating" << std::endl;
 		LOG(Fatal, "crash_handler caught signal [" << signal << "]")
 		execute_user_functions();
-		std::quick_exit(1);			// Directly terminate without clean shutdown
+		std::exit(1);			// Directly terminate without clean shutdown
 		// detach();
 	}
 
