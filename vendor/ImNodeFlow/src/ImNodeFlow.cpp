@@ -41,10 +41,9 @@ namespace ImFlow {
     // BASE NODE
 
     bool BaseNode::isHovered() {
-        // For comment nodes, use the full size for hover detection
+        // For custom nodes, use the custom hover detection if available
         if (usesCustomHover()) {
-            return ImGui::IsMouseHoveringRect(m_inf->grid2screen(m_pos),
-                                            m_inf->grid2screen(m_pos + m_size));
+            return customIsHovered();
         }
         
         // Original logic for regular nodes
@@ -56,6 +55,7 @@ namespace ImFlow {
 
 
     void BaseNode::update() {
+
         ImDrawList *draw_list = ImGui::GetWindowDrawList();
         ImGui::PushID(this);
         bool mouseClickState = m_inf->getSingleUseClick();
@@ -66,36 +66,42 @@ namespace ImFlow {
 
         // Check if this node has custom drawing
         if (usesCustomHover()) {
-            // For comment nodes, use custom drawing only
+            // For custom nodes, use custom drawing
             customDraw(draw_list, offset);
             
-            // Handle selection and dragging for comment nodes
+            // Get fresh mouse state for this frame
+            bool mouseClickState = m_inf->getSingleUseClick();
+            
+            // Handle selection
             if (ImGui::IsWindowHovered() && !ImGui::IsKeyDown(ImGuiKey_LeftCtrl) &&
                 ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !m_inf->on_selected_node())
                 selected(false);
 
+            // Hover detection for custom nodes
             if (isHovered()) {
                 m_inf->hoveredNode(this);
                 if (mouseClickState) {
                     selected(true);
                     m_inf->consumeSingleUseClick();
+                    
+                    // Start dragging when clicking on a custom node
+                    if (!m_inf->isBoxSelecting()) {
+                        m_dragged = true;
+                        m_inf->draggingNode(true);
+                    }
                 }
             }
 
-            if (ImGui::IsWindowFocused() && ImGui::IsKeyPressed(ImGuiKey_Delete) && !ImGui::IsAnyItemActive() && isSelected())
+            // Handle deletion
+            if (ImGui::IsWindowFocused() && ImGui::IsKeyPressed(ImGuiKey_Delete) && 
+                !ImGui::IsAnyItemActive() && isSelected())
                 destroy();
 
-            // Handle dragging for comment nodes
-            if (isHovered() && mouseClickState && !m_inf->isBoxSelecting()) {
-                m_inf->consumeSingleUseClick();
-                m_dragged = true;
-                m_inf->draggingNode(true);
-            }
-            
-            if (m_dragged || (m_selected && m_inf->isNodeDragged())) {
+            // Handle dragging for custom nodes
+            if (m_dragged || (isSelected() && m_inf->isNodeDragged())) {
                 float step = m_inf->getStyle().grid_size / m_inf->getStyle().grid_subdivisions;
                 m_posTarget += ImGui::GetIO().MouseDelta;
-                // "Slam" The position
+                // "Slam" The position to grid
                 m_pos.x = round(m_posTarget.x / step) * step;
                 m_pos.y = round(m_posTarget.y / step) * step;
 
@@ -109,7 +115,6 @@ namespace ImFlow {
             ImGui::PopID();
             return;
         }
-
 
         draw_list->ChannelsSetCurrent(1); // Foreground
         ImGui::SetCursorScreenPos(offset + m_pos);
@@ -277,10 +282,19 @@ namespace ImFlow {
 
 
     bool ImNodeFlow::on_free_space() {
-        return std::all_of(m_nodes.begin(), m_nodes.end(),
-                           [](const auto &n) { return !n.second->isHovered(); })
-               && std::all_of(m_links.begin(), m_links.end(),
-                              [](const auto &l) { return !l.lock()->isHovered(); });
+        // Check if any node is hovered (including custom nodes)
+        bool anyNodeHovered = std::any_of(m_nodes.begin(), m_nodes.end(),
+            [](const auto &n) { return n.second->isHovered(); });
+        
+        // Check if any link is hovered
+        bool anyLinkHovered = std::any_of(m_links.begin(), m_links.end(),
+            [](const auto &l) { 
+                auto link = l.lock();
+                return link && link->isHovered(); 
+            });
+        
+        // Free space means no nodes AND no links are hovered
+        return !anyNodeHovered && !anyLinkHovered;
     }
 
 

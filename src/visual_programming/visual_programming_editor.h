@@ -52,7 +52,6 @@ namespace AT {
         char m_searchBuffer[128] = "";
         bool m_searchActive = false;
         std::unordered_map<std::string, ImFlow::NodeFactory> m_node_factories;      // Node factory for loading
-
     };
 
 }

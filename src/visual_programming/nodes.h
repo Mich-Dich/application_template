@@ -464,17 +464,17 @@ namespace AT {
     public:
 
         comment_node() {
-            setTitle("Comment");
-            setStyle(create_custom_node_style(IM_COL32(200, 160, 60, 255), "Comment"));
-            
-            m_commentText = "Double click to edit comment...";
-            m_isEditing = false;
-            
-            setColor(ImVec4(0.f, 0.f, 0.f, 1.0f));
 
-            // Set initial size
+            m_comment_text = "Double click to edit comment...";
+            m_isEditing = false;
+            m_addingNodesMode = false;
             m_customSize = ImVec2(200, 100);
             m_padding = 20.0f;
+            m_posTarget = getPos();
+            
+            setTitle("Comment");
+            setStyle(create_custom_node_style(IM_COL32(200, 160, 60, 255), "Comment"));
+            setColor(ImVec4(0.f, 0.f, 0.f, 1.0f));
         }
         
 
@@ -486,7 +486,7 @@ namespace AT {
         
         bool usesCustomHover() const override { return true; }
         
-
+                        
         bool customIsHovered() const override {
             auto handler = getHandler();
             if (!handler) return false;
@@ -494,9 +494,56 @@ namespace AT {
             ImVec2 pos = getPos();
             ImVec2 size = getSize();
             
-            return ImGui::IsMouseHoveringRect(handler->grid2screen(pos), handler->grid2screen(pos + size));
+            // Convert to screen coordinates for accurate hover detection
+            ImVec2 screenMin = handler->grid2screen(pos);
+            
+            // Only the header area (top portion) should be hoverable for dragging
+            float headerHeight = 25.0f;
+            ImVec2 headerMax = ImVec2(screenMin.x + size.x, screenMin.y + headerHeight);
+            
+            return ImGui::IsMouseHoveringRect(screenMin, headerMax);
         }
         
+        // In the comment_node class in nodes.h, add this method:
+        void handleDragging() {
+            auto handler = getHandler();
+            if (!handler) return;
+
+            bool mouseClickState = handler->getSingleUseClick();
+            
+            // Only handle dragging if we're actually hovered (over header/border)
+            if (isHovered() && mouseClickState && !handler->isBoxSelecting()) {
+                handler->consumeSingleUseClick();
+                m_dragged = true;
+                handler->draggingNode(true);
+                
+                // Initialize m_posTarget to current position when starting drag
+                m_posTarget = getPos();
+            }
+            
+            if (m_dragged || (isSelected() && handler->isNodeDragged())) {
+                float step = handler->getStyle().grid_size / handler->getStyle().grid_subdivisions;
+                
+                // Convert mouse delta from screen space to grid space
+                ImVec2 mouseDelta = ImGui::GetIO().MouseDelta;
+                if (handler->getGrid().scale() > 0) {
+                    mouseDelta.x /= handler->getGrid().scale();
+                    mouseDelta.y /= handler->getGrid().scale();
+                }
+                
+                m_posTarget += mouseDelta;
+                
+                // "Slam" The position to grid
+                setPos(ImVec2(round(m_posTarget.x / step) * step, round(m_posTarget.y / step) * step));
+
+                if (ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
+                    m_dragged = false;
+                    handler->draggingNode(false);
+                    m_posTarget = getPos(); // Reset to actual position after dragging
+                }
+            }
+        }
+
 
         void updateCommentBounds() {
 
@@ -556,6 +603,7 @@ namespace AT {
         const std::set<ImFlow::NodeUID>& get_contained_nodes() const { return m_containedNodes; }
         
         //
+
         void customDraw(ImDrawList* draw_list, const ImVec2& offset) override {
             
             auto handler = getHandler();
@@ -564,15 +612,23 @@ namespace AT {
             updateCommentBounds();
             ImVec2 screenPos = handler->grid2screen(getPos());
             ImVec2 size = getSize();
+                    
+            // Handle dragging first
+            handleDragging();
             
             // Draw main comment box (semi-transparent background with border)
             ImU32 bgColor = m_bgColor;
             ImU32 borderColor = m_borderColor;
             ImU32 headerBgColor = m_headerColor;
             
+            // If in adding mode, highlight the border
+            if (m_addingNodesMode) {
+                borderColor = IM_COL32(255, 255, 0, 255); // Yellow highlight
+            }
+            
             // Main box
             draw_list->AddRectFilled(screenPos, screenPos + size, bgColor, 2.0f);
-            draw_list->AddRect(screenPos, screenPos + size, borderColor, 2.0f, 0, 0.0f);
+            draw_list->AddRect(screenPos, screenPos + size, borderColor, 2.0f, 0, m_addingNodesMode ? 3.0f : 2.0f);
             
             // Header box (for comment text)
             float headerHeight = 25.0f;
@@ -581,13 +637,13 @@ namespace AT {
             
             // Draw comment text
             ImGui::SetCursorScreenPos(screenPos + ImVec2(5.0f, 5.0f));
-            ImGui::PushItemWidth(size.x - 35.0f); // Leave space for settings button
+            ImGui::PushItemWidth(size.x - 70.0f); // Leave space for buttons
             
             if (m_isEditing) {
                 char buffer[256];
-                strncpy(buffer, m_commentText.c_str(), sizeof(buffer));
+                strncpy(buffer, m_comment_text.c_str(), sizeof(buffer));
                 if (ImGui::InputText("##CommentText", buffer, sizeof(buffer), ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll)) {
-                    m_commentText = buffer;
+                    m_comment_text = buffer;
                     m_isEditing = false;
                 }
                 // Stop editing if click outside
@@ -595,7 +651,7 @@ namespace AT {
                     m_isEditing = false;
                 }
             } else {
-                ImGui::TextUnformatted(m_commentText.c_str());
+                ImGui::TextUnformatted(m_comment_text.c_str());
                 // Double click to edit
                 if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
                     m_isEditing = true;
@@ -604,15 +660,37 @@ namespace AT {
             
             ImGui::PopItemWidth();
             
+            // Draw ADD button (left of settings button)
+            ImVec2 addButtonPos = screenPos + ImVec2(size.x - 50.0f, 5.0f);
+            ImGui::SetCursorScreenPos(addButtonPos);
+            
+            // Style the add button - highlight if in adding mode
+            ImU32 addButtonColor = m_addingNodesMode ? IM_COL32(100, 255, 100, 255) : IM_COL32(0, 0, 0, 0);
+            ImU32 addButtonHoveredColor = m_addingNodesMode ? IM_COL32(150, 255, 150, 255) : IM_COL32(255, 255, 255, 30);
+            ImU32 addButtonActiveColor = m_addingNodesMode ? IM_COL32(200, 255, 200, 255) : IM_COL32(255, 255, 255, 50);
+            
+            ImGui::PushStyleColor(ImGuiCol_Button, addButtonColor);
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, addButtonHoveredColor);
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, addButtonActiveColor);
+            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 200));
+            
+            if (ImGui::Button("+", ImVec2(20.0f, 15.0f))) {
+                m_addingNodesMode = !m_addingNodesMode; // Toggle mode
+                m_selectedNodesDuringAdd.clear(); // Clear previous selection
+            }
+            
+            // Add button tooltip
+            if (ImGui::IsItemHovered()) {
+                if (m_addingNodesMode) {
+                    ImGui::SetTooltip("Adding nodes mode active\n- Click nodes to add to comment\n- Hold SHIFT for multiple selection\n- Right-click or press + again to cancel");
+                } else {
+                    ImGui::SetTooltip("Add nodes to this comment\nClick to enter selection mode");
+                }
+            }
+            
             // Draw settings button in top-right corner
             ImVec2 settingsButtonPos = screenPos + ImVec2(size.x - 25.0f, 5.0f);
             ImGui::SetCursorScreenPos(settingsButtonPos);
-            
-            // Style the settings button to be subtle
-            ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(0, 0, 0, 0));
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(255, 255, 255, 30));
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive, IM_COL32(255, 255, 255, 50));
-            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 200));
             
             if (ImGui::Button("...", ImVec2(20.0f, 15.0f))) {
                 m_showSettings = !m_showSettings;
@@ -625,12 +703,17 @@ namespace AT {
                 ImGui::SetTooltip("Comment Settings");
             }
             
+            // Handle node selection when in adding mode
+            if (m_addingNodesMode) {
+                handleNodeSelectionMode();
+            }
+            
             // Draw settings window if open
             if (m_showSettings) {
                 drawSettingsWindow(screenPos, size);
             }
         }
-        
+
         //
         void drawSettingsWindow(const ImVec2& screenPos, const ImVec2& size) {
 
@@ -702,10 +785,13 @@ namespace AT {
         }
         
         //
-        void setCommentText(const std::string& text) { m_commentText = text; }
+        void setCommentText(const std::string& text) { m_comment_text = text; }
         
+        // 
+        bool isInAddingMode() const { return m_addingNodesMode; }
+
         //
-        const std::string& getCommentText() const { return m_commentText; }
+        const std::string& getCommentText() const { return m_comment_text; }
             
         SET_NODE_TYPE_NAME(comment_node)
                 
@@ -713,7 +799,7 @@ namespace AT {
         void serialize(AT::serializer::yaml& yaml) override {
             BaseNode::serialize(yaml);
             
-            yaml.entry("comment_text", m_commentText)
+            yaml.entry("comment_text", m_comment_text)
                 .entry("padding", m_padding)
                 .entry("custom_size_x", m_customSize.x)
                 .entry("custom_size_y", m_customSize.y);
@@ -736,11 +822,119 @@ namespace AT {
         }
 
     private:
+
+        void handleNodeSelectionMode() {
+            auto handler = getHandler();
+            if (!handler) return;
+            
+            // Check for right-click to cancel
+            if (ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
+                m_addingNodesMode = false;
+                m_selectedNodesDuringAdd.clear();
+                return;
+            }
+            
+            // Get shift state at the beginning so it's available throughout the function
+            bool shiftHeld = ImGui::IsKeyDown(ImGuiKey_LeftShift) || ImGui::IsKeyDown(ImGuiKey_RightShift);
+            
+            // Check for shift key release to confirm selection
+            if ((ImGui::IsKeyReleased(ImGuiKey_LeftShift) || ImGui::IsKeyReleased(ImGuiKey_RightShift)) && 
+                !m_selectedNodesDuringAdd.empty()) {
+                // Add all selected nodes and exit mode
+                for (auto nodeId : m_selectedNodesDuringAdd) {
+                    add_contained_node(nodeId);
+                }
+                m_addingNodesMode = false;
+                m_selectedNodesDuringAdd.clear();
+                return;
+            }
+            
+            // Get all nodes from the editor
+            auto& allNodes = handler->getNodes();
+            
+            // Check for left-click on nodes
+            if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+                // Find which node was clicked (if any)
+                for (auto& [nodeId, node] : allNodes) {
+                    // Skip comment nodes and ourselves
+                    if (node.get() == this || std::dynamic_pointer_cast<comment_node>(node)) {
+                        continue;
+                    }
+                    
+                    // Check if this node is hovered
+                    if (node->isHovered()) {
+                        if (shiftHeld) {
+                            // Toggle selection in multi-select mode
+                            if (m_selectedNodesDuringAdd.count(nodeId) > 0) {
+                                m_selectedNodesDuringAdd.erase(nodeId);
+                            } else {
+                                m_selectedNodesDuringAdd.insert(nodeId);
+                            }
+                        } else {
+                            // Single selection - add this node and exit mode
+                            add_contained_node(nodeId);
+                            m_addingNodesMode = false;
+                            m_selectedNodesDuringAdd.clear();
+                        }
+                        break; // Only handle one node per click
+                    }
+                }
+                
+                // If we're in multi-select mode and clicked on empty space, check if we should apply selection
+                if (shiftHeld && handler->on_free_space() && !m_selectedNodesDuringAdd.empty()) {
+                    // Add all selected nodes
+                    for (auto nodeId : m_selectedNodesDuringAdd) {
+                        add_contained_node(nodeId);
+                    }
+                    m_addingNodesMode = false;
+                    m_selectedNodesDuringAdd.clear();
+                }
+            }
+            
+            // Visual feedback for selected nodes during add mode
+            ImDrawList* draw_list = ImGui::GetWindowDrawList();
+            for (auto& [nodeId, node] : allNodes) {
+                if (node.get() == this || std::dynamic_pointer_cast<comment_node>(node)) {
+                    continue;
+                }
+                
+                ImVec2 nodeScreenPos = handler->grid2screen(node->getPos()) - ImVec2(15, 5);
+                ImVec2 nodeSize = node->getFullSize() + ImVec2(10, 10);
+                
+                if (m_selectedNodesDuringAdd.count(nodeId) > 0) {   // Highlight selected nodes with a green border
+                    draw_list->AddRect(nodeScreenPos, nodeScreenPos + nodeSize, IM_COL32(100, 255, 100, 255), 0.0f, 0, 3.0f);
+                } else if (node->isHovered()) {                     // Highlight hovered nodes with a yellow border
+                    draw_list->AddRect(nodeScreenPos, nodeScreenPos + nodeSize, IM_COL32(255, 255, 100, 255), 0.0f, 0, 2.0f);
+                }
+            }
+            
+            // Draw instruction text
+            ImVec2 screenPos = handler->grid2screen(getPos());
+            ImVec2 instructionPos = screenPos + ImVec2(5, getSize().y + 5);
+            std::string instruction;
+            
+            if (!m_selectedNodesDuringAdd.empty()) {
+                instruction = shiftHeld ? 
+                    "SHIFT: Release SHIFT to confirm selection, click empty space to confirm" : 
+                    "Release SHIFT to confirm selection, or click empty space to confirm";
+            } else {
+                instruction = shiftHeld ? 
+                    "SHIFT: Click nodes to multi-select, release SHIFT to confirm" : 
+                    "Click nodes to add to comment, hold SHIFT for multiple";
+            }
+            
+            draw_list->AddText(instructionPos, IM_COL32(255, 255, 255, 255), instruction.c_str());
+        }
+        
         std::set<ImFlow::NodeUID>       m_containedNodes;
-        std::string                     m_commentText;
+        std::string                     m_comment_text;
         bool                            m_isEditing = false;
         bool                            m_showSettings = false;
         ImVec2                          m_customSize;  // Custom size for comment node
+        bool                            m_dragged{};
+        ImVec2                          m_posTarget{};
+        bool                            m_addingNodesMode = false;  // track if we're in add mode
+        std::set<ImFlow::NodeUID>       m_selectedNodesDuringAdd;   // track nodes selected during add mode
 
         // appearance settings
         ImU32                           m_headerColor;
@@ -808,38 +1002,38 @@ namespace AT {
     struct NodeDefinition {
         const char* name;
         const char* category;
-        std::function<void(ImFlow::ImNodeFlow& editor)> creator;
+        // std::function<std::shared_ptr<ImFlow::BaseNode>(ImFlow::ImNodeFlow& editor, const ImVec2& pos)> creator;
+        std::function<void(ImFlow::ImNodeFlow& editor, const ImVec2& pos)> creator;
         const char* description;
     };
 
-    
     static std::vector<NodeDefinition> node_list = {
         {"Begin", "Execution",
-            [](ImFlow::ImNodeFlow& editor) { editor.placeNode<BeginNode>(); },
+            [](ImFlow::ImNodeFlow& editor, const ImVec2& pos) { editor.addNode<BeginNode>(pos); },
             "Start execution flow"},
         
         {"Add", "Math Operations",
-            [](ImFlow::ImNodeFlow& editor) { editor.placeNode<AddNode>(); },
+            [](ImFlow::ImNodeFlow& editor, const ImVec2& pos) { editor.addNode<AddNode>(pos); },
             "A + B"},
         
         {"Multiply", "Math Operations",
-            [](ImFlow::ImNodeFlow& editor) { editor.placeNode<MultiplyNode>(); },
+            [](ImFlow::ImNodeFlow& editor, const ImVec2& pos) { editor.addNode<MultiplyNode>(pos); },
             "A × B"},
         
         {"Subtract", "Math Operations", 
-            [](ImFlow::ImNodeFlow& editor) { editor.placeNode<SubtractNode>(); }, 
+            [](ImFlow::ImNodeFlow& editor, const ImVec2& pos) { editor.addNode<SubtractNode>(pos); }, 
             "A - B"},
         
         {"Multi Operation", "Math Operations", 
-            [](ImFlow::ImNodeFlow& editor) { editor.placeNode<MultiOperationNode>(); },
+            [](ImFlow::ImNodeFlow& editor, const ImVec2& pos) { editor.addNode<MultiOperationNode>(pos); },
             "16 math operations in one node"},
         
         {"Plotter", "Visualization", 
-            [](ImFlow::ImNodeFlow& editor) { editor.placeNode<PlotterNode>(); },
+            [](ImFlow::ImNodeFlow& editor, const ImVec2& pos) { editor.addNode<PlotterNode>(pos); },
             "Create various types of plots and charts"},
 
         {"Comment", "Organization",
-            [](ImFlow::ImNodeFlow& editor) { editor.placeNode<comment_node>(); },
+            [](ImFlow::ImNodeFlow& editor, const ImVec2& pos) { editor.addNode<comment_node>(pos); },
             "Group nodes with a comment box"},
     };
 

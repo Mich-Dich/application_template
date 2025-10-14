@@ -52,195 +52,203 @@ namespace AT {
     }
 
 
-    void visual_programming_editor::setup_right_click_menu() {
-        m_editor.rightClickPopUpContent([this](ImFlow::BaseNode* node) {
-            if (node == nullptr) {
-                // Search bar - use member variable instead of static
-                ImGui::SetNextItemWidth(-1);
-                if (ImGui::InputTextWithHint("##Search", "Search nodes...", m_searchBuffer, IM_ARRAYSIZE(m_searchBuffer))) {
-                    m_searchActive = true;
-                }
-                
-                ImGui::Separator();
+void visual_programming_editor::setup_right_click_menu() {
+    m_editor.rightClickPopUpContent([this](ImFlow::BaseNode* node) {
+        
+        ImVec2 contextMenuPos = ImGui::GetWindowPos();      // Store the position where the context menu was opened
+        if (node == nullptr) {
+            
+            // Search bar - use member variable instead of static
+            ImGui::SetNextItemWidth(-1);
+            if (ImGui::InputTextWithHint("##Search", "Search nodes...", m_searchBuffer, IM_ARRAYSIZE(m_searchBuffer))) {
+                m_searchActive = true;
+            }
+            
+            ImGui::Separator();
 
-                // Group nodes by category
-                std::map<std::string, std::vector<NodeDefinition>> categorized_nodes;
-                for (const auto& node_def : node_list) {
-                    categorized_nodes[node_def.category].push_back(node_def);
+            // Group nodes by category
+            std::map<std::string, std::vector<NodeDefinition>> categorized_nodes;
+            for (const auto& node_def : node_list) {
+                categorized_nodes[node_def.category].push_back(node_def);
+            }
+            
+            // Filter nodes based on search
+            std::string search_lower = m_searchBuffer;
+            std::transform(search_lower.begin(), search_lower.end(), search_lower.begin(), ::tolower);
+            
+            bool any_visible = false;
+            
+            ImGui::BeginChild("NodeList", ImVec2(300, 350), true);
+            for (const auto& [category, nodes_in_category] : categorized_nodes) {
+                std::vector<NodeDefinition> filtered_nodes;
+                
+                // Filter nodes in this category
+                for (const auto& node_def : nodes_in_category) {
+                    std::string name_lower = node_def.name;
+                    std::transform(name_lower.begin(), name_lower.end(), name_lower.begin(), ::tolower);
+                    std::string desc_lower = node_def.description;
+                    std::transform(desc_lower.begin(), desc_lower.end(), desc_lower.begin(), ::tolower);
+                    std::string category_lower = category;
+                    std::transform(category_lower.begin(), category_lower.end(), category_lower.begin(), ::tolower);
+                    
+                    if (search_lower.empty() || 
+                        name_lower.find(search_lower) != std::string::npos ||
+                        desc_lower.find(search_lower) != std::string::npos ||
+                        category_lower.find(search_lower) != std::string::npos) {
+                        filtered_nodes.push_back(node_def);
+                    }
                 }
                 
-                // Filter nodes based on search
-                std::string search_lower = m_searchBuffer;
-                std::transform(search_lower.begin(), search_lower.end(), search_lower.begin(), ::tolower);
-                
-                bool any_visible = false;
-                
-                ImGui::BeginChild("NodeList", ImVec2(300, 350), true);
-                for (const auto& [category, nodes_in_category] : categorized_nodes) {
-                    std::vector<NodeDefinition> filtered_nodes;
+                if (!filtered_nodes.empty()) {
+                    any_visible = true;
                     
-                    // Filter nodes in this category
-                    for (const auto& node_def : nodes_in_category) {
-                        std::string name_lower = node_def.name;
-                        std::transform(name_lower.begin(), name_lower.end(), name_lower.begin(), ::tolower);
-                        std::string desc_lower = node_def.description;
-                        std::transform(desc_lower.begin(), desc_lower.end(), desc_lower.begin(), ::tolower);
-                        std::string category_lower = category;
-                        std::transform(category_lower.begin(), category_lower.end(), category_lower.begin(), ::tolower);
-                        
-                        if (search_lower.empty() || 
-                            name_lower.find(search_lower) != std::string::npos ||
-                            desc_lower.find(search_lower) != std::string::npos ||
-                            category_lower.find(search_lower) != std::string::npos) {
-                            filtered_nodes.push_back(node_def);
-                        }
-                    }
-                    
-                    if (!filtered_nodes.empty()) {
-                        any_visible = true;
-                        
-                        ImGuiTreeNodeFlags category_flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed;
-                        if (ImGui::TreeNodeEx(category.c_str(), category_flags)) {
-                            for (const auto& node_def : filtered_nodes) {
-                                ImGui::PushID(node_def.name);
+                    ImGuiTreeNodeFlags category_flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed;
+                    if (ImGui::TreeNodeEx(category.c_str(), category_flags)) {
+                        for (const auto& node_def : filtered_nodes) {
+                            ImGui::PushID(node_def.name);
+                            
+                            ImGui::Selectable(node_def.name, false);
+                            if (ImGui::IsItemHovered()) {
+                                ImGui::BeginTooltip();
+                                ImGui::TextUnformatted(node_def.description);
+                                ImGui::EndTooltip();
                                 
-                                if (ImGui::Selectable(node_def.name, false, ImGuiSelectableFlags_AllowDoubleClick)) {
-                                    if (ImGui::IsMouseDoubleClicked(0)) {
-                                        LOG(Info, "Creating a new node: " << node_def.name)
-                                        try {
-                                            node_def.creator(m_editor);
-                                            ImGui::CloseCurrentPopup();
-                                            memset(m_searchBuffer, 0, sizeof(m_searchBuffer));
-                                            m_unsavedChanges = true;
-                                            m_searchActive = false;
-                                        } catch (const std::exception& e) {
-                                            LOG(Error, "Failed to create node: " << e.what())
-                                        }
-                                    }
+                                if (ImGui::IsMouseClicked(0)) {
+                                    ImVec2 gridPos = m_editor.screen2grid(contextMenuPos);
+                                    node_def.creator(m_editor, gridPos);
+                                    ImGui::CloseCurrentPopup();
+                                    memset(m_searchBuffer, 0, sizeof(m_searchBuffer));
+                                    m_unsavedChanges = true;
+                                    m_searchActive = false;
                                 }
-                                
-                                if (ImGui::IsItemHovered()) {
-                                    ImGui::BeginTooltip();
-                                    ImGui::TextUnformatted(node_def.description);
-                                    ImGui::EndTooltip();
-                                    
-                                    if (ImGui::IsMouseClicked(0)) {
-                                        node_def.creator(m_editor);
-                                        ImGui::CloseCurrentPopup();
-                                        memset(m_searchBuffer, 0, sizeof(m_searchBuffer));
-                                        m_unsavedChanges = true;
-                                        m_searchActive = false;
-                                    }
-                                }
-                                
-                                ImGui::PopID();
                             }
-                            ImGui::TreePop();
+                            
+                            ImGui::PopID();
                         }
+                        ImGui::TreePop();
                     }
-                }
-                
-                if (!any_visible && !search_lower.empty()) {
-                    ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.5f, 1.0f), "No nodes found matching: '%s'", m_searchBuffer);
-                    ImGui::Text("Try different search terms");
-                }
-                
-                ImGui::EndChild();
-                
-                ImGui::Separator();
-                if (ImGui::Button("Clear Search", ImVec2(100, 0))) {
-                    memset(m_searchBuffer, 0, sizeof(m_searchBuffer));
-                    m_searchActive = false;
-                }
-                ImGui::SameLine();
-                ImGui::TextDisabled("%zu nodes available", node_list.size());
-                
-            } else {        // Right-click on a specific node - show simple context menu
-
-                ImGui::TextColored(ImVec4(1, 1, 0, 1), "Node: %s", node->getName().c_str());
-                ImGui::Separator();
-                
-                if (ImGui::MenuItem("Delete")) {
-                    node->destroy();
-                    m_unsavedChanges = true;
-                }
-                
-                if (ImGui::MenuItem("Duplicate")) {
-                    // Basic duplication logic
-                    auto pos = node->getPos();
-                    auto new_pos = ImVec2(pos.x + 50, pos.y + 50);
-                    
-                    const auto& node_name = node->getName();
-
-                    bool found_node_def = false;
-                    for (const auto def : node_list) {
-
-                        if (def.name != node_name)
-                            continue;
-
-                        def.creator(m_editor);
-                        found_node_def = true;
-                    }
-                    VALIDATE(found_node_def, , "", "Failed to duplicate node")
-                    m_unsavedChanges = true;
-                }
-                
-                ImGui::SeparatorText("Comment Assignment");
-
-                // Find all comment nodes in the editor
-                auto& allNodes = m_editor.getNodes();
-                std::vector<std::shared_ptr<comment_node>> comment_nodes;
-                std::vector<std::shared_ptr<comment_node>> containingComments;
-
-                for (auto& [id, nodePtr] : allNodes) {
-                    if (auto loc_comment_node = std::dynamic_pointer_cast<comment_node>(nodePtr)) {
-                        comment_nodes.push_back(loc_comment_node);
-                        // Check if this node is already in the comment
-                        if (loc_comment_node->get_contained_nodes().count(node->getUID()) > 0) {
-                            containingComments.push_back(loc_comment_node);
-                        }
-                    }
-                }
-
-                if (!comment_nodes.empty()) {
-                    // Show which comments already contain this node
-                    if (!containingComments.empty()) {
-                        ImGui::TextDisabled("Currently in:");
-                        for (auto& comment_node : containingComments) {
-                            if (ImGui::MenuItem(("Remove from: " + comment_node->getCommentText()).c_str())) {
-                                comment_node->remove_contained_node(node->getUID());
-                                m_unsavedChanges = true;
-                            }
-                        }
-                        ImGui::Separator();
-                    }
-                    
-                    ImGui::TextDisabled("Add to comment:");
-                    for (auto& comment_node : comment_nodes) {
-                        // Don't show comments that already contain this node
-                        if (comment_node->get_contained_nodes().count(node->getUID()) == 0) {
-                            std::string menuText = comment_node->getCommentText();
-                            if (menuText.length() > 30) {
-                                menuText = menuText.substr(0, 27) + "...";
-                            }
-                            if (ImGui::MenuItem(menuText.c_str())) {
-                                comment_node->add_contained_node(node->getUID());
-                                m_unsavedChanges = true;
-                            }
-                        }
-                    }
-                } else {
-                    ImGui::TextDisabled("No comment nodes available");
                 }
             }
-        });
-    }
+            
+            if (!any_visible && !search_lower.empty()) {
+                ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.5f, 1.0f), "No nodes found matching: '%s'", m_searchBuffer);
+                ImGui::Text("Try different search terms");
+            }
+            
+            ImGui::EndChild();
+            
+            ImGui::Separator();
+            if (ImGui::Button("Clear Search", ImVec2(100, 0))) {
+                memset(m_searchBuffer, 0, sizeof(m_searchBuffer));
+                m_searchActive = false;
+            }
+            ImGui::SameLine();
+            ImGui::TextDisabled("%zu nodes available", node_list.size());
+            
+        } else {        // Right-click on a specific node - show simple context menu
+
+            ImGui::TextColored(ImVec4(1, 1, 0, 1), "Node: %s", node->getName().c_str());
+            ImGui::Separator();
+            
+            if (ImGui::MenuItem("Delete")) {
+                node->destroy();
+                m_unsavedChanges = true;
+            }
+            
+            if (ImGui::MenuItem("Duplicate")) {
+                // Store position for duplication
+                contextMenuPos = ImGui::GetMousePos();
+                
+                // Basic duplication logic - place duplicate near the original with offset
+                auto pos = node->getPos();
+                auto new_pos = ImVec2(pos.x + 50, pos.y + 50);
+                
+                const auto& node_name = node->getName();
+
+                bool found_node_def = false;
+                for (const auto& def : node_list) {
+                    if (def.name != node_name)
+                        continue;
+
+                    // Convert screen position to grid position for the duplicate
+                    ImVec2 gridPos = m_editor.screen2grid(contextMenuPos);
+                    // Use the context menu position with a small offset for the duplicate
+                    def.creator(m_editor, ImVec2(gridPos.x + 50, gridPos.y + 50));
+                    found_node_def = true;
+                }
+                VALIDATE(found_node_def, , "", "Failed to duplicate node")
+                m_unsavedChanges = true;
+            }
+            
+            ImGui::SeparatorText("Comment Assignment");
+
+            // Find all comment nodes in the editor
+            auto& allNodes = m_editor.getNodes();
+            std::vector<std::shared_ptr<comment_node>> comment_nodes;
+            std::vector<std::shared_ptr<comment_node>> containingComments;
+
+            for (auto& [id, nodePtr] : allNodes) {
+                if (auto loc_comment_node = std::dynamic_pointer_cast<comment_node>(nodePtr)) {
+                    comment_nodes.push_back(loc_comment_node);
+                    // Check if this node is already in the comment
+                    if (loc_comment_node->get_contained_nodes().count(node->getUID()) > 0) {
+                        containingComments.push_back(loc_comment_node);
+                    }
+                }
+            }
+
+            if (!comment_nodes.empty()) {
+                // Show which comments already contain this node
+                if (!containingComments.empty()) {
+                    ImGui::TextDisabled("Currently in:");
+                    for (auto& comment_node : containingComments) {
+                        if (ImGui::MenuItem(("Remove from: " + comment_node->getCommentText()).c_str())) {
+                            comment_node->remove_contained_node(node->getUID());
+                            m_unsavedChanges = true;
+                        }
+                    }
+                    ImGui::Separator();
+                }
+                
+                ImGui::TextDisabled("Add to comment:");
+                for (auto& comment_node : comment_nodes) {
+                    // Don't show comments that already contain this node
+                    if (comment_node->get_contained_nodes().count(node->getUID()) == 0) {
+                        std::string menuText = comment_node->getCommentText();
+                        if (menuText.length() > 30) {
+                            menuText = menuText.substr(0, 27) + "...";
+                        }
+                        if (ImGui::MenuItem(menuText.c_str())) {
+                            comment_node->add_contained_node(node->getUID());
+                            m_unsavedChanges = true;
+                        }
+                    }
+                }
+            } else {
+                ImGui::TextDisabled("No comment nodes available");
+            }
+        }
+    });
+}
 
 
     void visual_programming_editor::update(const f32 delta_time) {
 
         // Currently nothing to update per frame, but can add animation or other logic here
         (void)delta_time; // Prevent unused parameter warning
+        
+        // Check if any comment node is in adding mode and mark unsaved changes when nodes are added
+        auto& nodes = m_editor.getNodes();
+        for (auto& [id, node] : nodes) {
+            if (auto comment = std::dynamic_pointer_cast<comment_node>(node)) {
+                // If a comment was in adding mode but just exited it, nodes were likely added
+                static std::set<ImFlow::NodeUID> previouslyInAddMode;
+                
+                // Check if this comment is currently in adding mode
+                // We'll need to add a method to check this - let's add it to comment_node
+                // For now, we'll handle this through the node selection logic in comment_node
+            }
+        }
     }
 
 
