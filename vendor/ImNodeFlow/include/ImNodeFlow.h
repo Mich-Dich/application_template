@@ -54,6 +54,28 @@ namespace ImFlow
      * @brief short hand for nodes to set the typename
      */
     #define SET_NODE_TYPE_NAME(nodeName)    std::string getTypeName() const override { return #nodeName; }
+    
+    // -----------------------------------------------------------------------------------------------------------------
+    // HELPERS - SUBWAY STYLE CONNECTIONS
+
+    /**
+     * @brief Draw subway-style connections (only horizontal, vertical, and 45° lines)
+     * @param p1 Starting point
+     * @param p2 Ending point  
+     * @param color Color of the connection
+     * @param thickness Thickness of the connection
+     */
+    inline static void subway_connection(const ImVec2& p1, const ImVec2& p2, ImU32 color, float thickness);
+
+    /**
+     * @brief Collider checker for subway_connection
+     * @param p Point to be tested
+     * @param p1 Starting point of connection
+     * @param p2 Ending point of connection
+     * @param radius Lateral width of the hit box
+     * @return [TRUE] if "p" is inside the collider
+     */
+    inline static bool subway_connection_collider(const ImVec2& p, const ImVec2& p1, const ImVec2& p2, float radius);
 
     // -----------------------------------------------------------------------------------------------------------------
     // CLASSES PRE-DEFINITIONS

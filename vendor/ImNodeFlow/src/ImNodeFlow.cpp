@@ -14,7 +14,8 @@ namespace ImFlow {
         if (!ImGui::IsKeyDown(ImGuiKey_LeftCtrl) && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
             m_selected = false;
 
-        if (smart_bezier_collider(ImGui::GetMousePos(), start, end, 2.5)) {
+        // Replace smart_bezier_collider with subway_connection_collider
+        if (subway_connection_collider(ImGui::GetMousePos(), start, end, 2.5)) {
             m_hovered = true;
             thickness = m_left->getStyle()->extra.link_hovered_thickness;
             if (mouseClickState) {
@@ -24,9 +25,12 @@ namespace ImFlow {
         } else { m_hovered = false; }
 
         if (m_selected)
-            smart_bezier(start, end, m_left->getStyle()->extra.outline_color,
-                         thickness + m_left->getStyle()->extra.link_selected_outline_thickness);
-        smart_bezier(start, end, m_left->getStyle()->color, thickness);
+            // Replace smart_bezier with subway_connection for outline
+            subway_connection(start, end, m_left->getStyle()->extra.outline_color,
+                        thickness + m_left->getStyle()->extra.link_selected_outline_thickness);
+        
+        // Replace smart_bezier with subway_connection for main line
+        subway_connection(start, end, m_left->getStyle()->color, thickness);
 
         if (m_selected && ImGui::IsKeyPressed(ImGuiKey_Delete, false))
             m_right->deleteLink();
@@ -35,6 +39,123 @@ namespace ImFlow {
 
     Link::~Link() {
         m_left->deleteLink();
+    }
+
+    // -----------------------------------------------------------------------------------------------------------------
+    // SUBWAY STYLE CONNECTIONS
+
+    // Helper function to calculate distance from point to line segment
+    inline static float ImPointSegmentDistance(const ImVec2& p, const ImVec2& a, const ImVec2& b) {
+        ImVec2 ab = b - a;
+        ImVec2 ap = p - a;
+        
+        float ab_length_sq = ab.x * ab.x + ab.y * ab.y;
+        if (ab_length_sq < 1e-6f) {
+            // a and b are the same point
+            return ImLength(ap);
+        }
+        
+        // Project point onto the segment
+        float t = ImClamp(ImDot(ap, ab) / ab_length_sq, 0.0f, 1.0f);
+        ImVec2 projection = a + t * ab;
+        
+        return ImLength(p - projection);
+    }
+
+
+    // -----------------------------------------------------------------------------------------------------------------
+    // SUBWAY STYLE CONNECTIONS - SMART 45° ROUTING
+
+    inline static void subway_connection(const ImVec2& p1, const ImVec2& p2, ImU32 color, float thickness) {
+        ImDrawList* draw_list = ImGui::GetWindowDrawList();
+        
+        ImVec2 delta = p2 - p1;
+        float abs_dx = fabsf(delta.x);
+        float abs_dy = fabsf(delta.y);
+        
+        // Choose routing based on direction to create nice 45° diagonals
+        if (delta.x * delta.y > 0) {
+            // Same direction (bottom-right or top-left)
+            // Use two 45° segments with a diagonal in the middle
+            float diagonal_length = ImMin(abs_dx, abs_dy);
+            float remaining = (ImMax(abs_dx, abs_dy) - diagonal_length) * 0.5f;
+            
+            if (abs_dx > abs_dy) {
+                ImVec2 p1_horiz = p1 + ImVec2(delta.x > 0 ? remaining : -remaining, 0);
+                ImVec2 p2_diag = p1_horiz + ImVec2(delta.x > 0 ? diagonal_length : -diagonal_length, 
+                                                delta.y > 0 ? diagonal_length : -diagonal_length);
+                draw_list->AddLine(p1, p1_horiz, color, thickness);
+                draw_list->AddLine(p1_horiz, p2_diag, color, thickness);
+                draw_list->AddLine(p2_diag, p2, color, thickness);
+            } else {
+                ImVec2 p1_vert = p1 + ImVec2(0, delta.y > 0 ? remaining : -remaining);
+                ImVec2 p2_diag = p1_vert + ImVec2(delta.x > 0 ? diagonal_length : -diagonal_length,
+                                                delta.y > 0 ? diagonal_length : -diagonal_length);
+                draw_list->AddLine(p1, p1_vert, color, thickness);
+                draw_list->AddLine(p1_vert, p2_diag, color, thickness);
+                draw_list->AddLine(p2_diag, p2, color, thickness);
+            }
+        } else {
+            // Opposite direction (bottom-left or top-right)
+            // Use a single 45° diagonal in the middle
+            float diagonal_length = ImMin(abs_dx, abs_dy);
+            
+            if (abs_dx > abs_dy) {
+                float remaining = (abs_dx - diagonal_length) * 0.5f;
+                ImVec2 p1_horiz = p1 + ImVec2(delta.x > 0 ? remaining : -remaining, 0);
+                ImVec2 p2_diag = p1_horiz + ImVec2(delta.x > 0 ? diagonal_length : -diagonal_length, delta.y);
+                draw_list->AddLine(p1, p1_horiz, color, thickness);
+                draw_list->AddLine(p1_horiz, p2_diag, color, thickness);
+                draw_list->AddLine(p2_diag, p2, color, thickness);
+            } else {
+                float remaining = (abs_dy - diagonal_length) * 0.5f;
+                ImVec2 p1_vert = p1 + ImVec2(0, delta.y > 0 ? remaining : -remaining);
+                ImVec2 p2_diag = p1_vert + ImVec2(delta.x, delta.y > 0 ? diagonal_length : -diagonal_length);
+                draw_list->AddLine(p1, p1_vert, color, thickness);
+                draw_list->AddLine(p1_vert, p2_diag, color, thickness);
+                draw_list->AddLine(p2_diag, p2, color, thickness);
+            }
+        }
+    }
+
+
+    inline static bool subway_connection_collider(const ImVec2& p, const ImVec2& p1, const ImVec2& p2, float radius) {
+        ImVec2 delta = p2 - p1;
+        float abs_dx = fabsf(delta.x);
+        float abs_dy = fabsf(delta.y);
+        
+        // Check collision with each segment based on the connection type
+        if (abs_dx > abs_dy) {
+            // Horizontal-diagonal-horizontal pattern
+            float diagonal_length = abs_dy;
+            float remaining_horizontal = (abs_dx - diagonal_length) * 0.5f;
+            
+            ImVec2 p1_horizontal = p1 + ImVec2(delta.x > 0 ? remaining_horizontal : -remaining_horizontal, 0);
+            ImVec2 p2_diagonal = p1_horizontal + ImVec2(delta.x > 0 ? diagonal_length : -diagonal_length, delta.y);
+            
+            // Check first horizontal segment
+            if (ImPointSegmentDistance(p, p1, p1_horizontal) <= radius) return true;
+            // Check diagonal segment  
+            if (ImPointSegmentDistance(p, p1_horizontal, p2_diagonal) <= radius) return true;
+            // Check second horizontal segment
+            if (ImPointSegmentDistance(p, p2_diagonal, p2) <= radius) return true;
+        } else {
+            // Vertical-diagonal-vertical pattern
+            float diagonal_length = abs_dx;
+            float remaining_vertical = (abs_dy - diagonal_length) * 0.5f;
+            
+            ImVec2 p1_vertical = p1 + ImVec2(0, delta.y > 0 ? remaining_vertical : -remaining_vertical);
+            ImVec2 p2_diagonal = p1_vertical + ImVec2(delta.x, delta.y > 0 ? diagonal_length : -diagonal_length);
+            
+            // Check first vertical segment
+            if (ImPointSegmentDistance(p, p1, p1_vertical) <= radius) return true;
+            // Check diagonal segment
+            if (ImPointSegmentDistance(p, p1_vertical, p2_diagonal) <= radius) return true;
+            // Check second vertical segment
+            if (ImPointSegmentDistance(p, p2_diagonal, p2) <= radius) return true;
+        }
+        
+        return false;
     }
 
     // -----------------------------------------------------------------------------------------------------------------
@@ -397,11 +518,13 @@ namespace ImFlow {
             m_dragOut = m_hovering;
         if (m_dragOut) {
             if (m_dragOut->getType() == PinType_Output)
-                smart_bezier(m_dragOut->pinPoint(), ImGui::GetMousePos(), m_dragOut->getStyle()->color,
-                             m_dragOut->getStyle()->extra.link_dragged_thickness);
+                // Replace smart_bezier with subway_connection
+                subway_connection(m_dragOut->pinPoint(), ImGui::GetMousePos(), m_dragOut->getStyle()->color,
+                            m_dragOut->getStyle()->extra.link_dragged_thickness);
             else
-                smart_bezier(ImGui::GetMousePos(), m_dragOut->pinPoint(), m_dragOut->getStyle()->color,
-                             m_dragOut->getStyle()->extra.link_dragged_thickness);
+                // Replace smart_bezier with subway_connection  
+                subway_connection(ImGui::GetMousePos(), m_dragOut->pinPoint(), m_dragOut->getStyle()->color,
+                            m_dragOut->getStyle()->extra.link_dragged_thickness);
 
             if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
                 m_dragOut = nullptr;
