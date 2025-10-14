@@ -1,8 +1,16 @@
 #include "util/pch.h"
-#include <dlfcn.h>
+
+#if defined(PLATFORM_LINUX)
+    #include <dlfcn.h>
+#elif defined(PLATFORM_WINDOWS)
+    #include <windows.h>
+#else
+    #error Undefined PLatform
+#endif
 
 #include "logger_wrapper.h"
 #include "plugin_manager.h"
+
 
 namespace AT {
 
@@ -11,29 +19,56 @@ namespace AT {
 
     plugin_manager::~plugin_manager() {
         for (auto handle : handles_) {
-            dlclose(handle);
+
+            #if defined(PLATFORM_LINUX)
+                dlclose(handle);
+            #else
+                FreeLibrary(static_cast<HMODULE>(handle));
+            #endif
         }
     }
 
     void plugin_manager::load_plugin(const std::filesystem::path& path) {
         
-        void* handle = dlopen(path.string().c_str(), RTLD_LAZY);
-        if (!handle)
-            throw std::runtime_error(dlerror());
         
-        // Get factory functions
-        auto create_plugin = reinterpret_cast<create_plugin_func>(dlsym(handle, "create_plugin"));
-        auto create_plugin_error = dlerror();
-        
-        auto destroy_plugin = reinterpret_cast<destroy_plugin_func>(dlsym(handle, "destroy_plugin"));
-        auto destroy_plugin_error = dlerror();
+        #if defined(PLATFORM_LINUX)
+            void* handle = dlopen(path.string().c_str(), RTLD_LAZY);
+            if (!handle)
+                throw std::runtime_error(dlerror());
+        #else
+            // Convert to wide string for Windows Unicode API
+            std::wstring wide_path = path.wstring();
+            HMODULE handle = LoadLibraryW(wide_path.c_str());
+            if (!handle) {
+                DWORD error = GetLastError();
+                throw std::runtime_error("Failed to load library, error code: " + std::to_string(error));
+            }
+        #endif
+
+        #if defined(PLATFORM_LINUX)
+            // Get factory functions
+            auto create_plugin = reinterpret_cast<create_plugin_func>(dlsym(handle, "create_plugin"));
+            auto create_plugin_error = dlerror();
+            
+            auto destroy_plugin = reinterpret_cast<destroy_plugin_func>(dlsym(handle, "destroy_plugin"));
+            auto destroy_plugin_error = dlerror();
+        #else
+            auto create_plugin = reinterpret_cast<create_plugin_func>(GetProcAddress(handle, "create_plugin"));
+            auto destroy_plugin = reinterpret_cast<destroy_plugin_func>(GetProcAddress(handle, "destroy_plugin"));
+        #endif
         
         if (!create_plugin || !destroy_plugin) {
-            dlclose(handle);
-            std::cout << "Symbol lookup errors:" << std::endl;
-            if (create_plugin_error)    LOG(Error, "create_plugin: [" << create_plugin_error << "]");
-            if (destroy_plugin_error)   LOG(Error, "destroy_plugin: [" << destroy_plugin_error << "]");
-            throw std::runtime_error("Failed to find plugin functions");
+
+            #if defined(PLATFORM_LINUX)
+                dlclose(handle);
+                std::cout << "Symbol lookup errors:" << std::endl;
+                if (create_plugin_error)    LOG(Error, "create_plugin: [" << create_plugin_error << "]");
+                if (destroy_plugin_error)   LOG(Error, "destroy_plugin: [" << destroy_plugin_error << "]");
+                throw std::runtime_error("Failed to find plugin functions");
+            #else
+                FreeLibrary(handle);
+                throw std::runtime_error("Failed to find plugin functions");
+            #endif
         }
         
         // Create plugin instance with custom deleter

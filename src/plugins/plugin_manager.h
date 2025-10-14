@@ -38,7 +38,13 @@ namespace AT {
         }
 
     private:
-        std::vector<void*> handles_;
+
+        #if defined(PLATFORM_LINUX)
+            std::vector<void*> handles_;
+        #else
+            std::vector<HMODULE> handles_;
+        #endif
+
         std::unordered_map<std::string, std::shared_ptr<plugin>> m_plugins;
     };
     

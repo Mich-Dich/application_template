@@ -108,14 +108,19 @@ namespace AT {
     u32 image::get_height() const { return m_image_extent.height; }
 
     ImTextureID image::get() {
-#if defined(RENDER_API_VULKAN)
-		if (m_descriptor_set == nullptr)
-			m_descriptor_set = (VkDescriptorSet)ImGui_ImplVulkan_AddTexture(GET_RENDERER_CAST_TO_API->get_default_sampler_linear(), m_image_view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-        return reinterpret_cast<void*>(m_descriptor_set);
+		#if defined(RENDER_API_VULKAN)
+			if (m_descriptor_set == nullptr)
+				m_descriptor_set = (VkDescriptorSet)ImGui_ImplVulkan_AddTexture(GET_RENDERER_CAST_TO_API->get_default_sampler_linear(), m_image_view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+			return reinterpret_cast<void*>(m_descriptor_set);
 
-#elif defined(RENDER_API_OPENGL)
-    	return static_cast<ImTextureID>(m_textureID);
-#endif
+		#elif defined(RENDER_API_OPENGL)
+
+			#if defined(PLATFORM_LINUX)
+				return static_cast<ImTextureID>(m_textureID);
+			#else
+				return reinterpret_cast<void*>(static_cast<uintptr_t>(m_textureID));
+			#endif
+		#endif
     }
 
 #if defined(RENDER_API_VULKAN)

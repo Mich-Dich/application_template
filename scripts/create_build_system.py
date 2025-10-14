@@ -57,9 +57,9 @@ endif()
 set(CMAKE_CONFIGURATION_TYPES "Debug;RelWithDebInfo;Release")
 
 # Set output directories with platform/configuration specific paths
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE}-${PLATFORM_NAME}-${CMAKE_HOST_SYSTEM_PROCESSOR})
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin-int/${CMAKE_BUILD_TYPE}-${PLATFORM_NAME}-${CMAKE_HOST_SYSTEM_PROCESSOR})
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin-int/${CMAKE_BUILD_TYPE}-${PLATFORM_NAME}-${CMAKE_HOST_SYSTEM_PROCESSOR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE}-${PLATFORM_NAME})
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin-int/${CMAKE_BUILD_TYPE}-${PLATFORM_NAME})
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin-int/${CMAKE_BUILD_TYPE}-${PLATFORM_NAME})
 
 # Platform-specific definitions
 if(WIN32)
@@ -107,7 +107,7 @@ add_subdirectory(vendor/imgui)
 add_subdirectory(vendor/ImNodeFlow)
 
 # add the tests
-add_subdirectory(testing)
+# add_subdirectory(testing)             # Disabled for dev
 
 # Create your main application project
 add_subdirectory(src)
@@ -121,8 +121,10 @@ project({project_name} LANGUAGES CXX)
 
 # Find required packages
 find_package(OpenGL REQUIRED)
-find_package(Qt5 COMPONENTS Core Widgets REQUIRED)  # For Qt5
-# find_package(Qt6 COMPONENTS Core Widgets REQUIRED)  # For Qt6     # not needed yet
+if (NOT WIN32)
+    find_package(Qt5 COMPONENTS Core Widgets REQUIRED)  # For Qt5
+    # find_package(Qt6 COMPONENTS Core Widgets REQUIRED)  # For Qt6     # not needed yet
+endif()
 
 # List your source files
 file(GLOB_RECURSE SOURCES_CONAN "*.cpp" "*.h")
@@ -165,9 +167,14 @@ target_include_directories({project_name} PRIVATE
     ${{CMAKE_CURRENT_SOURCE_DIR}}/../vendor/ImNodeFlow/include
     ${{CMAKE_CURRENT_SOURCE_DIR}}/../vendor/ImNodeFlow/src
     ${{CMAKE_CURRENT_SOURCE_DIR}}/../vendor/stb_image
-    ${{Qt5Core_INCLUDE_DIRS}}
-    ${{Qt5Widgets_INCLUDE_DIRS}}
 )
+
+if (NOT WIN32)
+    target_include_directories({project_name} PRIVATE
+        ${{Qt5Core_INCLUDE_DIRS}}
+        ${{Qt5Widgets_INCLUDE_DIRS}}
+    )
+endif()
 
 # Add definitions for application target
 target_compile_definitions({project_name} PRIVATE 
@@ -186,12 +193,17 @@ target_compile_definitions({project_name} PRIVATE
 # Link libraries - ADD IMNODEFLOW
 target_link_libraries({project_name} PRIVATE
     imgui
-    ImNodeFlow  # ADD THIS
+    ImNodeFlow
     glfw
     OpenGL::GL
-    Qt5::Core
-    Qt5::Widgets
 )
+    
+if(NOT WIN32)
+    target_link_libraries({project_name} PRIVATE
+        Qt5::Core
+        Qt5::Widgets
+    )
+endif()
 
 
 # Platform-specific linking
@@ -268,6 +280,11 @@ else()
     )
 endif()
 
+if(WIN32)
+    # If your main application uses WinMain (common for GUI apps)
+    target_link_options({project_name} PRIVATE -Wl,-subsystem,windows)
+endif()
+
 # Disable PCH for specific files - ADD IMNODEFLOW FILES IF NEEDED
 set_source_files_properties(
     ../vendor/implot/implot.cpp
@@ -278,7 +295,6 @@ set_source_files_properties(
     PROPERTIES
     SKIP_PRECOMPILE_HEADERS ON
 )
-
 """
     
     tests_cmake = """
