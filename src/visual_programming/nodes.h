@@ -481,6 +481,9 @@ namespace AT {
         void draw() override { /* No content in the main body */ }
         
 
+        bool isCommentNode() const override { return true; }
+
+
         bool usesCustomDrawing() const override { return true; }
         
         
@@ -503,7 +506,7 @@ namespace AT {
             
             return ImGui::IsMouseHoveringRect(screenMin, headerMax);
         }
-        
+                
 
         void handleDragging() {
             auto handler = getHandler();
@@ -538,62 +541,47 @@ namespace AT {
                 ImVec2 newPos = ImVec2(round(m_posTarget.x / step) * step, round(m_posTarget.y / step) * step);
                 setPos(newPos);
                 
-                // Update contained nodes by the same delta
+                // Update contained nodes by the same delta (including nested comments)
                 ImVec2 delta = newPos - oldPos;
                 if (delta.x != 0 || delta.y != 0) {
-                    for (auto nodeId : m_containedNodes) {
-                        auto& nodes = handler->getNodes();
-                        auto it = nodes.find(nodeId);
-                        if (it != nodes.end()) {
-                            auto node = it->second;
-                            ImVec2 nodeNewPos = node->getPos() + delta;
-                            // Snap to grid
-                            nodeNewPos = ImVec2(round(nodeNewPos.x / step) * step, round(nodeNewPos.y / step) * step);
-                            node->setPos(nodeNewPos);
-                        }
-                    }
+                    moveContainedNodes(delta, step);
+                    
+                    // Update our bounds after moving (in case nested comments changed position)
+                    updateCommentBounds();
                 }
 
                 if (ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
                     m_dragged = false;
                     handler->draggingNode(false);
                     m_posTarget = getPos(); // Reset to actual position after dragging
+                    
+                    // Final bounds update after dragging stops
+                    updateCommentBounds();
                 }
             }
         }
 
 
         void updateCommentBounds() {
-
             if (m_containedNodes.empty()) {
                 // If no contained nodes, use default size
                 m_customSize = ImVec2(200, 100);
                 return;
             }
             
-            // Calculate bounds that encompass all contained nodes
+            // Calculate bounds that encompass all contained nodes (including nested comments)
             float minX = FLT_MAX, minY = FLT_MAX;
             float maxX = -FLT_MAX, maxY = -FLT_MAX;
             
             auto handler = getHandler();
             if (!handler) return;
             
-            for (auto nodeId : m_containedNodes) {
-                auto& nodes = handler->getNodes();
-                auto it = nodes.find(nodeId);
-                if (it != nodes.end()) {
-                    auto node = it->second;
-                    ImVec2 nodePos = node->getPos();
-                    ImVec2 nodeSize = node->getFullSize();
-                    
-                    minX = std::min(minX, nodePos.x);
-                    minY = std::min(minY, nodePos.y);
-                    maxX = std::max(maxX, nodePos.x + nodeSize.x);
-                    maxY = std::max(maxY, nodePos.y + nodeSize.y);
-                }
-            }
+            // Track nodes we've already processed to avoid infinite recursion
+            std::set<ImFlow::NodeUID> processedNodes;
+            calculateRecursiveBounds(processedNodes, minX, minY, maxX, maxY);
             
-            // Add padding around the contained nodes
+            // Add OUR padding around the contained nodes (not including inner comment padding)
+            // The inner comments already have their own padding included in their bounds
             ImVec2 newPos = ImVec2(minX - 10.f - m_padding, minY - 30.f - m_padding);
             ImVec2 newSize = ImVec2((maxX - minX) + (2 * m_padding), (maxY - minY) + 30.f + (2 * m_padding));
             
@@ -601,7 +589,7 @@ namespace AT {
             setPos(newPos);
             m_customSize = newSize;
         }
-        
+
         // Override getSize to return our custom size
         const ImVec2& getSize() const override { return m_customSize; }
         
@@ -609,7 +597,15 @@ namespace AT {
         ImVec2 getVisualSize() const override { return m_customSize; }
         
         //
-        void add_contained_node(ImFlow::NodeUID nodeId) { m_containedNodes.insert(nodeId); }
+        void add_contained_node(ImFlow::NodeUID nodeId) { 
+            // Prevent circular references
+            if (wouldCreateCircularReference(nodeId)) {
+                // Log warning or show message
+                LOG(Warn, "Cannot add node to comment: would create circular reference")
+                return;
+            }
+            m_containedNodes.insert(nodeId); 
+        }
         
         //
         void remove_contained_node(ImFlow::NodeUID nodeId) { m_containedNodes.erase(nodeId); }
@@ -812,7 +808,44 @@ namespace AT {
         const std::string& getCommentText() const { return m_comment_text; }
             
         SET_NODE_TYPE_NAME(comment_node)
-                
+        
+
+        bool wouldCreateCircularReference(ImFlow::NodeUID potentialChildId) {
+            // A node cannot contain itself
+            if (potentialChildId == getUID()) return true;
+            
+            auto handler = getHandler();
+            if (!handler) return false;
+            
+            // Check if the potential child is already our ancestor
+            std::set<ImFlow::NodeUID> visited;
+            return isAncestor(potentialChildId, visited);
+        }
+
+
+        int getNestingDepth() const {
+            auto handler = getHandler();
+            if (!handler) return 0;
+            
+            int maxDepth = 0;
+            for (auto nodeId : m_containedNodes) {
+                auto& nodes = handler->getNodes();
+                auto it = nodes.find(nodeId);
+                if (it != nodes.end()) {
+                    if (auto nestedComment = std::dynamic_pointer_cast<comment_node>(it->second)) {
+                        maxDepth = std::max(maxDepth, nestedComment->getNestingDepth() + 1);
+                    }
+                }
+            }
+            return maxDepth;
+        }
+
+
+        ImVec2 getVisualBoundsMin() const { return getPos(); }
+
+
+        ImVec2 getVisualBoundsMax() const { return getPos() + getVisualSize(); }
+
         //
         void serialize(AT::serializer::yaml& yaml) override {
             BaseNode::serialize(yaml);
@@ -832,6 +865,7 @@ namespace AT {
             }
         }
 
+
         void serializePins(AT::serializer::yaml& yaml) override {
             // Comment nodes don't have pins, but we need to update bounds after loading
             if (yaml.get_option() == AT::serializer::option::load_from_file) {
@@ -840,6 +874,48 @@ namespace AT {
         }
 
     private:
+
+        void calculateRecursiveBounds(std::set<ImFlow::NodeUID>& processed, float& minX, float& minY, float& maxX, float& maxY) {
+            auto handler = getHandler();
+            if (!handler) return;
+            
+            for (auto nodeId : m_containedNodes) {
+                // Avoid infinite recursion
+                if (processed.count(nodeId) > 0) continue;
+                processed.insert(nodeId);
+                
+                auto& nodes = handler->getNodes();
+                auto it = nodes.find(nodeId);
+                if (it != nodes.end()) {
+                    auto node = it->second;
+                    ImVec2 nodePos = node->getPos();
+                    ImVec2 nodeSize = node->getFullSize();
+                    
+                    // For comment nodes, we need to include their visual bounds (position + size)
+                    // which already includes their padding
+                    if (auto nestedComment = std::dynamic_pointer_cast<comment_node>(node)) {
+                        // Comment nodes have their padding already calculated in their size
+                        // So we just use their current position and visual size
+                        ImVec2 commentVisualSize = nestedComment->getVisualSize();
+                        
+                        minX = std::min(minX, nodePos.x);
+                        minY = std::min(minY, nodePos.y);
+                        maxX = std::max(maxX, nodePos.x + commentVisualSize.x);
+                        maxY = std::max(maxY, nodePos.y + commentVisualSize.y);
+                        
+                        // Recursively calculate bounds of nested comment's contained nodes
+                        nestedComment->calculateRecursiveBounds(processed, minX, minY, maxX, maxY);
+                    } else {
+                        // Regular nodes - use their position and full size
+                        minX = std::min(minX, nodePos.x);
+                        minY = std::min(minY, nodePos.y);
+                        maxX = std::max(maxX, nodePos.x + nodeSize.x);
+                        maxY = std::max(maxY, nodePos.y + nodeSize.y);
+                    }
+                }
+            }
+        }
+
 
         void handleNodeSelectionMode() {
             auto handler = getHandler();
@@ -864,6 +940,7 @@ namespace AT {
                 }
                 m_addingNodesMode = false;
                 m_selectedNodesDuringAdd.clear();
+                updateCommentBounds(); // Update bounds after adding nodes
                 return;
             }
             
@@ -874,13 +951,23 @@ namespace AT {
             if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
                 // Find which node was clicked (if any)
                 for (auto& [nodeId, node] : allNodes) {
-                    // Skip comment nodes and ourselves
-                    if (node.get() == this || std::dynamic_pointer_cast<comment_node>(node)) {
+                    // Skip ourselves
+                    if (node.get() == this) {
                         continue;
                     }
                     
                     // Check if this node is hovered
                     if (node->isHovered()) {
+                        // Allow selecting comment nodes, but check for circular references
+                        if (auto clickedComment = std::dynamic_pointer_cast<comment_node>(node)) {
+                            // Check if this would create a circular reference
+                            if (wouldCreateCircularReference(nodeId)) {
+                                // Show warning or skip
+                                LOG(Warn, "Cannot add comment to comment: would create circular reference")
+                                continue;
+                            }
+                        }
+                        
                         if (shiftHeld) {
                             // Toggle selection in multi-select mode
                             if (m_selectedNodesDuringAdd.count(nodeId) > 0) {
@@ -893,6 +980,7 @@ namespace AT {
                             add_contained_node(nodeId);
                             m_addingNodesMode = false;
                             m_selectedNodesDuringAdd.clear();
+                            updateCommentBounds(); // Update bounds after adding node
                         }
                         break; // Only handle one node per click
                     }
@@ -906,23 +994,46 @@ namespace AT {
                     }
                     m_addingNodesMode = false;
                     m_selectedNodesDuringAdd.clear();
+                    updateCommentBounds(); // Update bounds after adding nodes
                 }
             }
             
             // Visual feedback for selected nodes during add mode
             ImDrawList* draw_list = ImGui::GetWindowDrawList();
             for (auto& [nodeId, node] : allNodes) {
-                if (node.get() == this || std::dynamic_pointer_cast<comment_node>(node)) {
+                if (node.get() == this) {
                     continue;
                 }
                 
-                ImVec2 nodeScreenPos = handler->grid2screen(node->getPos()) - ImVec2(15, 5);
-                ImVec2 nodeSize = node->getFullSize() + ImVec2(10, 10);
+                ImVec2 nodeScreenPos, nodeSize;
                 
-                if (m_selectedNodesDuringAdd.count(nodeId) > 0) {   // Highlight selected nodes with a green border
-                    draw_list->AddRect(nodeScreenPos, nodeScreenPos + nodeSize, IM_COL32(100, 255, 100, 255), 0.0f, 0, 3.0f);
-                } else if (node->isHovered()) {                     // Highlight hovered nodes with a yellow border
-                    draw_list->AddRect(nodeScreenPos, nodeScreenPos + nodeSize, IM_COL32(255, 255, 100, 255), 0.0f, 0, 2.0f);
+                if (auto comment = std::dynamic_pointer_cast<comment_node>(node)) {
+                    // For comment nodes, use their visual bounds
+                    nodeScreenPos = handler->grid2screen(comment->getPos()) - ImVec2(15, 5);
+                    nodeSize = comment->getVisualSize() + ImVec2(10, 10);
+                    
+                    // Special visual indicator for comment nodes
+                    if (m_selectedNodesDuringAdd.count(nodeId) > 0) {
+                        draw_list->AddRect(nodeScreenPos, nodeScreenPos + nodeSize, IM_COL32(100, 255, 100, 255), 0.0f, 0, 3.0f);
+                        // Add text indicator that this is a comment
+                        ImVec2 textPos = nodeScreenPos + ImVec2(5, -20);
+                        draw_list->AddText(textPos, IM_COL32(100, 255, 100, 255), "Comment");
+                    } else if (node->isHovered()) {
+                        draw_list->AddRect(nodeScreenPos, nodeScreenPos + nodeSize, IM_COL32(255, 255, 100, 255), 0.0f, 0, 2.0f);
+                        // Add text indicator that this is a comment
+                        ImVec2 textPos = nodeScreenPos + ImVec2(5, -20);
+                        draw_list->AddText(textPos, IM_COL32(255, 255, 100, 255), "Comment");
+                    }
+                } else {
+                    // For regular nodes
+                    nodeScreenPos = handler->grid2screen(node->getPos()) - ImVec2(15, 5);
+                    nodeSize = node->getFullSize() + ImVec2(10, 10);
+                    
+                    if (m_selectedNodesDuringAdd.count(nodeId) > 0) {
+                        draw_list->AddRect(nodeScreenPos, nodeScreenPos + nodeSize, IM_COL32(100, 255, 100, 255), 0.0f, 0, 3.0f);
+                    } else if (node->isHovered()) {
+                        draw_list->AddRect(nodeScreenPos, nodeScreenPos + nodeSize, IM_COL32(255, 255, 100, 255), 0.0f, 0, 2.0f);
+                    }
                 }
             }
             
@@ -941,9 +1052,77 @@ namespace AT {
                     "Click nodes to add to comment, hold SHIFT for multiple";
             }
             
+            // Add note about comment nesting
+            instruction += "\nComments can contain other comments (no circular references)";
+            
             draw_list->AddText(instructionPos, IM_COL32(255, 255, 255, 255), instruction.c_str());
         }
-        
+
+
+        void moveContainedNodes(const ImVec2& delta, float step) {
+            auto handler = getHandler();
+            if (!handler) return;
+            
+            // Track nodes we've already moved to avoid moving them multiple times
+            std::set<ImFlow::NodeUID> movedNodes;
+            moveContainedNodesRecursive(delta, step, movedNodes);
+        }
+
+
+        void moveContainedNodesRecursive(const ImVec2& delta, float step, std::set<ImFlow::NodeUID>& movedNodes) {
+            auto handler = getHandler();
+            if (!handler) return;
+            
+            for (auto nodeId : m_containedNodes) {
+                // Avoid moving nodes multiple times
+                if (movedNodes.count(nodeId) > 0) continue;
+                movedNodes.insert(nodeId);
+                
+                auto& nodes = handler->getNodes();
+                auto it = nodes.find(nodeId);
+                if (it != nodes.end()) {
+                    auto node = it->second;
+                    ImVec2 nodeNewPos = node->getPos() + delta;
+                    // Snap to grid
+                    nodeNewPos = ImVec2(round(nodeNewPos.x / step) * step, round(nodeNewPos.y / step) * step);
+                    node->setPos(nodeNewPos);
+                    
+                    // If this is a nested comment, recursively move its contained nodes
+                    if (auto nestedComment = std::dynamic_pointer_cast<comment_node>(node)) {
+                        nestedComment->moveContainedNodesRecursive(delta, step, movedNodes);
+                    }
+                }
+            }
+        }
+
+
+        bool isAncestor(ImFlow::NodeUID nodeId, std::set<ImFlow::NodeUID>& visited) {
+            if (visited.count(nodeId) > 0) return false;
+            visited.insert(nodeId);
+            
+            // This node is an ancestor if nodeId contains our UID
+            auto handler = getHandler();
+            if (!handler) return false;
+            
+            auto& nodes = handler->getNodes();
+            auto it = nodes.find(nodeId);
+            if (it != nodes.end()) {
+                if (auto potentialAncestor = std::dynamic_pointer_cast<comment_node>(it->second)) {
+                    if (potentialAncestor->get_contained_nodes().count(getUID()) > 0) {
+                        return true;
+                    }
+                    // Recursively check the potential ancestor's contained nodes
+                    for (auto containedId : potentialAncestor->get_contained_nodes()) {
+                        if (isAncestor(containedId, visited)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+
         std::set<ImFlow::NodeUID>       m_containedNodes;
         std::string                     m_comment_text;
         bool                            m_isEditing = false;

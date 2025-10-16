@@ -182,13 +182,18 @@ void visual_programming_editor::setup_right_click_menu() {
             
             ImGui::SeparatorText("Comment Assignment");
 
-            // Find all comment nodes in the editor
+            // Find all comment nodes in the editor (excluding the current node if it's a comment)
             auto& allNodes = m_editor.getNodes();
             std::vector<std::shared_ptr<comment_node>> comment_nodes;
             std::vector<std::shared_ptr<comment_node>> containingComments;
 
             for (auto& [id, nodePtr] : allNodes) {
                 if (auto loc_comment_node = std::dynamic_pointer_cast<comment_node>(nodePtr)) {
+                    // Don't allow a comment to contain itself
+                    if (loc_comment_node.get() == node) {
+                        continue;
+                    }
+                    
                     comment_nodes.push_back(loc_comment_node);
                     // Check if this node is already in the comment
                     if (loc_comment_node->get_contained_nodes().count(node->getUID()) > 0) {
@@ -428,24 +433,41 @@ void visual_programming_editor::setup_right_click_menu() {
         }
     }
 
-    
+        
     bool visual_programming_editor::on_key_event(key_event& event) {
-
         // Check if 'C' key is pressed
         if (event.m_keycode == key_code::key_C && event.m_key_state == key_state::press) {
 
             auto& nodes = m_editor.getNodes();
             std::vector<std::shared_ptr<ImFlow::BaseNode>> selected_nodes;
             
-            for (auto& [id, node] : nodes)              // Get all selected nodes
+            for (auto& [id, node] : nodes) {              // Get all selected nodes
                 if (node->isSelected())
                     selected_nodes.push_back(node);
+            }
             
             if (!selected_nodes.empty()) {      // If we have selected nodes, create a comment around them
 
                 auto new_comment_node = m_editor.placeNode<comment_node>();
-                for (auto& node : selected_nodes)                               // Add all selected nodes to the comment
+                
+                // Check if we're selecting any existing comments
+                bool hasExistingComments = false;
+                for (auto& node : selected_nodes) {
+                    if (std::dynamic_pointer_cast<comment_node>(node)) {
+                        hasExistingComments = true;
+                        break;
+                    }
+                }
+                
+                if (hasExistingComments) {
+                    // If we're nesting comments, set a different default color
+                    new_comment_node->setColor(ImVec4(0.3f, 0.7f, 0.3f, 1.0f)); // Green tint for nested comments
+                    new_comment_node->setCommentText("Nested Comment");
+                }
+                
+                for (auto& node : selected_nodes) {                              // Add all selected nodes to the comment
                     new_comment_node->add_contained_node(node->getUID());
+                }
                 
                 m_unsavedChanges = true;
                 return true; // Event handled

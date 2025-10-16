@@ -22,6 +22,7 @@
 //#define ConnectionFilter_SameType   [](ImFlow::Pin* out, ImFlow::Pin* in){ return out->getDataType() == in->getDataType(); }
 //#define ConnectionFilter_Numbers    [](ImFlow::Pin* out, ImFlow::Pin* in){ return out->getDataType() == typeid(double) || out->getDataType() == typeid(float) || out->getDataType() == typeid(int); }
 
+
 namespace ImFlow
 {
     // -----------------------------------------------------------------------------------------------------------------
@@ -659,6 +660,9 @@ namespace ImFlow
          */
         const ImVec2& getPos() const { return m_pos; }
         
+
+        virtual bool isCommentNode() const { return false; }
+
         // /**
         //  * @brief <BR>Get node size (const version)
         //  * @return Const reference to the node's size
