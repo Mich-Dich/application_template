@@ -43,6 +43,7 @@ namespace AT {
     #endif
         set_fps_settings(m_target_fps);
         s_window = std::make_shared<window>();
+        s_window->show_titlebar(false);
         s_window->set_event_callback(BIND_FUNCTION(application::on_event));
 
         // ----------- general subsystems -----------

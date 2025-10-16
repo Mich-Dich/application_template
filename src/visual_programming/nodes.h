@@ -504,7 +504,7 @@ namespace AT {
             return ImGui::IsMouseHoveringRect(screenMin, headerMax);
         }
         
-        // In the comment_node class in nodes.h, add this method:
+
         void handleDragging() {
             auto handler = getHandler();
             if (!handler) return;
@@ -531,10 +531,28 @@ namespace AT {
                     mouseDelta.y /= handler->getGrid().scale();
                 }
                 
+                ImVec2 oldPos = getPos(); // Store position before update
                 m_posTarget += mouseDelta;
                 
                 // "Slam" The position to grid
-                setPos(ImVec2(round(m_posTarget.x / step) * step, round(m_posTarget.y / step) * step));
+                ImVec2 newPos = ImVec2(round(m_posTarget.x / step) * step, round(m_posTarget.y / step) * step);
+                setPos(newPos);
+                
+                // Update contained nodes by the same delta
+                ImVec2 delta = newPos - oldPos;
+                if (delta.x != 0 || delta.y != 0) {
+                    for (auto nodeId : m_containedNodes) {
+                        auto& nodes = handler->getNodes();
+                        auto it = nodes.find(nodeId);
+                        if (it != nodes.end()) {
+                            auto node = it->second;
+                            ImVec2 nodeNewPos = node->getPos() + delta;
+                            // Snap to grid
+                            nodeNewPos = ImVec2(round(nodeNewPos.x / step) * step, round(nodeNewPos.y / step) * step);
+                            node->setPos(nodeNewPos);
+                        }
+                    }
+                }
 
                 if (ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
                     m_dragged = false;
