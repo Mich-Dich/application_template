@@ -10,7 +10,33 @@
 namespace AT {
 
     visual_programming_editor::visual_programming_editor() {
-            
+        
+        // Somewhere in your initialization code
+        // FunctionRegistry::getInstance().registerFunction({
+        //     "Sine Wave",
+        //     "Calculates sine of input angle in radians", 
+        //     "Math",
+        //     {{"angle", 0.0}},
+        //     {{"result", 0.0}},
+        //     [](const std::vector<FunctionValue>& inputs) -> std::vector<FunctionValue> {
+        //         double angle = std::get<double>(inputs[0]);
+        //         return {std::sin(angle)};
+        //     }
+        // });
+
+        // FunctionRegistry::getInstance().registerFunction({
+        //     "Power",
+        //     "Raises base to exponent power",
+        //     "Math", 
+        //     {{"base", 0.0}, {"exponent", 0.0}},
+        //     {{"result", 0.0}},
+        //     [](const std::vector<FunctionValue>& inputs) -> std::vector<FunctionValue> {
+        //         double base = std::get<double>(inputs[0]);
+        //         double exponent = std::get<double>(inputs[1]);
+        //         return {std::pow(base, exponent)};
+        //     }
+        // });
+
         setup_node_factories();
         memset(m_searchBuffer, 0, sizeof(m_searchBuffer)); // Initialize search buffer
     }
@@ -44,7 +70,11 @@ namespace AT {
             {"BeginNode", [this](const ImVec2& pos) { return m_editor.addNode<BeginNode>(pos); }},
             {"math_expression_node", [this](const ImVec2& pos) { return m_editor.addNode<math_expression_node>(pos); }},
             {"PlotterNode", [this](const ImVec2& pos) { return m_editor.addNode<PlotterNode>(pos); }},
-            {"comment_node", [this](const ImVec2& pos) { return m_editor.addNode<comment_node>(pos); }}
+            {"comment_node", [this](const ImVec2& pos) { return m_editor.addNode<comment_node>(pos); }},
+            {"FunctionNode", [this](const ImVec2& pos) { 
+                // For serialization, need to handle this differently, MAYBE: store the function name and recreate it
+                return m_editor.addNode<FunctionNode>(pos, FunctionRegistry::getInstance().getAllFunctions().begin()->second);
+            }}
         };
     }
 
@@ -63,11 +93,15 @@ namespace AT {
                 
                 ImGui::Separator();
 
+                auto completeNodeList = AT::getCompleteNodeList();          // Use the complete node list including functions
+                
                 // Group nodes by category
                 std::map<std::string, std::vector<NodeDefinition>> categorized_nodes;
-                for (const auto& node_def : node_list) {
+                for (const auto& node_def : node_list)
                     categorized_nodes[node_def.category].push_back(node_def);
-                }
+                
+                for (const auto& node_def : completeNodeList)
+                    categorized_nodes[node_def.category].push_back(node_def);
                 
                 // Filter nodes based on search
                 std::string search_lower = m_searchBuffer;

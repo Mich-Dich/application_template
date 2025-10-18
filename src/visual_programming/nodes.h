@@ -6,6 +6,8 @@
 
 #include "visual_programming/nodes/comment_node.h"
 #include "visual_programming/nodes/math_expression_node.h"
+#include "visual_programming/nodes/function_node.h"
+#include "visual_programming/nodes/function_registry.h"
 
 namespace AT {
 
@@ -288,5 +290,43 @@ namespace AT {
             [](ImFlow::ImNodeFlow& editor, const ImVec2& pos) { editor.addNode<comment_node>(pos); },
             "Group nodes with a comment box"},
     };
+
+
+    // Helper to create function nodes
+    static void createFunctionNode(ImFlow::ImNodeFlow& editor, const ImVec2& pos, const std::string& functionName) {
+        const auto* def = FunctionRegistry::getInstance().getFunction(functionName);
+        if (def) {
+            auto node = editor.addNode<FunctionNode>(pos, *def);
+        }
+    }
+
+
+    // Create node definitions for all registered functions
+    static std::vector<NodeDefinition> createFunctionNodeList() {
+        std::vector<NodeDefinition> functionNodes;
+        const auto& allFunctions = FunctionRegistry::getInstance().getAllFunctions();
+        
+        for (const auto& [name, def] : allFunctions) {
+            functionNodes.push_back({
+                def.title.c_str(),
+                def.category.c_str(),
+                [name](ImFlow::ImNodeFlow& editor, const ImVec2& pos) { 
+                    createFunctionNode(editor, pos, name); 
+                },
+                def.description.c_str()
+            });
+        }
+        
+        return functionNodes;
+    }
+
+
+    // Combine existing nodes with function nodes
+    static std::vector<NodeDefinition> getCompleteNodeList() {
+        auto completeList = node_list;
+        auto functionList = createFunctionNodeList();
+        completeList.insert(completeList.end(), functionList.begin(), functionList.end());
+        return completeList;
+    }
 
 }
