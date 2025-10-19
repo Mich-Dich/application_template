@@ -14,6 +14,8 @@
 #include "application.h"
 #include "config/imgui_config.h"
 #include "visual_programming/visual_programming_editor.h"
+#include "visual_programming/simplified_graph_editor.h"
+
 
 #include "dashboard.h"
 
@@ -21,7 +23,9 @@
 namespace AT {
 
     
-    dashboard::dashboard() : m_visual_editor(std::make_unique<visual_programming_editor>())  { 
+    dashboard::dashboard()
+        : m_visual_editor(std::make_unique<visual_programming_editor>())
+        , m_simple_visual_editor(std::make_unique<simplified_graph_editor>())  { 
 
     }
     
@@ -44,7 +48,8 @@ namespace AT {
         // ===========================================================================================
         
         VALIDATE(m_visual_editor->initialize(), return false, "", "Failed to initialize the visual programming editor")
-
+        VALIDATE(m_simple_visual_editor->initialize(), return false, "", "Failed to initialize the visual programming editor")
+        
         LOG_INIT
         return true;
     }
@@ -69,6 +74,7 @@ namespace AT {
         PROFILE_APPLICATION_FUNCTION();
         
         m_visual_editor->update(delta_time);
+        m_simple_visual_editor->update(delta_time);
     }
 
 
@@ -205,6 +211,13 @@ namespace AT {
             ImVec2 available_size = ImGui::GetContentRegionAvail();
             m_visual_editor->set_size(available_size);
             m_visual_editor->draw(delta_time);
+        }
+        ImGui::End();
+        ImGui::Begin("Simple Node Editor");
+        {
+            ImVec2 available_size = ImGui::GetContentRegionAvail();
+            m_simple_visual_editor->set_size(available_size);
+            m_simple_visual_editor->draw(delta_time);
         }
         ImGui::End();
 

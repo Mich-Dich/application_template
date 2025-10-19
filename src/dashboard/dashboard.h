@@ -6,6 +6,7 @@ namespace AT {
 
     class event;
     class visual_programming_editor;
+    class simplified_graph_editor;
 
 
     // =======================================================================
@@ -92,6 +93,17 @@ namespace AT {
     private:
 
         std::unique_ptr<visual_programming_editor> m_visual_editor;
+        std::unique_ptr<simplified_graph_editor> m_simple_visual_editor;
         
     };
 }
+
+
+/*
+I want to create a simplified graph editor, it should only contain two types of node.
+
+- The main node "PC" that can not be deleted or manually created, it should have execution inputs but no outputs.
+- And device nodes, the device node should have a simple execute output.
+
+I need a new style for this custom graph. The nodes don't need a colored header or title, just a unified body is good, it should look like a gray node with the title in the middle of the node. A gray background with a bit brighter gray edge.
+*/

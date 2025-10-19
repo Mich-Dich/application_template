@@ -66,15 +66,34 @@ namespace AT {
 
 
     void visual_programming_editor::setup_node_factories() {
-        m_node_factories = {
-            {"BeginNode", [this](const ImVec2& pos) { return m_editor.addNode<BeginNode>(pos); }},
-            {"math_expression_node", [this](const ImVec2& pos) { return m_editor.addNode<math_expression_node>(pos); }},
-            {"PlotterNode", [this](const ImVec2& pos) { return m_editor.addNode<PlotterNode>(pos); }},
-            {"comment_node", [this](const ImVec2& pos) { return m_editor.addNode<comment_node>(pos); }},
-            {"FunctionNode", [this](const ImVec2& pos) { 
-                // For serialization, need to handle this differently, MAYBE: store the function name and recreate it
-                return m_editor.addNode<FunctionNode>(pos, FunctionRegistry::getInstance().getAllFunctions().begin()->second);
-            }}
+        
+        m_node_factories["FunctionNode"] = [this](const ImVec2& pos) { 
+            // This is problematic for loading - we need to store which function was used
+            // For now, use the first available function as default
+            auto allFuncs = FunctionRegistry::getInstance().getAllFunctions();
+            if (!allFuncs.empty()) {
+                return m_editor.addNode<FunctionNode>(pos, allFuncs.begin()->second);
+            }
+            // Fallback: create a simple add function
+            FunctionDefinition fallbackDef = {
+                "Add",
+                "Adds two numbers",
+                "Math",
+                {
+                    {"a", "double", 0.0, true, "First number"},
+                    {"b", "double", 0.0, true, "Second number"}
+                },
+                {
+                    {"result", "double", 0.0, true, "Sum of a and b"}
+                },
+                [](const std::vector<FunctionValue>& inputs) -> std::vector<FunctionValue> {
+                    double a = std::get<double>(inputs[0]);
+                    double b = std::get<double>(inputs[1]);
+                    return {a + b};
+                },
+                false
+            };
+            return m_editor.addNode<FunctionNode>(pos, fallbackDef);
         };
     }
 
@@ -87,8 +106,21 @@ namespace AT {
                 
                 // Search bar - use member variable instead of static
                 ImGui::SetNextItemWidth(-1);
-                if (ImGui::InputTextWithHint("##Search", "Search nodes...", m_searchBuffer, IM_ARRAYSIZE(m_searchBuffer))) {
+                if (ImGui::InputTextWithHint("##Search", "Search nodes...", m_searchBuffer, IM_ARRAYSIZE(m_searchBuffer), 
+                    ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll)) {
                     m_searchActive = true;
+                }
+
+                // Auto-focus on the search bar when popup opens
+                static bool focusSearch = true;
+                if (focusSearch) {
+                    ImGui::SetKeyboardFocusHere(-1); // Auto-focus previous widget (the search bar)
+                    focusSearch = false;
+                }
+
+                // Reset focus flag when popup closes
+                if (!ImGui::IsPopupOpen("RightClickPopUp")) {
+                    focusSearch = true;
                 }
                 
                 ImGui::Separator();
@@ -97,8 +129,8 @@ namespace AT {
                 
                 // Group nodes by category
                 std::map<std::string, std::vector<NodeDefinition>> categorized_nodes;
-                for (const auto& node_def : node_list)
-                    categorized_nodes[node_def.category].push_back(node_def);
+                // for (const auto& node_def : node_list)
+                //     categorized_nodes[node_def.category].push_back(node_def);
                 
                 for (const auto& node_def : completeNodeList)
                     categorized_nodes[node_def.category].push_back(node_def);
@@ -135,11 +167,12 @@ namespace AT {
                         
                         ImGuiTreeNodeFlags category_flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed;
                         if (ImGui::TreeNodeEx(category.c_str(), category_flags)) {
+                            bool hovering_item = false;
                             for (const auto& node_def : filtered_nodes) {
                                 ImGui::PushID(node_def.name);
                                 
                                 ImGui::Selectable(node_def.name, false);
-                                if (ImGui::IsItemHovered()) {
+                                if (ImGui::IsItemHovered() && !hovering_item) {
                                     ImGui::BeginTooltip();
                                     ImGui::TextUnformatted(node_def.description);
                                     ImGui::EndTooltip();
@@ -152,6 +185,7 @@ namespace AT {
                                         m_unsavedChanges = true;
                                         m_searchActive = false;
                                     }
+                                    hovering_item = true;
                                 }
                                 
                                 ImGui::PopID();
