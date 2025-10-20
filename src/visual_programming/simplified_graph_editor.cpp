@@ -144,15 +144,30 @@ namespace AT {
         });
     }
 
+    
     void simplified_graph_editor::update(const f32 delta_time) {
         (void)delta_time; // Prevent unused parameter warning
     }
 
+
     void simplified_graph_editor::draw(const f32 delta_time) {
-        
         if (!m_initialized) return;
             
         try {
+            // Debug: Print node and pin info
+            auto& nodes = m_editor.getNodes();
+            static bool firstFrame = true;
+            if (firstFrame) {
+                LOG(Trace, "Simplified editor nodes count: " << nodes.size());
+                for (auto& [id, node] : nodes) {
+                    LOG(Trace, "Node: " << node->getName() << " UID: " << id);
+                    auto ins = node->getIns();
+                    auto outs = node->getOuts();
+                    LOG(Trace, "  Input pins: " << ins.size() << ", Output pins: " << outs.size());
+                }
+                firstFrame = false;
+            }
+            
             m_editor.update();
         } catch (const std::exception& e) {
             LOG(Error, "Error in simplified editor update: " << e.what())
@@ -161,9 +176,11 @@ namespace AT {
         }
     }
 
+
     void simplified_graph_editor::set_size(const ImVec2 new_size) { 
         m_editor.setSize(new_size); 
     }
+
 
     void simplified_graph_editor::update_grid_color(glm::vec4 background_color, glm::vec4 grid_color, glm::vec4 subgrid_color) {
 
@@ -281,8 +298,23 @@ namespace AT {
         }
     }
 
+
     bool simplified_graph_editor::on_key_event(key_event& event) {
-        // Handle key events if needed
+        // Handle key events for simplified editor
+        if (event.m_keycode == key_code::key_delete && event.m_key_state == key_state::press) {
+            // Delete selected nodes (except PC node)
+            auto& nodes = m_editor.getNodes();
+            for (auto it = nodes.begin(); it != nodes.end(); ) {
+                if (it->second->isSelected() && dynamic_cast<PCNode*>(it->second.get()) == nullptr) {
+                    it = nodes.erase(it);
+                    m_unsavedChanges = true;
+                } else {
+                    ++it;
+                }
+            }
+            return true;
+        }
         return false;
     }
+
 }

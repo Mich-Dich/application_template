@@ -230,8 +230,12 @@ namespace AT {
 
     void dashboard::on_event(event& event) {
 
+        bool handled = false;
         event_dispatcher dispatcher(event);
-        dispatcher.dispatch<key_event>([this](key_event& e) { return m_visual_editor->on_key_event(e); });
+        handled = dispatcher.dispatch<key_event>([this](key_event& e) { 
+            return m_visual_editor->on_key_event(e) || m_simple_visual_editor->on_key_event(e); 
+        });
+        
     }
     
     

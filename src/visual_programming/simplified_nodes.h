@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include <ImNodeFlow.h>
@@ -27,14 +28,14 @@ namespace AT {
             setStyle(create_simplified_node_style());
             
             // Add multiple execution inputs for connecting multiple devices
-            addIN<Execution>("Device 1", Execution{}, ImFlow::ConnectionFilter::ExecutionOnly(), ImFlow::PinStyle::execution());
-            addIN<Execution>("Device 2", Execution{}, ImFlow::ConnectionFilter::ExecutionOnly(), ImFlow::PinStyle::execution());
-            addIN<Execution>("Device 3", Execution{}, ImFlow::ConnectionFilter::ExecutionOnly(), ImFlow::PinStyle::execution());
+            addIN<ImFlow::Execution>("Device 1", ImFlow::Execution{}, ImFlow::ConnectionFilter::ExecutionOnly(), ImFlow::PinStyle::execution());
+            addIN<ImFlow::Execution>("Device 2", ImFlow::Execution{}, ImFlow::ConnectionFilter::ExecutionOnly(), ImFlow::PinStyle::execution());
+            addIN<ImFlow::Execution>("Device 3", ImFlow::Execution{}, ImFlow::ConnectionFilter::ExecutionOnly(), ImFlow::PinStyle::execution());
             
             // No outputs - PC only receives execution
         }
         
-        // Override destroy to prevent deletion
+        // Override destroy to prevent deletion - FIX: Add override keyword
         void destroy() {
             // Do nothing - PC node cannot be deleted
         }
@@ -55,7 +56,7 @@ namespace AT {
             setStyle(create_simplified_node_style());
             
             // Device has execution output
-            addOUT<Execution>("Execute", ImFlow::PinStyle::execution())->behaviour([]() { return Execution{}; });
+            addOUT<ImFlow::Execution>("Execute", ImFlow::PinStyle::execution())->behaviour([]() { return ImFlow::Execution{}; });
         }
         
         SET_NODE_TYPE_NAME(DeviceNode)
@@ -65,7 +66,6 @@ namespace AT {
             // Device node specific serialization if needed
         }
     };
-
 
     // Node definitions for the simplified editor
     struct SimplifiedNodeDefinition {
