@@ -1,45 +1,6 @@
 #pragma once
 
-
-#ifdef ENGINE
-	#define API								__declspec(dllexport)
-#else
-	#define API								__declspec(dllimport)
-#endif
-
-//#ifdef ENGINE
-//	#define HELPER_API						__declspec(dllexport)
-//#elif defined(HELPER)
-//	#define HELPER_API						__declspec(dllimport)
-//#else
-//	#define HELPER_API
-//#endif
-
-#ifdef ENGINE
-	#define API_EDITOR						__declspec(dllexport)
-#elif defined(EDITOR)
-	#define API_EDITOR						__declspec(dllimport)
-#else
-	#define API_EDITOR	
-#endif
-
-#ifdef PROJECT
-	#define PROJECT_API							extern "C" __declspec(dllexport)
-#else
-	#define PROJECT_API							__declspec(dllimport)
-#endif
-
-#if defined(ENGINE) || defined(EDITOR)
-	#define USE_IN_EDITOR
-#else
-	#define USE_IN_EDITOR	
-#endif
-
 #define DEBUG_BREAK()							(__debugbreak())
-
-#ifdef CDECL
-	#undef CDECL
-#endif
 
 // Function type macros.
 // Functions with variable arguments

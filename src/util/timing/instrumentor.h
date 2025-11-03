@@ -15,23 +15,20 @@ namespace AT {
 
 	namespace Profiling {
 
-#define ISOLATED_PROFILER_SCOPED(num_of_tests, message, profile_duration_precision)     static Profiling::simple_profiler loc_simple_profiler(num_of_tests, message, profile_duration_precision);      \
-                                                                                            stopwatch loc_stopwatch_for_profiling(&loc_simple_profiler.single_duration, profile_duration_precision);       \
-                                                                                            if (loc_simple_profiler.add_value())                                                                                \
-                                                                                                loc_stopwatch_for_profiling.restart()
+    #define ISOLATED_PROFILER_SCOPED(num_of_tests, message, profile_duration_precision)                                 \
+        static Profiling::simple_profiler loc_simple_profiler(num_of_tests, message, profile_duration_precision);       \
+        stopwatch loc_stopwatch_for_profiling(&loc_simple_profiler.single_duration, profile_duration_precision);        \
+        if (loc_simple_profiler.add_value())                                                                            \
+            loc_stopwatch_for_profiling.restart()
 
-
-#define DURATION_microseconds       " microseconds"
-#define DURATION_miliseconds        " milliseconds"
-#define DURATION_seconds            " seconds"
-
-#define ISOLATED_PROFILER_LOOP(num_of_iterations, message, profile_duration_precision, func)                                                                                                      \
-            {                                                                                                                                                                                         \
-                f32 duration = -1.f;                                                                                                                                                                  \
-                {   stopwatch loc_stpowatch(&duration);                                                                                                                                          \
-                    for (size_t x = 0; x < num_of_iterations; x++) { func }                                                                                                                           \
-                } LOG(Info, message << " => sample count: " << num_of_iterations << " average duration: " << (duration / (f64)num_of_iterations) << DURATION_##profile_duration_precision);  \
-            }
+    #define ISOLATED_PROFILER_LOOP(num_of_iterations, message, profile_duration_precision, func)                        \
+        {                                                                                                               \
+            f32 duration = -1.f;                                                                                        \
+            {   AT::util::stopwatch loc_stopwatch(&duration, AT::duration_precision::##profile_duration_precision);     \
+                for (size_t x = 0; x < num_of_iterations; x++) { func }                                                 \
+            } LOG(Info, message << " => sample count: " << num_of_iterations << " average duration: "                   \
+                << (duration / (f64)num_of_iterations) << " " << #profile_duration_precision);                          \
+        }
 
 		class simple_profiler {
 		public:

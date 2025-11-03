@@ -1,8 +1,6 @@
 
 #include "util/pch.h"
 
-#include <GLFW/glfw3.h>
-
 #include "util/timing/instrumentor.h"
 #include "util/crash_handler.h"
 #include "util/util.h"
@@ -92,7 +90,7 @@ namespace AT {
         s_running = true;
         m_renderer->set_state(system_state::active);
         s_window->show_window(true);
-        start_fps_measurement();
+        m_fps_stopwatch = util::stopwatch(&m_work_time, duration_precision::milliseconds);
         if (long_startup_process) {
 
             PROFILE_APPLICATION_SCOPE("long startup process(different thread)");
@@ -131,8 +129,6 @@ namespace AT {
         while (s_running) {
     
             PROFILE_APPLICATION_SCOPE("main loop");
-
-            // PROFILE_SCOPE("run")
             s_window->poll_events();                        // update internal state
             m_dashboard->update(m_delta_time);
             m_renderer->draw_frame(m_delta_time);
@@ -144,7 +140,6 @@ namespace AT {
             LOG(Trace, "Exiting main run loop")
             m_dashboard->shutdown();
         }
-
     }
     
     // -----------------------------------------------------------------------------------------------------------------
@@ -162,35 +157,28 @@ namespace AT {
     }
 
 
-    void application::set_fps_settings(u32 target_fps)              { target_duration = static_cast<f32>(1.0 / target_fps); }
+    void application::set_fps_settings(u32 target_fps)              { m_target_duration = static_cast<f32>(1.0 / target_fps); }
 
     // -----------------------------------------------------------------------------------------------------------------
     // PRIVATE
     // -----------------------------------------------------------------------------------------------------------------
 
-    void application::start_fps_measurement()                       { m_last_frame_time = static_cast<f32>(glfwGetTime()); }
-    
-
-    void application::end_fps_measurement(f32& work_time)           { work_time = static_cast<f32>(glfwGetTime()) - m_last_frame_time; }
-    
-
     void application::limit_fps() {
     
         PROFILE_APPLICATION_FUNCTION();
-        
-        m_work_time = static_cast<f32>(glfwGetTime()) - m_last_frame_time;
-        if (m_work_time < target_duration) {
+
+        m_fps_stopwatch.stop();
+        if ((m_work_time / 1000) < m_target_duration) {
     
             // PROFILE_SCOPE("sleep");
-            m_sleep_time = (target_duration - m_work_time) * 1000;
-            util::high_precision_sleep(m_sleep_time / 1000);
+            m_sleep_time = m_target_duration - (m_work_time / 1000);
+            util::high_precision_sleep(m_sleep_time);
         } else
             m_sleep_time = 0;
+        m_fps_stopwatch.restart();
     
-        f32 time = static_cast<f32>(glfwGetTime());
-        m_delta_time = std::min<f32>(time - m_last_frame_time, 100000);
-        m_absolute_time += m_delta_time;
-        m_last_frame_time = time;
+        m_delta_time = m_work_time + (m_sleep_time / 1000);
+        m_absolute_time += m_work_time;
         m_fps = static_cast<u32>(1.0 / (m_work_time + (m_sleep_time * 0.001)) + 0.5); // Round to nearest integer
     }
 

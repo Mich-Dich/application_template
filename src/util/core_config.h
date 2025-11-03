@@ -4,8 +4,17 @@
 // Defines that have influence on system behavior
 // -------------------------------------------------------------------------------------------------------------------------------------------
 
-#define RENDER_API_OPENGL
-// #define RENDER_API_VULKAN
+#if 1       // define with rendering backend to use
+    #define RENDER_API_OPENGL
+#else
+    #define RENDER_API_VULKAN
+#endif
+
+#if 1       // define with windowing backend to use
+    #define PLATFORM_WINDOWING_BACKEND_GLFW
+#else
+    #define PLATFORM_WINDOWING_BACKEND_SDL3
+#endif
 
 
 // collect timing-data from every major function?

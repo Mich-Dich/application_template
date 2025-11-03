@@ -8,28 +8,8 @@
 #include "util/data_structures/string_manipulation.h"
 
 
-// static FORCEINLINE ImVec2  operator*(const ImVec2& lhs, const f32 rhs) { return ImVec2(lhs.x * rhs, lhs.y * rhs); }
-// static FORCEINLINE ImVec2  operator/(const ImVec2& lhs, const f32 rhs) { return ImVec2(lhs.x / rhs, lhs.y / rhs); }
-// static FORCEINLINE ImVec2  operator+(const ImVec2& lhs, const ImVec2& rhs) { return ImVec2(lhs.x + rhs.x, lhs.y + rhs.y); }
-// static FORCEINLINE ImVec2  operator-(const ImVec2& lhs, const ImVec2& rhs) { return ImVec2(lhs.x - rhs.x, lhs.y - rhs.y); }
-// static FORCEINLINE ImVec2  operator*(const ImVec2& lhs, const ImVec2& rhs) { return ImVec2(lhs.x * rhs.x, lhs.y * rhs.y); }
-// static FORCEINLINE ImVec2  operator/(const ImVec2& lhs, const ImVec2& rhs) { return ImVec2(lhs.x / rhs.x, lhs.y / rhs.y); }
-// static FORCEINLINE ImVec2  operator-(const ImVec2& lhs) { return ImVec2(-lhs.x, -lhs.y); }
-// static FORCEINLINE ImVec2& operator*=(ImVec2& lhs, const f32 rhs) { lhs.x *= rhs; lhs.y *= rhs; return lhs; }
-// static FORCEINLINE ImVec2& operator/=(ImVec2& lhs, const f32 rhs) { lhs.x /= rhs; lhs.y /= rhs; return lhs; }
-// static FORCEINLINE ImVec2& operator+=(ImVec2& lhs, const ImVec2& rhs) { lhs.x += rhs.x; lhs.y += rhs.y; return lhs; }
-// static FORCEINLINE ImVec2& operator-=(ImVec2& lhs, const ImVec2& rhs) { lhs.x -= rhs.x; lhs.y -= rhs.y; return lhs; }
-// static FORCEINLINE ImVec2& operator*=(ImVec2& lhs, const ImVec2& rhs) { lhs.x *= rhs.x; lhs.y *= rhs.y; return lhs; }
-// static FORCEINLINE ImVec2& operator/=(ImVec2& lhs, const ImVec2& rhs) { lhs.x /= rhs.x; lhs.y /= rhs.y; return lhs; }
-// static FORCEINLINE bool    operator==(const ImVec2& lhs, const ImVec2& rhs) { return lhs.x == rhs.x && lhs.y == rhs.y; }
-// static FORCEINLINE bool    operator!=(const ImVec2& lhs, const ImVec2& rhs) { return lhs.x != rhs.x || lhs.y != rhs.y; }
-// static FORCEINLINE ImVec4  operator+(const ImVec4& lhs, const ImVec4& rhs) { return ImVec4(lhs.x + rhs.x, lhs.y + rhs.y, lhs.z + rhs.z, lhs.w + rhs.w); }
-// static FORCEINLINE ImVec4  operator-(const ImVec4& lhs, const ImVec4& rhs) { return ImVec4(lhs.x - rhs.x, lhs.y - rhs.y, lhs.z - rhs.z, lhs.w - rhs.w); }
-// static FORCEINLINE ImVec4  operator*(const ImVec4& lhs, const ImVec4& rhs) { return ImVec4(lhs.x * rhs.x, lhs.y * rhs.y, lhs.z * rhs.z, lhs.w * rhs.w); }
-// static FORCEINLINE bool    operator==(const ImVec4& lhs, const ImVec4& rhs) { return lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z && lhs.w == rhs.w; }
-// static FORCEINLINE bool    operator!=(const ImVec4& lhs, const ImVec4& rhs) { return lhs.x != rhs.x || lhs.y != rhs.y || lhs.z != rhs.z || lhs.w != rhs.w; }
-
 namespace AT::UI {
+
 
 	enum class window_pos {
 
@@ -40,6 +20,7 @@ namespace AT::UI {
 		bottom_left = 4,
 		bottom_right = 5,
 	};
+
 
 	enum class mouse_interation : u8 {									
 
@@ -149,6 +130,9 @@ namespace AT::UI {
 	// Print a text with a specific font
 	void text(ImFont* font, const char* fmt, ...);
 
+
+	void text(UI::font_type type, const char* fmt, ...);
+
 	// @brief Draws text using a larger font.
 	// @param [text] The text to be drawn.
 	void big_text(const char* text, bool wrapped = false);
@@ -221,6 +205,8 @@ namespace AT::UI {
 	// MISC
 	// ============================================================================================================
 
+	bool HorizontalSplitter(const char* id, float* ratio, float total_width, float min_size = 50.0f, float splitter_size = 8.0f);
+
 	// @brief Creates a search input field with a clear button.
 	// @param [label] The label for the search input field.
 	// @param [search_text] A reference to the string that holds the search text.
@@ -279,6 +265,9 @@ namespace AT::UI {
 	bool table_row_slider_color(std::string_view label, glm::vec4& value, f32 min_value = 0.f, f32 max_value = 1.f, ImGuiInputTextFlags flags = ImGuiInputTextFlags_None);
 
 
+	void table_row(std::string_view label, std::function<void()> second_column);
+
+
 	// @brief Renders a table row with two columns, each containing custom content.
 	// @param [first_column] A function to render the content of the first column.
 	// @param [second_column] A function to render the content of the second column.
@@ -288,7 +277,9 @@ namespace AT::UI {
 	// @param [label] The label for the row.
 	// @param [text] A reference to the string that holds the text.
 	// @param [enable_input] A reference to a boolean that controls whether the text field is editable.
-	void table_row(std::string_view label, std::string& text, bool& enable_input);
+	// @param [allowSpaceAsInput] Are empty characters allowed such as space
+	// @return When the input is confirmed
+	bool table_row(std::string_view label, std::string& text, bool& enable_input, const bool allowSpaceAsInput = true);
 
 	// @brief Renders a table row with a label and formatted text.
 	// @param [label] The label for the row.
@@ -299,7 +290,7 @@ namespace AT::UI {
 	// @brief Renders a table row with a label and a checkbox.
 	// @param [label] The label for the row.
 	// @param [value] A reference to the boolean value controlled by the checkbox.
-	void table_row(std::string_view label, bool& value);
+	bool table_row(std::string_view label, bool& value);
 
 	// @brief Renders a table row with a label and a non-editable text value.
 	// @param [label] The label for the row.

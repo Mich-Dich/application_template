@@ -125,8 +125,11 @@ name& operator=(name&&) = default;
 #define GETTER_REF_FUNC_IMPL(type, name)						type name{};																\
 																type& get_##name##_ref() { return name; }
 
+#define GETTER_REF_FUNC_IMPL1(type, name)						type& get_##name##_ref() { return name; }
+
 #define GETTER_REF_FUNC_IMPL2(type, name, value)				type name = value;															\
 																type& get_##name##_ref() { return name; }
+																
 // --------- const ---------
 #define GETTER_C_FUNC_IMPL(type, name)							type name{};																\
 																type get_##name() const;

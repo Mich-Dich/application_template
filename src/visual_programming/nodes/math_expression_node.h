@@ -7,6 +7,10 @@ namespace AT {
 
     class math_expression_node : public ImFlow::BaseNode {
     public:
+        
+        SET_NODE_TYPE_NAME(math_expression_node)
+
+
         math_expression_node() {
             setTitle("Math Expression");
             setStyle(create_custom_node_style(IM_COL32(71, 142, 200, 255)));
@@ -25,6 +29,7 @@ namespace AT {
             parseExpression();
         }
         
+
         void draw() override {
             ImGui::PushItemWidth(250);
             
@@ -104,9 +109,8 @@ namespace AT {
                 ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f), "Error: %s", m_parseError.c_str());
             }
         }
-        
-        SET_NODE_TYPE_NAME(math_expression_node)
-        
+                
+
         void serialize(AT::serializer::yaml& yaml) override {
             BaseNode::serialize(yaml);
             
@@ -120,6 +124,7 @@ namespace AT {
         }
 
     private:
+
         bool parseExpression() {
             m_parseError.clear();
             
@@ -160,6 +165,7 @@ namespace AT {
             return true;
         }
         
+
         std::set<std::string> extractVariables(const std::string& expression) {
             std::set<std::string> variables;
             
@@ -194,6 +200,7 @@ namespace AT {
             return variables;
         }
         
+
         bool isReservedWord(const std::string& word) {
             // Common math functions and constants that shouldn't be treated as variables
             static const std::set<std::string> reservedWords = {
@@ -207,6 +214,7 @@ namespace AT {
             return reservedWords.count(word) > 0;
         }
         
+
         void recreatePins() {
             // Store the names of pins to remove
             std::vector<std::string> pinsToRemove;
@@ -259,6 +267,7 @@ namespace AT {
             });
         }
         
+
         void updateVariableValues() {
             // Update variable values from input pins
             for (auto& [varName, varValue] : m_variables) {

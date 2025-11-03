@@ -249,6 +249,18 @@ namespace AT::logger {
     }
 
 
+    void flush_buffer() {
+
+        std::unique_lock<std::mutex> lock(s_general_mutex);
+
+        OPEN_FILE
+        s_main_file << s_buffered_messages;
+        CLOSE_FILE
+        
+        s_buffered_messages.clear();
+    }
+    
+
     // ========================================================================================================================
     // message queue
     // ========================================================================================================================

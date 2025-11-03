@@ -27,8 +27,8 @@ namespace AT::UI {
 
 	// Enum representing available UI theme options.
 	enum class theme_selection : u8 {
-		dark, // Dark theme.
-		light // Light theme.
+		dark = 0, 				// Dark theme.
+		light 					// Light theme.
 	};
 
 
@@ -39,6 +39,7 @@ namespace AT::UI {
 		bold_big,
 		italic,
 		italic_big,
+		small,
 		header_0,
 		header_1,
 		header_2,
@@ -53,14 +54,15 @@ namespace AT::UI {
 	// -----------------------------------------------------------------------------------------------------------------------
 
 	inline std::filesystem::path g_ini_file_location = AT::config::get_filepath_from_configtype_ini(util::get_executable_path(), config::file::imgui); // Path to the ImGui .ini file.
-	inline f32 g_font_size = 15.f; 								// Default UI font size.
-	inline f32 g_font_size_header_0 = 19.f; 					// Font size for small headers.
-	inline f32 g_font_size_header_1 = 23.f; 					// Font size for medium headers.
-	inline f32 g_font_size_header_2 = 27.f; 					// Font size for large headers.
-	inline f32 g_big_font_size = 18.f; 							// Font size for emphasized text.
-	inline theme_selection g_UI_theme = theme_selection::dark; 	// Currently selected UI theme.
-	inline bool g_window_border = false; 						// Whether window borders are enabled.
-	inline ImVec4 g_highlighted_window_bg; 						// Highlighted background color for selected windows.
+	inline f32 g_font_size = 15.f; 												// Default UI font size.
+	inline f32 g_font_size_header_0 = 19.f; 									// Font size for small headers.
+	inline f32 g_font_size_header_1 = 23.f; 									// Font size for medium headers.
+	inline f32 g_font_size_header_2 = 27.f; 									// Font size for large headers.
+	inline f32 g_big_font_size = 18.f; 											// Font size for emphasized text.
+	inline f32 g_font_size_small = 14.4f;										// Font size for emphasized text.
+	inline theme_selection g_UI_theme = theme_selection::dark; 					// Currently selected UI theme.
+	inline bool g_window_border = false; 										// Whether window borders are enabled.
+	inline ImVec4 g_highlighted_window_bg = {0.5700, 0.5700, 0.5700, 1.0000}; 	// Highlighted background color for selected windows.
 
 	GETTER_REF_FUNC(ImVec4, main_color);
 	GETTER_REF_FUNC(ImVec4, main_titlebar_color);
@@ -133,7 +135,7 @@ namespace AT::UI {
 		// @param font_size_header_0 Font size for header level 0.
 		// @param font_size_header_1 Font size for header level 1.
 		// @param font_size_header_2 Font size for header level 2.
-		void resize_fonts(const f32 font_size, const f32 big_font_size, const f32 font_size_header_0, const f32 font_size_header_1, const f32 font_size_header_2);
+		void resize_fonts(const f32 regular, const f32 small, const f32 big, const f32 header_0, const f32 header_1, const f32 header_2);
 
 
 		// Retrieves a font by name.
@@ -142,7 +144,7 @@ namespace AT::UI {
 		ImFont* get_font(const font_type type = font_type::regular);
 
 
-		ImGuiID m_viewport_ID{}; // ID of the current viewport.
+		ImGuiID m_viewport_ID{}; // ID of the current viewport.gg
 
 	private:
 

@@ -30,21 +30,29 @@
 namespace AT::UI {
 
 
-	GETTER_REF_FUNC_IMPL(ImVec4, main_color);
+	ImVec4 main_color = {0.0000, 0.4088, 1.0000, 1.0000};
+	GETTER_REF_FUNC_IMPL1(ImVec4, main_color);
 	GETTER_REF_FUNC_IMPL(ImVec4, main_titlebar_color);
-
 	GETTER_REF_FUNC_IMPL(ImVec4, action_color_00_faded);
 	GETTER_REF_FUNC_IMPL(ImVec4, action_color_00_weak);
 	GETTER_REF_FUNC_IMPL(ImVec4, action_color_00_default);
 	GETTER_REF_FUNC_IMPL(ImVec4, action_color_00_hover);
 	GETTER_REF_FUNC_IMPL(ImVec4, action_color_00_active);
-			  
-	GETTER_REF_FUNC_IMPL2(ImVec4, default_gray, IMCOLOR_GRAY(30));
-	GETTER_REF_FUNC_IMPL2(ImVec4, default_gray_1, IMCOLOR_GRAY(35));
-			  
-	GETTER_REF_FUNC_IMPL2(ImVec4, action_color_gray_default, LERP_GRAY(0.2f));
-	GETTER_REF_FUNC_IMPL2(ImVec4, action_color_gray_hover, LERP_GRAY(0.27f));
-	GETTER_REF_FUNC_IMPL2(ImVec4, action_color_gray_active, LERP_GRAY(0.35f));
+	
+	ImVec4 default_gray = IMCOLOR_GRAY(30);
+	GETTER_REF_FUNC_IMPL1(ImVec4, default_gray);
+	
+	ImVec4 default_gray_1 = IMCOLOR_GRAY(35);
+	GETTER_REF_FUNC_IMPL1(ImVec4, default_gray_1);
+	
+	ImVec4 action_color_gray_default = LERP_GRAY(0.2f);
+	GETTER_REF_FUNC_IMPL1(ImVec4, action_color_gray_default);
+	
+	ImVec4 action_color_gray_hover = LERP_GRAY(0.27f);
+	GETTER_REF_FUNC_IMPL1(ImVec4, action_color_gray_hover);
+	
+	ImVec4 action_color_gray_active = LERP_GRAY(0.35f);
+	GETTER_REF_FUNC_IMPL1(ImVec4, action_color_gray_active);
 
 	[[maybe_unused]] static ImVec4 vector_multi(const ImVec4& vec_0, const ImVec4& vec_1) {
 		return ImVec4{ vec_0.x * vec_1.x, vec_0.y * vec_1.y, vec_0.z * vec_1.z, vec_0.w * vec_1.w };
@@ -59,7 +67,6 @@ namespace AT::UI {
 		ImPlot::SetCurrentContext(m_context_implot);
 
 		auto& io = ImGui::GetIO();
-		application::get().get_renderer()->imgui_destroy_fonts();
 		io.Fonts->Clear();			// Clear the font atlas before adding new fonts
 		m_fonts.clear();
 
@@ -68,33 +75,34 @@ namespace AT::UI {
 		std::filesystem::path Inconsolata_path = base_path / "Inconsolata" / "static";
 
 		io.FontAllowUserScaling = true;
-		m_fonts[font_type::regular] =		io.Fonts->AddFontFromFileTTF((font_path/ "OpenSans-Regular.ttf").string().c_str(), g_font_size);
-		m_fonts[font_type::bold] =			io.Fonts->AddFontFromFileTTF((font_path/ "OpenSans-Bold.ttf").string().c_str(), g_font_size);
-		m_fonts[font_type::italic] =		io.Fonts->AddFontFromFileTTF((font_path/ "OpenSans-Italic.ttf").string().c_str(), g_font_size);
+		m_fonts[font_type::regular] 				= io.Fonts->AddFontFromFileTTF((font_path/ "OpenSans-Regular.ttf").string().c_str(), g_font_size);
+		m_fonts[font_type::bold]					= io.Fonts->AddFontFromFileTTF((font_path/ "OpenSans-Bold.ttf").string().c_str(), g_font_size);
+		m_fonts[font_type::italic]					= io.Fonts->AddFontFromFileTTF((font_path/ "OpenSans-Italic.ttf").string().c_str(), g_font_size);
 
-		m_fonts[font_type::regular_big] =	io.Fonts->AddFontFromFileTTF((font_path / "OpenSans-Regular.ttf").string().c_str(), g_big_font_size);
-		m_fonts[font_type::bold_big] =		io.Fonts->AddFontFromFileTTF((font_path / "OpenSans-Bold.ttf").string().c_str(), g_big_font_size);
-		m_fonts[font_type::italic_big] =	io.Fonts->AddFontFromFileTTF((font_path / "OpenSans-Italic.ttf").string().c_str(), g_big_font_size);
+		m_fonts[font_type::regular_big] 			= io.Fonts->AddFontFromFileTTF((font_path / "OpenSans-Regular.ttf").string().c_str(), g_big_font_size);
+		m_fonts[font_type::bold_big] 				= io.Fonts->AddFontFromFileTTF((font_path / "OpenSans-Bold.ttf").string().c_str(), g_big_font_size);
+		m_fonts[font_type::italic_big]  			= io.Fonts->AddFontFromFileTTF((font_path / "OpenSans-Italic.ttf").string().c_str(), g_big_font_size);
 
-		m_fonts[font_type::header_0] =		io.Fonts->AddFontFromFileTTF((font_path / "OpenSans-Regular.ttf").string().c_str(), g_font_size_header_2);
-		m_fonts[font_type::header_1] =		io.Fonts->AddFontFromFileTTF((font_path / "OpenSans-Regular.ttf").string().c_str(), g_font_size_header_1);
-		m_fonts[font_type::header_2] =		io.Fonts->AddFontFromFileTTF((font_path / "OpenSans-Regular.ttf").string().c_str(), g_font_size_header_0);
+		m_fonts[font_type::small]					= io.Fonts->AddFontFromFileTTF((font_path / "OpenSans-Regular.ttf").string().c_str(), g_font_size_small);
 
-		m_fonts[font_type::giant] =			io.Fonts->AddFontFromFileTTF((font_path / "OpenSans-Bold.ttf").string().c_str(), 60.f);
+		m_fonts[font_type::header_0] 				= io.Fonts->AddFontFromFileTTF((font_path / "OpenSans-Regular.ttf").string().c_str(), g_font_size_header_2);
+		m_fonts[font_type::header_1] 				= io.Fonts->AddFontFromFileTTF((font_path / "OpenSans-Regular.ttf").string().c_str(), g_font_size_header_1);
+		m_fonts[font_type::header_2] 				= io.Fonts->AddFontFromFileTTF((font_path / "OpenSans-Regular.ttf").string().c_str(), g_font_size_header_0);
+
+		m_fonts[font_type::giant] 					= io.Fonts->AddFontFromFileTTF((font_path / "OpenSans-Bold.ttf").string().c_str(), 38.f);
 
 		//Inconsolata-Regular
 		m_fonts[font_type::monospace_regular] 		= io.Fonts->AddFontFromFileTTF((Inconsolata_path / "Inconsolata-Regular.ttf").string().c_str(), g_font_size * 0.92f);
 		m_fonts[font_type::monospace_regular_big] 	= io.Fonts->AddFontFromFileTTF((Inconsolata_path / "Inconsolata-Regular.ttf").string().c_str(), g_big_font_size * 1.92f);
 
 		io.FontDefault = m_fonts[font_type::regular];
-
-		application::get().get_renderer()->imgui_create_fonts();
 	}
 
 
 	void imgui_config::resize_fonts(const f32 font_size) {
 
 		g_font_size = font_size;
+		g_font_size_small = font_size * 0.8f;
 		g_big_font_size = font_size * 1.2f;
 		g_font_size_header_0 = font_size * 	1.2666666666f;
 		g_font_size_header_1 = font_size * 	1.5333333333f;
@@ -103,13 +111,14 @@ namespace AT::UI {
 		load_fonts();
 	}
 
-	void imgui_config::resize_fonts(const f32 font_size, const f32 big_font_size, const f32 font_size_header_0, const f32 font_size_header_1, const f32 font_size_header_2) {
+	void imgui_config::resize_fonts(const f32 regular, const f32 small, const f32 big, const f32 header_0, const f32 header_1, const f32 header_2) {
 
-		g_font_size = font_size;
-		g_big_font_size = big_font_size;
-		g_font_size_header_0 = font_size_header_0;
-		g_font_size_header_1 = font_size_header_1;
-		g_font_size_header_2 = font_size_header_2;
+		g_font_size = regular;
+		g_font_size_small = small;
+		g_big_font_size = big;
+		g_font_size_header_0 = header_0;
+		g_font_size_header_1 = header_1;
+		g_font_size_header_2 = header_2;
 
 		load_fonts();
 	}
@@ -122,19 +131,15 @@ namespace AT::UI {
 		m_context_implot = ImPlot::CreateContext();
 		application::get().get_renderer()->imgui_init();
 		
-
-		main_color = { .0f,	.4088f,	1.0f,	1.f };
-		g_window_border = false;
 		g_highlighted_window_bg = LERP_GRAY(0.57f);
-
-		serialize(serializer::option::load_from_file);
-
 		main_titlebar_color = LERP_MAIN_COLOR_DARK(.5f);			// lerp after loading main color
 		action_color_00_faded = LERP_MAIN_COLOR_DARK(0.5f);
 		action_color_00_weak = LERP_MAIN_COLOR_DARK(0.6f);
 		action_color_00_default = LERP_MAIN_COLOR_DARK(0.7f);
 		action_color_00_hover = LERP_MAIN_COLOR_DARK(0.85f);
 		action_color_00_active = LERP_MAIN_COLOR_DARK(1.f);
+
+		serialize(serializer::option::load_from_file);
 	
 		load_fonts();
 		update_UI_theme();
@@ -171,6 +176,7 @@ namespace AT::UI {
 			.entry(KEY_VALUE(g_font_size_header_1))
 			.entry(KEY_VALUE(g_font_size_header_2))
 			.entry(KEY_VALUE(g_big_font_size))
+			.entry(KEY_VALUE(g_font_size_small))
 			.entry(KEY_VALUE(g_UI_theme))
 			.entry(KEY_VALUE(g_window_border))
 			.entry(KEY_VALUE(g_highlighted_window_bg))
@@ -296,6 +302,7 @@ namespace AT::UI {
 				colors[ImGuiCol_TabActive]				= LERP_MAIN_COLOR_DARK(0.6f);
 				colors[ImGuiCol_TabUnfocused]			= LERP_MAIN_COLOR_DARK(0.5f);
 				colors[ImGuiCol_TabUnfocusedActive]		= LERP_MAIN_COLOR_DARK(0.6f);
+				colors[ImGuiCol_TabSelectedOverline]	= ImVec4(0.f, 0.f, 0.f, 0.f);
 				colors[ImGuiCol_DockingPreview]			= action_color_00_active;
 				colors[ImGuiCol_DockingEmptyBg]			= LERP_GRAY(0.2f);
 				colors[ImGuiCol_PlotLines]				= ImVec4(0.61f, 0.61f, 0.61f, 1.00f);
@@ -367,6 +374,7 @@ namespace AT::UI {
 				colors[ImGuiCol_TabActive]				= action_color_00_active;
 				colors[ImGuiCol_TabUnfocused]			= LERP_MAIN_COLOR_LIGHT(0.5f);
 				colors[ImGuiCol_TabUnfocusedActive]		= LERP_MAIN_COLOR_LIGHT(0.6f);
+				colors[ImGuiCol_TabSelectedOverline]	= ImVec4(0.f, 0.f, 0.f, 0.f);
 				colors[ImGuiCol_DockingPreview]			= action_color_00_active;
 				colors[ImGuiCol_DockingEmptyBg]			= LERP_GRAY(.2f);
 				colors[ImGuiCol_PlotLines]				= ImVec4(0.61f, 0.61f, 0.61f, 1.00f);

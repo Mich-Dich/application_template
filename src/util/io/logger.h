@@ -106,6 +106,8 @@ namespace AT::logger {
     // @note for messages that are not directly logged
     void set_buffer_size(const size_t new_size);
 
+    // 
+    void flush_buffer();
 
     // Registers a label for a specific thread, allowing for easier identification in logs.
     // If a label is already registered for the given thread ID, it will be overridden with the new label.

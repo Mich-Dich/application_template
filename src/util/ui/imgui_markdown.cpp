@@ -30,7 +30,7 @@ namespace AT::UI {
 
 #define FONT_MONOSPACE_DEFAULT      application::get().get_imgui_config_ref()->get_font(font_type::monospace_regular)
 
-    const f32 INDENTATION_SPACING = 16;
+    const f32 INDENTATION_SPACING = 6;
     static const bool skip_empty_lines = false;
     static ImVec2 button_size;
     static const ImVec2 padding(15, 15);
@@ -50,6 +50,7 @@ namespace AT::UI {
         u64     content_start = 0, content_end = 0;
         void*   user_data{};
     };
+
 
     struct markdown_context {
 
@@ -82,6 +83,7 @@ namespace AT::UI {
         }
     }
     
+
     FORCEINLINE static f32 calculate_text_height(const char* text, const char* text_end) {
         f32 scale = ImGui::GetIO().FontGlobalScale;
         f32 line_height = ImGui::GetTextLineHeight();
@@ -195,6 +197,7 @@ namespace AT::UI {
         start_position = highlight_end;
     }
 
+
     FORCEINLINE static void check_for_emphasis(markdown_context& markdown_context, u64& start_position) {
 
         u64 emphasis_start = start_position;
@@ -216,6 +219,7 @@ namespace AT::UI {
         markdown_context.line_start = emphasis_end + 2;
         start_position = emphasis_end + 1;
     }
+
 
     enum class line_purpose {
         empty,
@@ -262,10 +266,6 @@ namespace AT::UI {
         
     }
     
-#define MOVE_POINTER_TO_END_OF_LINE(pointer)            while (markdown_text[pointer] != '\n' && pointer < markdown_length)             \
-                                                            pointer++;
-
-
     // =================================================================================================================================================
     // MAIN FUNCTION
     // =================================================================================================================================================
@@ -310,9 +310,6 @@ namespace AT::UI {
                     loc_context.indentation++;
                 }
 
-                //ImGui::Text("indentation: %d                      ", loc_context.indentation);
-                //ImGui::SameLine();
-
                 if (loc_context.indentation > loc_context.indentation_last_line)
                     ImGui::Indent((f32)(loc_context.indentation - loc_context.indentation_last_line) * INDENTATION_SPACING);
                 else if (loc_context.indentation_last_line > loc_context.indentation)
@@ -336,6 +333,9 @@ namespace AT::UI {
                         x++;
 
                     ImGui::NewLine();
+                    ImVec4 header_color = AT::UI::get_main_color_ref();
+                    ImGui::PushStyleColor(ImGuiCol_Text, header_color);
+
                     switch (heading_counter) {
                         case 1:  ImGui::PushFont(FONT_HEADER_0); break;
                         case 2:  ImGui::PushFont(FONT_HEADER_1); break;
@@ -343,8 +343,13 @@ namespace AT::UI {
                         default: ImGui::PushFont(FONT_HEADER_DEFAULT); break;
                     }
                     render_text_wrapped(markdown_text + loc_context.line_start + loc_context.indentation + heading_counter, markdown_text + x);
-                    ImGui::Separator();
+                    
+                    if (heading_counter == 1)
+                        ImGui::Separator();
+
                     ImGui::PopFont();
+                    ImGui::PopStyleColor();
+                    
                     last_line_purpose = line_purpose::headline;
                     continue;
 
@@ -390,6 +395,11 @@ namespace AT::UI {
 
                         u64 y = x;
 
+                        
+                        #define MOVE_POINTER_TO_END_OF_LINE(pointer)                                    \
+                            while (markdown_text[pointer] != '\n' && pointer < markdown_length)         \
+                                pointer++;
+
                         MOVE_POINTER_TO_END_OF_LINE(y);
                         sub_section_begin = markdown_text + y+1;
 
@@ -402,6 +412,8 @@ namespace AT::UI {
                         RenderTextWithBackground(sub_section_begin, markdown_text + y, ImColor(60, 60, 60)); // Gray color
 
                         MOVE_POINTER_TO_END_OF_LINE(y);
+                        #undef MOVE_POINTER_TO_END_OF_LINE
+
                         last_line_purpose = line_purpose::highlight_block;
 
                         x = y-1;

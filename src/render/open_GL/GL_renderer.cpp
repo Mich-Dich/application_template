@@ -1,17 +1,20 @@
 #include "util/pch.h"
 
-#if defined(PLATFORM_LINUX)
-    #include <GL/glew.h>
-#elif defined(PLATFORM_WINDOWS)
-    // #include <Windows.h>
+#if defined(PLATFORM_WINDOWS)
     #define GLFW_EXPOSE_NATIVE_WIN32
-    #include <GL/glew.h>
 #endif
+#include <GL/glew.h>
 
-#include <GLFW/glfw3.h>
+#if defined(PLATFORM_WINDOWING_BACKEND_GLFW)
+    #include <GLFW/glfw3.h>
+    #include <imgui_impl_glfw.h>
+#else
+    #include <SDL3/SDL.h>
+    #include <imgui_impl_sdl3.h>
+#endif	
+
 #include <imgui.h>
 #include <imgui_internal.h>
-#include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 
 #include "util/util.h"
@@ -32,7 +35,11 @@ namespace AT::render::open_GL {
         
         PROFILE_APPLICATION_FUNCTION();
 
-        glfwMakeContextCurrent(m_window->get_window());
+        #if defined(PLATFORM_WINDOWING_BACKEND_GLFW)
+            glfwMakeContextCurrent(m_window->get_window());
+        #else
+            SDL_GL_MakeCurrent(m_window->get_window(), m_window->get_gl_context());
+        #endif	
         
         glewExperimental = GL_TRUE;
         GLenum err = glewInit();
@@ -78,30 +85,59 @@ namespace AT::render::open_GL {
 
         if (m_imgui_initalized) {
 
-            // ------ start new ImGui frame ------
-		    ImGui::SetCurrentContext(application::get().get_imgui_config_ref()->get_context_imgui());
-            ImGui_ImplOpenGL3_NewFrame();
-            ImGui_ImplGlfw_NewFrame();
-            ImGui::NewFrame();
+            {
+                PROFILE_RENDER_SCOPE("Start new ImGui Frame");
+                ImGui::SetCurrentContext(application::get().get_imgui_config_ref()->get_context_imgui());
+                ImGui_ImplOpenGL3_NewFrame();
+                #if defined(PLATFORM_WINDOWING_BACKEND_GLFW)
+                    ImGui_ImplGlfw_NewFrame();
+                #else
+                    ImGui_ImplSDL3_NewFrame();
+                #endif
+                ImGui::NewFrame();
+            }
 
-            application::get().get_dashboard()->draw(delta_time);
+            {
+                PROFILE_RENDER_SCOPE("dashboard draw");
+                application::get().get_dashboard()->draw(delta_time);
+            }
+
+            {
+                PROFILE_RENDER_SCOPE("End Frame");
+                ImGui::EndFrame();
+                ImGui::Render();
+                ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+            }
             
-            ImGui::EndFrame();
-            ImGui::Render();
-            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-            
-            // update other platform windows
-            GLFWwindow* backup_current_context = glfwGetCurrentContext();
-            ImGui::UpdatePlatformWindows();
-            ImGui::RenderPlatformWindowsDefault();
-            glfwMakeContextCurrent(backup_current_context);
-            glfwSwapBuffers(m_window->get_window());
+            {
+                PROFILE_RENDER_SCOPE("Render external windows");
+
+                #if defined(PLATFORM_WINDOWING_BACKEND_GLFW)
+                    GLFWwindow* backup_current_context = glfwGetCurrentContext();
+                #else
+                    SDL_Window* backup_current_window = SDL_GL_GetCurrentWindow();
+                    SDL_GLContext backup_current_context = SDL_GL_GetCurrentContext();
+                #endif
+
+                ImGui::UpdatePlatformWindows();
+                ImGui::RenderPlatformWindowsDefault();
+
+                #if defined(PLATFORM_WINDOWING_BACKEND_GLFW)
+                    glfwMakeContextCurrent(backup_current_context);
+                    glfwSwapBuffers(m_window->get_window());
+                #else
+                    SDL_GL_MakeCurrent(backup_current_window, backup_current_context);
+                    SDL_GL_SwapWindow(m_window->get_window());
+                #endif
+            }
         }
     }
 
     
     void GL_renderer::draw_startup_UI(float delta_time) {
             
+        PROFILE_APPLICATION_FUNCTION();
+
         // execute_pending_commands();              // DISABLED: dont need custom shaders yet
         
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -112,7 +148,11 @@ namespace AT::render::open_GL {
             // ------ start new ImGui frame ------
 		    ImGui::SetCurrentContext(application::get().get_imgui_config_ref()->get_context_imgui());
             ImGui_ImplOpenGL3_NewFrame();
-            ImGui_ImplGlfw_NewFrame();
+            #if defined(PLATFORM_WINDOWING_BACKEND_GLFW)
+                ImGui_ImplGlfw_NewFrame();
+            #else
+                ImGui_ImplSDL3_NewFrame();
+            #endif
             ImGui::NewFrame();
 
             application::get().get_dashboard()->draw_init_UI(delta_time);
@@ -122,11 +162,23 @@ namespace AT::render::open_GL {
             ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
             
             // update other platform windows
-            GLFWwindow* backup_current_context = glfwGetCurrentContext();
+            #if defined(PLATFORM_WINDOWING_BACKEND_GLFW)
+                GLFWwindow* backup_current_context = glfwGetCurrentContext();
+            #else
+                SDL_Window* backup_current_window = SDL_GL_GetCurrentWindow();
+                SDL_GLContext backup_current_context = SDL_GL_GetCurrentContext();
+            #endif
+
             ImGui::UpdatePlatformWindows();
             ImGui::RenderPlatformWindowsDefault();
-            glfwMakeContextCurrent(backup_current_context);
-            glfwSwapBuffers(m_window->get_window());
+
+            #if defined(PLATFORM_WINDOWING_BACKEND_GLFW)
+                glfwMakeContextCurrent(backup_current_context);
+                glfwSwapBuffers(m_window->get_window());
+            #else
+                SDL_GL_MakeCurrent(backup_current_window, backup_current_context);
+                SDL_GL_SwapWindow(m_window->get_window());
+            #endif
         }
     }
 
@@ -151,7 +203,11 @@ namespace AT::render::open_GL {
 
         // util::get_executable_path();
 
-        ImGui_ImplGlfw_InitForOpenGL(m_window->get_window(), true);
+        #if defined(PLATFORM_WINDOWING_BACKEND_GLFW)
+            ImGui_ImplGlfw_InitForOpenGL(m_window->get_window(), true);
+        #else
+            ImGui_ImplSDL3_InitForOpenGL(m_window->get_window(), m_window->get_gl_context());
+        #endif
         ImGui_ImplOpenGL3_Init("#version 330");
         ImGui::StyleColorsDark();
         m_imgui_initalized = true;
@@ -161,7 +217,11 @@ namespace AT::render::open_GL {
     void GL_renderer::imgui_shutdown() {
 
         ImGui_ImplOpenGL3_Shutdown();
-        ImGui_ImplGlfw_Shutdown();
+        #if defined(PLATFORM_WINDOWING_BACKEND_GLFW)
+            ImGui_ImplGlfw_Shutdown();
+        #else
+            ImGui_ImplSDL3_Shutdown();
+        #endif
     }
 
 

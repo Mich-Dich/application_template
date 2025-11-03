@@ -1,44 +1,6 @@
 #pragma once
 
-#ifdef ENGINE
-    #define API                             __attribute__((visibility("default")))
-#else
-    #define API                             
-#endif
-
-//#ifdef ENGINE
-//    #define HELPER_API                     __attribute__((visibility("default")))
-//#elif defined(HELPER)
-//    #define HELPER_API                     
-//#else
-//    #define HELPER_API
-//#endif
-
-#ifdef ENGINE
-    #define API_EDITOR                      __attribute__((visibility("default")))
-#elif defined(EDITOR)
-    #define API_EDITOR                      
-#else
-    #define API_EDITOR	
-#endif
-
-#ifdef PROJECT
-    #define PROJECT_API                         extern "C" __attribute__((visibility("default")))
-#else
-    #define PROJECT_API                         extern "C"
-#endif
-
-#if defined(ENGINE) || defined(EDITOR)
-    #define USE_IN_EDITOR
-#else
-    #define USE_IN_EDITOR	
-#endif
-
 #define DEBUG_BREAK()                          __builtin_trap()
-
-#ifdef CDECL
-    #undef CDECL
-#endif
 
 // Function type macros.
 // Functions with variable arguments (not directly supported in C++)

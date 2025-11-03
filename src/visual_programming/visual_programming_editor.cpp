@@ -11,34 +11,10 @@ namespace AT {
 
     visual_programming_editor::visual_programming_editor() {
         
-        // Somewhere in your initialization code
-        // FunctionRegistry::getInstance().registerFunction({
-        //     "Sine Wave",
-        //     "Calculates sine of input angle in radians", 
-        //     "Math",
-        //     {{"angle", 0.0}},
-        //     {{"result", 0.0}},
-        //     [](const std::vector<FunctionValue>& inputs) -> std::vector<FunctionValue> {
-        //         double angle = std::get<double>(inputs[0]);
-        //         return {std::sin(angle)};
-        //     }
-        // });
-
-        // FunctionRegistry::getInstance().registerFunction({
-        //     "Power",
-        //     "Raises base to exponent power",
-        //     "Math", 
-        //     {{"base", 0.0}, {"exponent", 0.0}},
-        //     {{"result", 0.0}},
-        //     [](const std::vector<FunctionValue>& inputs) -> std::vector<FunctionValue> {
-        //         double base = std::get<double>(inputs[0]);
-        //         double exponent = std::get<double>(inputs[1]);
-        //         return {std::pow(base, exponent)};
-        //     }
-        // });
-
         setup_node_factories();
         memset(m_searchBuffer, 0, sizeof(m_searchBuffer)); // Initialize search buffer
+
+        minimal_node_registry::getInstance();
     }
 
 
@@ -67,33 +43,40 @@ namespace AT {
 
     void visual_programming_editor::setup_node_factories() {
         
-        m_node_factories["FunctionNode"] = [this](const ImVec2& pos) { 
+        m_node_factories["function_node"] = [this](const ImVec2& pos) { 
             // This is problematic for loading - we need to store which function was used
             // For now, use the first available function as default
-            auto allFuncs = FunctionRegistry::getInstance().getAllFunctions();
+            auto allFuncs = function_registry::getInstance().getAllFunctions();
             if (!allFuncs.empty()) {
-                return m_editor.addNode<FunctionNode>(pos, allFuncs.begin()->second);
+                return m_editor.addNode<function_node>(pos, allFuncs.begin()->second);
             }
             // Fallback: create a simple add function
-            FunctionDefinition fallbackDef = {
+            function_definition fallbackDef = {
                 "Add",
                 "Adds two numbers",
                 "Math",
                 {
-                    {"a", "double", 0.0, true, "First number"},
-                    {"b", "double", 0.0, true, "Second number"}
+                    {"a", pin_data_type::floating_point, 0.0, true, "First number"},
+                    {"b", pin_data_type::floating_point, 0.0, true, "Second number"}
                 },
                 {
-                    {"result", "double", 0.0, true, "Sum of a and b"}
+                    {"result", pin_data_type::floating_point, 0.0, true, "Sum of a and b"}
                 },
-                [](const std::vector<FunctionValue>& inputs) -> std::vector<FunctionValue> {
+                [](const std::vector<function_value>& inputs) -> std::vector<function_value> {
                     double a = std::get<double>(inputs[0]);
                     double b = std::get<double>(inputs[1]);
                     return {a + b};
                 },
                 false
             };
-            return m_editor.addNode<FunctionNode>(pos, fallbackDef);
+            return m_editor.addNode<function_node>(pos, fallbackDef);
+        };
+
+        // Add minimal node factory - simplified
+        m_node_factories["minimal_node"] = [this](const ImVec2& pos) -> std::shared_ptr<ImFlow::BaseNode> {
+            std::vector<pin_data_type> input_types = {pin_data_type::floating_point, pin_data_type::floating_point};
+            std::vector<pin_data_type> output_types = {pin_data_type::floating_point};
+            return m_editor.addNode<minimal_node>(pos, "Add", input_types, output_types);
         };
     }
 

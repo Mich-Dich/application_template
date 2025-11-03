@@ -3,12 +3,13 @@
 
 #include <emmintrin.h>    // SSE2
 #include <immintrin.h>    // for future‑proofing (AVX)
-#include <imgui_impl_glfw.h>
+#include <imgui_impl_sdl3.h>
 #if defined(RENDER_API_VULKAN)
 	#include <imgui_impl_vulkan.h>
 #endif
 #include <imgui_internal.h>
 
+#include "application.h"
 #include "config/imgui_config.h"
 
 #include "panel_collection.h"
@@ -278,7 +279,7 @@ namespace AT::UI {
 
 			ImGui::PushStyleColor(ImGuiCol_Button, UI::get_action_color_00_faded_ref());
 			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, UI::get_action_color_00_weak_ref());
-			ImGui::PushStyleColor(ImGuiCol_ButtonActive, UI::get_action_color_00_default_ref());
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, UI::get_main_color_ref());
 		}
 
 		const bool result = ImGui::Button("show Markdown", ImVec2(100, 21));
@@ -375,7 +376,20 @@ namespace AT::UI {
 		ImGui::PopFont();
 	}
 
+
+	void text(UI::font_type type, const char* fmt, ...) {
+
+		ImGui::PushFont(application::get().get_imgui_config_ref()->get_font(type));
+
+		va_list args;
+		va_start(args, fmt);
+		ImGui::TextV(fmt, args);
+		va_end(args);
+		
+		ImGui::PopFont();
+	}
 	
+
 	void big_text(const char* text, bool wrapped) {
 
 		ImGui::PushFont(application::get().get_imgui_config_ref()->get_font(font_type::regular_big));
@@ -896,6 +910,52 @@ namespace AT::UI {
 	// ============================================================================================================
 	// MISC
 	// ============================================================================================================
+	
+	// Generic horizontal splitter function
+	bool HorizontalSplitter(const char* id, float* ratio, float total_width, float min_size, float splitter_size)
+	{
+		bool changed = false;
+		
+		// Calculate widths based on ratio
+		float left_width = total_width * (*ratio);
+		float right_width = total_width * (1.0f - *ratio);
+		
+		// Apply minimum size constraints
+		if (left_width < min_size) {
+			left_width = min_size;
+			*ratio = min_size / total_width;
+		}
+		if (right_width < min_size) {
+			right_width = min_size;
+			*ratio = 1.0f - (min_size / total_width);
+		}
+		
+		// Create splitter
+		ImGui::InvisibleButton(id, ImVec2(splitter_size, -1));
+		
+		if (ImGui::IsItemActive())
+		{
+			float delta = ImGui::GetIO().MouseDelta.x / total_width;
+			*ratio += delta;
+			*ratio = ImClamp(*ratio, 0.1f, 0.9f); // Keep some minimum space for both
+			changed = true;
+		}
+		
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
+		}
+		
+		// Draw splitter visual
+		const f32 cropSize = (splitter_size - 1.f) / 2;
+		ImVec2 splitter_min = ImGui::GetItemRectMin() + ImVec2(cropSize, 0.f);
+		ImVec2 splitter_max = ImGui::GetItemRectMax() - ImVec2(cropSize, 0.f);
+		ImGui::GetWindowDrawList()->AddRectFilled(
+			splitter_min, splitter_max, ImGui::GetColorU32(ImGuiCol_SeparatorActive), 0.0f);
+		
+		return changed;
+	}
+
 
 	bool search_input(const char* lable, std::string& search_text) {
 
@@ -1170,17 +1230,28 @@ namespace AT::UI {
 	}
 
 
-	void table_row(std::function<void()> first_colum, std::function<void()> second_colum) {
+	void table_row(std::string_view label, std::function<void()> second_column) {
 
 		ImGui::TableNextRow();
 		ImGui::TableSetColumnIndex(0);
-		first_colum();
+		ImGui::Text("%s", label.data());
 		ImGui::TableSetColumnIndex(1);
-		second_colum();
+		second_column();
 	}
 
 
-	void table_row(std::string_view label, std::string& text, bool& enable_input) {
+	void table_row(std::function<void()> first_column, std::function<void()> second_column) {
+
+		ImGui::TableNextRow();
+		ImGui::TableSetColumnIndex(0);
+		first_column();
+		ImGui::TableSetColumnIndex(1);
+		second_column();
+	}
+
+
+	bool table_row(std::string_view label, std::string& text, bool& enable_input, const bool allowSpaceAsInput) {
+		bool confirmed = false;
 
 		ImGui::TableNextRow();
 		ImGui::TableSetColumnIndex(0);
@@ -1189,32 +1260,48 @@ namespace AT::UI {
 		ImGui::TableSetColumnIndex(1);
 
 		if (enable_input) {
-
 			std::string loc_label = "##";
 			loc_label.reserve(label.size() + 2);
-			std::remove_copy_if(label.begin(), label.end(), std::back_inserter(loc_label), [](char c) { return std::isspace(static_cast<unsigned char>(c)); });
+			std::remove_copy_if(label.begin(), label.end(), std::back_inserter(loc_label), 
+				[](char c) { return std::isspace(static_cast<unsigned char>(c)); });
 
 			std::string buffer = text;
 			buffer.resize(256);
 
 			ImGui::SetNextItemWidth(ImGui::GetColumnWidth());
-			if (ImGui::InputText(loc_label.c_str(), buffer.data(), 256, ImGuiInputTextFlags_CharsNoBlank | ImGuiInputTextFlags_EnterReturnsTrue)) {
-
+			
+			// Remove  to allow spaces
+			ImGuiInputTextFlags flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_EscapeClearsAll
+				| ImGuiInputTextFlags_CtrlEnterForNewLine | ImGuiInputTextFlags_AutoSelectAll;
+			if (!allowSpaceAsInput)
+			{
+				flags |= ImGuiInputTextFlags_CharsNoBlank;
+			}
+			if (ImGui::InputText(loc_label.c_str(), buffer.data(), 256, flags))
+			{
 				buffer.resize(strlen(buffer.c_str()));
-				if (!buffer.empty()) {
-
+				if (!buffer.empty())
+				{
 					text = buffer;
 					enable_input = false;
+					confirmed = true;  // Input was confirmed
 				}
 			}
-
+			
+			// Optional: Handle loss of focus (clicking away) to cancel editing
+			if (!ImGui::IsItemActive() && ImGui::IsItemDeactivated()) {
+				enable_input = false;
+			}
+			
 		} else {
 
+			ImGui::SetNextItemWidth(ImGui::GetColumnWidth());
 			UI::gray_button(text.c_str());
-			if (get_mouse_interation_on_item() == mouse_interation::left_double_clicked) 
+			if (get_mouse_interation_on_item() == mouse_interation::left_double_clicked)
 				enable_input = true;
 		}
 
+		return confirmed;
 	}
 
 	
@@ -1233,7 +1320,7 @@ namespace AT::UI {
 	}
 
 
-	void table_row(std::string_view label, bool& value) {
+	bool table_row(std::string_view label, bool& value) {
 
 		ImGui::TableNextRow();
 		ImGui::TableSetColumnIndex(0);
@@ -1241,7 +1328,7 @@ namespace AT::UI {
 
 		ImGui::TableSetColumnIndex(1);
 
-		ImGui::Checkbox(label.data(), &value);
+		return ImGui::Checkbox(label.data(), &value);
 		//ImGui::Text("%s", value.data());
 	}
 

@@ -1,9 +1,18 @@
 #pragma once
 
-struct GLFWwindow;
-struct VkExtent2D;
-struct VkInstance_T;
-struct VkSurfaceKHR_T;
+#if defined(PLATFORM_WINDOWING_BACKEND_GLFW)
+	struct GLFWwindow;
+#else
+	struct SDL_Event;
+	struct SDL_Window;
+	struct SDL_GLContext;
+#endif
+
+#if defined(RENDER_API_VULKAN)
+	struct VkExtent2D;
+	struct VkInstance_T;
+	struct VkSurfaceKHR_T;
+#endif
 
 class event;
 class application;
@@ -79,13 +88,17 @@ namespace AT {
 		// @return Window height in pixels.
 		GETTER_C(u32, height, m_data.height)
 		
+		#if defined(PLATFORM_WINDOWING_BACKEND_SDL3)
+			DEFAULT_GETTER(SDL_GLContext, gl_context)
+		#endif
+
 		// Returns the current window attributes.
 		// @return A copy of the window_attrib struct.
 		FORCEINLINE window_attrib get_attributes() const { return m_data; }
 
 		// Returns the raw GLFW window pointer.
 		// @return A pointer to the GLFWwindow object.
-		FORCEINLINE GLFWwindow* get_window() const { return m_Window; }
+		FORCEINLINE GLFWwindow* get_window() const { return m_window; }
 
 		// Sets the callback function used to handle window events.
 		// @param callback Function to call when events occur.
@@ -156,7 +169,7 @@ namespace AT {
 		// @return True if the user requested the window to close, false otherwise.
 		bool should_close();
 
-		// Processes window events by polling GLFW and executing queued custom events.
+		// Processes window events by polling windowing backend and executing queued custom events.
 		// @return None.
 		void poll_events();
 
@@ -176,16 +189,32 @@ namespace AT {
 	
 	private:
 	
-		// Binds all GLFW event callbacks to the window.
-		// This function sets up handling for resize, focus, close, mouse, and key events.
-		// @return None.
-		void bind_event_callbacks();
-	
-		std::mutex 							m_event_queue_mutex;	// Mutex protecting the event queue.
-		std::queue<std::function<void()>> 	m_event_queue;         	// Custom event execution queue.
-		std::filesystem::path 				m_icon_path;            // Path to the window icon.
-		window_attrib 						m_data{};     			// Stores all attributes of the window.
-		GLFWwindow* 						m_Window{};    			// Pointer to the GLFW window object.
+		#if defined(PLATFORM_WINDOWING_BACKEND_GLFW)
+			// Binds all GLFW event callbacks to the window.
+			// This function sets up handling for resize, focus, close, mouse, and key events.
+			// @return None.
+			void bind_event_callbacks();
+		#else
+
+			void process_sdl_event(const SDL_Event& event);
+
+		#endif
+
+		std::mutex 							m_event_queue_mutex{};		// Mutex protecting the event queue.
+		std::queue<std::function<void()>> 	m_event_queue{};         	// Custom event execution queue.
+		std::filesystem::path 				m_icon_path{};            	// Path to the window icon.
+		window_attrib 						m_data{};     				// Stores all attributes of the window.
+		#if defined(PLATFORM_WINDOWING_BACKEND_GLFW)
+			GLFWwindow* 					m_window{};    				// Pointer to the GLFW window object.
+		#elif defined(PLATFORM_WINDOWING_BACKEND_SDL3)
+			SDL_Window* 					m_window{};
+			SDL_GLContext 					m_gl_context{};
+			bool 							m_is_titlebar_hovered = false;
+			glm::vec2 						m_cursor_position = {};
+			bool 							m_should_close = false;
+		#else
+			#error No windowing backend defined
+		#endif
 	};
 
 }	

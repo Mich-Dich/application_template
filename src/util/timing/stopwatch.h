@@ -11,6 +11,7 @@ namespace AT::util {
     class stopwatch {
     public:
 
+        stopwatch() {};
         stopwatch(f32* result_pointer, duration_precision precision = duration_precision::milliseconds)
             : m_result_pointer(result_pointer), m_precision(precision) { _start(); }
 

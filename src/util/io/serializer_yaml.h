@@ -305,7 +305,7 @@ namespace AT::serializer {
 				for (const auto& element : set) {
 					std::string buffer;
 					util::convert_to_string<T>(element, buffer);
-					m_file_content << util::add_spaces(m_level_of_indention + 1) << "- " << buffer << "\n";
+					m_file_content << util::add_spaces(m_level_of_indention) << "- " << buffer << "\n";
 				}
 			} else {																	// Deserialize the set from YAML
 
@@ -319,7 +319,7 @@ namespace AT::serializer {
 				}
 
 				while (std::getline(m_file_content, line)) {							// Read sequence elements
-					if (util::measure_indentation(line) <= m_level_of_indention) 		// End of set section
+					if (util::measure_indentation(line) < m_level_of_indention || line.back() == ':') 		// End of set section
 						break;
 					
 					if (line.find("- ") != std::string::npos) {							// Extract element value

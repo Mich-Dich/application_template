@@ -8,6 +8,9 @@
 #include "visual_programming/nodes/math_expression_node.h"
 #include "visual_programming/nodes/function_node.h"
 #include "visual_programming/nodes/function_registry.h"
+#include "visual_programming/nodes/minimal_node.h"
+#include "visual_programming/nodes/minimal_node_registry.h"
+
 
 namespace AT {
 
@@ -267,16 +270,13 @@ namespace AT {
     struct NodeDefinition {
         const char* name;
         const char* category;
-        // std::function<std::shared_ptr<ImFlow::BaseNode>(ImFlow::ImNodeFlow& editor, const ImVec2& pos)> creator;
+        // std::function<ref<ImFlow::BaseNode>(ImFlow::ImNodeFlow& editor, const ImVec2& pos)> creator;
         std::function<void(ImFlow::ImNodeFlow& editor, const ImVec2& pos)> creator;
         const char* description;
     };
 
 
     static std::vector<NodeDefinition> node_list = {
-        {"Begin", "Execution",
-            [](ImFlow::ImNodeFlow& editor, const ImVec2& pos) { editor.addNode<BeginNode>(pos); },
-            "Start execution flow"},
                 
         {"Math Expression", "Math Operations", 
             [](ImFlow::ImNodeFlow& editor, const ImVec2& pos) { editor.addNode<math_expression_node>(pos); },
@@ -293,40 +293,74 @@ namespace AT {
 
 
     // Helper to create function nodes
-    static void createFunctionNode(ImFlow::ImNodeFlow& editor, const ImVec2& pos, const std::string& functionName) {
-        const auto* def = FunctionRegistry::getInstance().getFunction(functionName);
+    static void createfunction_node(ImFlow::ImNodeFlow& editor, const ImVec2& pos, const std::string& functionName) {
+        const auto* def = function_registry::getInstance().getFunction(functionName);
         if (def) {
-            auto node = editor.addNode<FunctionNode>(pos, *def);
+            auto node = editor.addNode<function_node>(pos, *def);
         }
     }
 
 
     // Create node definitions for all registered functions
-    static std::vector<NodeDefinition> createFunctionNodeList() {
-        std::vector<NodeDefinition> functionNodes;
-        const auto& allFunctions = FunctionRegistry::getInstance().getAllFunctions();
+    static std::vector<NodeDefinition> createfunction_nodeList() {
+        std::vector<NodeDefinition> function_nodes;
+        const auto& allFunctions = function_registry::getInstance().getAllFunctions();
         
         for (const auto& [name, def] : allFunctions) {
-            functionNodes.push_back({
+            function_nodes.push_back({
                 def.title.c_str(),
                 def.category.c_str(),
                 [name](ImFlow::ImNodeFlow& editor, const ImVec2& pos) { 
-                    createFunctionNode(editor, pos, name); 
+                    createfunction_node(editor, pos, name); 
                 },
                 def.description.c_str()
             });
         }
         
-        return functionNodes;
+        return function_nodes;
     }
+
+
+    // -------------------------- minimal node --------------------------
+
+    // helper function to create minimal nodes
+    static void createMinimalNode(ImFlow::ImNodeFlow& editor, const ImVec2& pos, const std::string& nodeName) {
+        const auto* def = minimal_node_registry::getInstance().getNode(nodeName);
+        if (def) {
+            auto node = editor.addNode<minimal_node>(pos, def->name, def->inputs, def->outputs, def->operation);
+        }
+    }
+
+    // function to create minimal node list
+    static std::vector<NodeDefinition> createMinimalNodeList() {
+        std::vector<NodeDefinition> minimal_nodes;
+        const auto& allNodes = minimal_node_registry::getInstance().getAllNodes();
+        
+        for (const auto& [name, def] : allNodes) {
+            minimal_nodes.push_back({
+                def.name.c_str(),
+                def.category.c_str(),
+                [name](ImFlow::ImNodeFlow& editor, const ImVec2& pos) { 
+                    createMinimalNode(editor, pos, name); 
+                },
+                def.description.c_str()
+            });
+        }
+        
+        return minimal_nodes;
+    }
+
 
 
     // Combine existing nodes with function nodes
     static std::vector<NodeDefinition> getCompleteNodeList() {
         auto completeList = node_list;
-        auto functionList = createFunctionNodeList();
+        auto functionList = createfunction_nodeList();
+        auto minimalList = createMinimalNodeList();
         completeList.insert(completeList.end(), functionList.begin(), functionList.end());
+        completeList.insert(completeList.end(), minimalList.begin(), minimalList.end());
         return completeList;
     }
+
 
 }
