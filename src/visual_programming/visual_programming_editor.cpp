@@ -56,11 +56,11 @@ namespace AT {
                 "Adds two numbers",
                 "Math",
                 {
-                    {"a", pin_data_type::floating_point, 0.0, true, "First number"},
-                    {"b", pin_data_type::floating_point, 0.0, true, "Second number"}
+                    {"a", pin_data_type::float_32, 0.0, true, "First number"},
+                    {"b", pin_data_type::float_32, 0.0, true, "Second number"}
                 },
                 {
-                    {"result", pin_data_type::floating_point, 0.0, true, "Sum of a and b"}
+                    {"result", pin_data_type::float_32, 0.0, true, "Sum of a and b"}
                 },
                 [](const std::vector<function_value>& inputs) -> std::vector<function_value> {
                     double a = std::get<double>(inputs[0]);
@@ -74,8 +74,8 @@ namespace AT {
 
         // Add minimal node factory - simplified
         m_node_factories["minimal_node"] = [this](const ImVec2& pos) -> std::shared_ptr<ImFlow::BaseNode> {
-            std::vector<pin_data_type> input_types = {pin_data_type::floating_point, pin_data_type::floating_point};
-            std::vector<pin_data_type> output_types = {pin_data_type::floating_point};
+            std::vector<pin_data_type> input_types = {pin_data_type::float_32, pin_data_type::float_32};
+            std::vector<pin_data_type> output_types = {pin_data_type::float_32};
             return m_editor.addNode<minimal_node>(pos, "Add", input_types, output_types);
         };
     }

@@ -53,11 +53,11 @@ namespace AT {
                 "Adds two numbers",
                 "Math",
                 {
-                    {"a", pin_data_type::floating_point, 0.0, true, "First number"},
-                    {"b", pin_data_type::floating_point, 0.0, true, "Second number"}
+                    {"a", pin_data_type::float_32, 0.0, true, "First number"},
+                    {"b", pin_data_type::float_32, 0.0, true, "Second number"}
                 },
                 {
-                    {"result", pin_data_type::floating_point, 0.0, true, "Sum of a and b"}
+                    {"result", pin_data_type::float_32, 0.0, true, "Sum of a and b"}
                 },
                 [](const std::vector<function_value>& inputs) -> std::vector<function_value> {
                     double a = std::get<double>(inputs[0]);
@@ -73,11 +73,11 @@ namespace AT {
                 "Multiplies two numbers",
                 "Math",
                 {
-                    {"a", pin_data_type::floating_point, 0.0, true, "First number"},
-                    {"b", pin_data_type::floating_point, 0.0, true, "Second number"}
+                    {"a", pin_data_type::float_32, 0.0, true, "First number"},
+                    {"b", pin_data_type::float_32, 0.0, true, "Second number"}
                 },
                 {
-                    {"result", pin_data_type::floating_point, 0.0, true, "Product of a and b"}
+                    {"result", pin_data_type::float_32, 0.0, true, "Product of a and b"}
                 },
                 [](const std::vector<function_value>& inputs) -> std::vector<function_value> {
                     double a = std::get<double>(inputs[0]);
@@ -93,10 +93,10 @@ namespace AT {
                 "Calculates square root of a number",
                 "Math", 
                 {
-                    {"x", pin_data_type::floating_point, 0.0, true, "Input value"}
+                    {"x", pin_data_type::float_32, 0.0, true, "Input value"}
                 },
                 {
-                    {"result", pin_data_type::floating_point, 0.0, true, "Square root of x"}
+                    {"result", pin_data_type::float_32, 0.0, true, "Square root of x"}
                 },
                 [](const std::vector<function_value>& inputs) -> std::vector<function_value> {
                     double x = std::get<double>(inputs[0]);
@@ -131,8 +131,8 @@ namespace AT {
                 "Compares two numbers",
                 "Logic",
                 {
-                    {"a", pin_data_type::floating_point, 0.0, true, "First number"},
-                    {"b", pin_data_type::floating_point, 0.0, true, "Second number"}
+                    {"a", pin_data_type::float_32, 0.0, true, "First number"},
+                    {"b", pin_data_type::float_32, 0.0, true, "Second number"}
                 },
                 {
                     {"a_equals_b", pin_data_type::boolean, false, true, "True if a equals b"},
@@ -153,11 +153,11 @@ namespace AT {
                 "Generates a random integer within specified range",
                 "Random",
                 {
-                    {"min", pin_data_type::integer, 0, true, "Minimum value (inclusive)"},
-                    {"max", pin_data_type::integer, 100, true, "Maximum value (inclusive)"}
+                    {"min", pin_data_type::integer_32, 0, true, "Minimum value (inclusive)"},
+                    {"max", pin_data_type::integer_32, 100, true, "Maximum value (inclusive)"}
                 },
                 {
-                    {"result", pin_data_type::integer, 0, true, "Random integer"}
+                    {"result", pin_data_type::integer_32, 0, true, "Random integer"}
                 },
                 [](const std::vector<function_value>& inputs) -> std::vector<function_value> {
                     int min = std::get<int>(inputs[0]);
@@ -174,11 +174,11 @@ namespace AT {
                 "Generates a random floating-point number within specified range",
                 "Random",
                 {
-                    {"min", pin_data_type::floating_point, 0.0, true, "Minimum value (inclusive)"},
-                    {"max", pin_data_type::floating_point, 1.0, true, "Maximum value (inclusive)"}
+                    {"min", pin_data_type::float_32, 0.0, true, "Minimum value (inclusive)"},
+                    {"max", pin_data_type::float_32, 1.0, true, "Maximum value (inclusive)"}
                 },
                 {
-                    {"result", pin_data_type::floating_point, 0.0, true, "Random float"}
+                    {"result", pin_data_type::float_32, 0.0, true, "Random float"}
                 },
                 [](const std::vector<function_value>& inputs) -> std::vector<function_value> {
                     double min = std::get<double>(inputs[0]);
@@ -195,7 +195,7 @@ namespace AT {
                 "Generates a random boolean value",
                 "Random",
                 {
-                    {"probability", pin_data_type::floating_point, 0.5, true, "Probability of true (0.0 to 1.0)"}
+                    {"probability", pin_data_type::float_32, 0.5, true, "Probability of true (0.0 to 1.0)"}
                 },
                 {
                     {"result", pin_data_type::boolean, false, true, "Random boolean"}
@@ -213,7 +213,7 @@ namespace AT {
                 "Generates a random alphanumeric string",
                 "Random",
                 {
-                    {"length", pin_data_type::integer, 10, true, "Length of the string"}
+                    {"length", pin_data_type::integer_32, 10, true, "Length of the string"}
                 },
                 {
                     {"result", pin_data_type::string, std::string(""), true, "Random string"}
@@ -233,7 +233,7 @@ namespace AT {
                 "Constants",
                 {},
                 {
-                    {"pi", pin_data_type::floating_point, 0.0, true, "Value of π"}
+                    {"pi", pin_data_type::float_32, 0.0, true, "Value of π"}
                 },
                 [](const std::vector<function_value>& inputs) -> std::vector<function_value> {
                     return {AT::pi<double>()};
@@ -247,7 +247,7 @@ namespace AT {
                 "Constants",
                 {},
                 {
-                    {"e", pin_data_type::floating_point, 0.0, true, "Value of e"}
+                    {"e", pin_data_type::float_32, 0.0, true, "Value of e"}
                 },
                 [](const std::vector<function_value>& inputs) -> std::vector<function_value> {
                     return {AT::e<double>()};
@@ -261,7 +261,7 @@ namespace AT {
                 "Constants",
                 {},
                 {
-                    {"golden_ratio", pin_data_type::floating_point, 0.0, true, "Value of golden ratio"}
+                    {"golden_ratio", pin_data_type::float_32, 0.0, true, "Value of golden ratio"}
                 },
                 [](const std::vector<function_value>& inputs) -> std::vector<function_value> {
                     return {AT::golden_ratio<double>()};
@@ -278,7 +278,7 @@ namespace AT {
                     {"input", pin_data_type::string, std::string(""), true, "Input string"}
                 },
                 {
-                    {"length", pin_data_type::integer, 0, true, "Length of the string"}
+                    {"length", pin_data_type::integer_32, 0, true, "Length of the string"}
                 },
                 [](const std::vector<function_value>& inputs) -> std::vector<function_value> {
                     std::string str = std::get<std::string>(inputs[0]);
@@ -385,12 +385,12 @@ namespace AT {
                 "Finds minimum and maximum of two numbers",
                 "Math",
                 {
-                    {"a", pin_data_type::floating_point, 0.0, true, "First number"},
-                    {"b", pin_data_type::floating_point, 0.0, true, "Second number"}
+                    {"a", pin_data_type::float_32, 0.0, true, "First number"},
+                    {"b", pin_data_type::float_32, 0.0, true, "Second number"}
                 },
                 {
-                    {"min", pin_data_type::floating_point, 0.0, true, "Minimum value"},
-                    {"max", pin_data_type::floating_point, 0.0, true, "Maximum value"}
+                    {"min", pin_data_type::float_32, 0.0, true, "Minimum value"},
+                    {"max", pin_data_type::float_32, 0.0, true, "Maximum value"}
                 },
                 [](const std::vector<function_value>& inputs) -> std::vector<function_value> {
                     double a = std::get<double>(inputs[0]);
@@ -405,11 +405,11 @@ namespace AT {
                 "Raises a number to a power",
                 "Math",
                 {
-                    {"base", pin_data_type::floating_point, 2.0, true, "Base number"},
-                    {"exponent", pin_data_type::floating_point, 3.0, true, "Exponent"}
+                    {"base", pin_data_type::float_32, 2.0, true, "Base number"},
+                    {"exponent", pin_data_type::float_32, 3.0, true, "Exponent"}
                 },
                 {
-                    {"result", pin_data_type::floating_point, 0.0, true, "base raised to exponent"}
+                    {"result", pin_data_type::float_32, 0.0, true, "base raised to exponent"}
                 },
                 [](const std::vector<function_value>& inputs) -> std::vector<function_value> {
                     double base = std::get<double>(inputs[0]);
@@ -425,10 +425,10 @@ namespace AT {
                 "Converts a floating-point number to integer (truncates)",
                 "Conversion",
                 {
-                    {"input", pin_data_type::floating_point, 0.0, true, "Input float"}
+                    {"input", pin_data_type::float_32, 0.0, true, "Input float"}
                 },
                 {
-                    {"result", pin_data_type::integer, 0, true, "Truncated integer"}
+                    {"result", pin_data_type::integer_32, 0, true, "Truncated integer"}
                 },
                 [](const std::vector<function_value>& inputs) -> std::vector<function_value> {
                     double input = std::get<double>(inputs[0]);
@@ -442,10 +442,10 @@ namespace AT {
                 "Converts an integer to floating-point number",
                 "Conversion",
                 {
-                    {"input", pin_data_type::integer, 0, true, "Input integer"}
+                    {"input", pin_data_type::integer_32, 0, true, "Input integer"}
                 },
                 {
-                    {"result", pin_data_type::floating_point, 0.0, true, "Converted float"}
+                    {"result", pin_data_type::float_32, 0.0, true, "Converted float"}
                 },
                 [](const std::vector<function_value>& inputs) -> std::vector<function_value> {
                     int input = std::get<int>(inputs[0]);
@@ -497,13 +497,13 @@ namespace AT {
                 "Generates a random 3D vector within specified range",
                 "Random",
                 {
-                    {"min", pin_data_type::floating_point, -1.0, true, "Minimum value for each component"},
-                    {"max", pin_data_type::floating_point, 1.0, true, "Maximum value for each component"}
+                    {"min", pin_data_type::float_32, -1.0, true, "Minimum value for each component"},
+                    {"max", pin_data_type::float_32, 1.0, true, "Maximum value for each component"}
                 },
                 {
-                    {"x", pin_data_type::floating_point, 0.0, true, "X component"},
-                    {"y", pin_data_type::floating_point, 0.0, true, "Y component"},
-                    {"z", pin_data_type::floating_point, 0.0, true, "Z component"}
+                    {"x", pin_data_type::float_32, 0.0, true, "X component"},
+                    {"y", pin_data_type::float_32, 0.0, true, "Y component"},
+                    {"z", pin_data_type::float_32, 0.0, true, "Z component"}
                 },
                 [](const std::vector<function_value>& inputs) -> std::vector<function_value> {
                     double min = std::get<double>(inputs[0]);

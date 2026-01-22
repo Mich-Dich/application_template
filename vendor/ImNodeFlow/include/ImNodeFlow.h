@@ -17,6 +17,7 @@
 
 // import application util to enable basic functionality like serialization
 #include "util/util.h"
+#include "config/imgui_config.h"
 
 //#define ConnectionFilter_None       [](ImFlow::Pin* out, ImFlow::Pin* in){ return true; }
 //#define ConnectionFilter_SameType   [](ImFlow::Pin* out, ImFlow::Pin* in){ return out->getDataType() == in->getDataType(); }
@@ -193,7 +194,7 @@ namespace ImFlow
         /// @brief Border color
         ImU32 border_color = IM_COL32(30,38,41,140);
         /// @brief Border color when selected
-        ImU32 border_selected_color = IM_COL32(170, 190, 205, 230);
+        ImVec4 border_selected_color = AT::UI::get_main_color_ref();
 
         /// @brief Body's content padding (Left Top Right Bottom)
         ImVec4 padding = ImVec4(13.7f, 6.f, 13.7f, 2.f);

@@ -331,7 +331,7 @@ namespace ImFlow {
         ImVec2 ptl = paddingTL;
         ImVec2 pbr = paddingBR;
         if (m_selected) {
-            col = m_style->border_selected_color;
+            col = IM_COL32(m_style->border_selected_color.x * 255, m_style->border_selected_color.y * 255, m_style->border_selected_color.z * 255, m_style->border_selected_color.w * 255);
             thickness = m_style->border_selected_thickness;
         }
         if (thickness < 0.f) {

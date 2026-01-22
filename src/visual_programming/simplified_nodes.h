@@ -15,7 +15,7 @@ namespace AT {
         );
         style->bg = IM_COL32(60, 60, 60, 255);           // dark gray body
         style->border_color = IM_COL32(120, 120, 120, 255); // brighter gray border
-        style->border_selected_color = IM_COL32(150, 150, 150, 255);
+        style->border_selected_color = ImVec4(150, 150, 150, 255);
         style->padding = ImVec4(15.f, 8.f, 15.f, 8.f);   // Adjusted padding for centered title
         return style;
     }
