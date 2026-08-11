@@ -301,3 +301,12 @@ Contributions welcome! Please fork the repo and submit pull requests against `ma
 ## License
 
 This project is licensed under the [Apache 2.0 License](LICENSE).
+
+
+
+
+
+
+
+
+clear; cmake .. -DCMAKE_BUILD_TYPE=Debug && make -j

@@ -1,6 +1,8 @@
 
 #pragma once
 
+#include "audio/recorder.h"
+
 
 namespace AT {
 
@@ -89,7 +91,13 @@ namespace AT {
 
     private:
 
-        // No private data members yet.
-        // You may want to add: persistent UI state, ImGui configuration, cached panel data, ...
+        // Audio recording members
+        audio::recorder                     m_audio_recorder;
+        std::vector<audio::source_info>     m_audio_devices;
+        int                                 m_selected_device_index = -1;
+        std::string                         m_output_filename = "output.wav";
+        bool                                m_show_audio_panel = true;
+
     };
+
 }

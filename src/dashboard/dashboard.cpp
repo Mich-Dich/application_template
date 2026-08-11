@@ -30,14 +30,10 @@ namespace AT {
 
         PROFILE_APPLICATION_FUNCTION();
 
-        // =========== Demonstrate a long startup process (just replace with custom logic) ===========
-        bool long_startup_process = false;
-		AT::serializer::yaml(config::get_filepath_from_configtype(util::get_executable_path(), config::file::app_settings), "general_settings", AT::serializer::option::load_from_file)
-			.entry(KEY_VALUE(long_startup_process));
-
-        if (long_startup_process)
-            std::this_thread::sleep_for(std::chrono::milliseconds(2500));  // 2.5s
-        // ===========================================================================================
+        m_audio_devices = audio::recorder::enumerate_devices();
+        if (!m_audio_devices.empty()) {
+            m_selected_device_index = 0; // default to first
+        }
 
         LOG_INIT
         return true;
@@ -91,9 +87,60 @@ namespace AT {
             ImGui::End();
         }
 
-        // main content
-        ImGui::ShowDemoWindow();
-        ImPlot::ShowDemoWindow();
+
+        // Audio Recorder Panel
+        if (m_show_audio_panel) {
+            ImGui::Begin("Audio Recorder", &m_show_audio_panel);
+
+            // Device selection dropdown
+            if (!m_audio_devices.empty()) {
+                const char* preview = m_audio_devices[m_selected_device_index].description.c_str();
+                if (ImGui::BeginCombo("Output Device", preview)) {
+                    for (int i = 0; i < m_audio_devices.size(); ++i) {
+                        bool isSelected = (m_selected_device_index == i);
+                        if (ImGui::Selectable(m_audio_devices[i].description.c_str(), isSelected)) {
+                            m_selected_device_index = i;
+                        }
+                        if (isSelected) ImGui::SetItemDefaultFocus();
+                    }
+                    ImGui::EndCombo();
+                }
+            } else {
+                ImGui::Text("No output devices found.");
+            }
+
+            // Filename input
+            char filename_buf[256];
+            strncpy(filename_buf, m_output_filename.c_str(), sizeof(filename_buf));
+            filename_buf[sizeof(filename_buf)-1] = '\0';
+            if (ImGui::InputText("Filename", filename_buf, sizeof(filename_buf))) {
+                m_output_filename = filename_buf;
+            }
+
+            // Recording status and controls
+            bool is_recording = m_audio_recorder.is_recording();
+            if (is_recording) {
+                auto elapsed = m_audio_recorder.elapsed_time();
+                uint64_t bytes = m_audio_recorder.bytes_recorded();
+                ImGui::Text("Recording...  Time: %lld s  Size: %.2f KB",
+                            (long long)elapsed.count(), bytes / 1024.0);
+                if (ImGui::Button("Stop Recording")) {
+                    m_audio_recorder.stop_recording();
+                }
+            } else {
+                if (ImGui::Button("Start Recording")) {
+                    if (m_selected_device_index >= 0 && m_selected_device_index < m_audio_devices.size()) {
+                        m_audio_recorder.start_recording(m_audio_devices[m_selected_device_index].name, m_output_filename);
+                    }
+                }
+            }
+
+            ImGui::End();
+        }
+        
+        // // main content
+        // ImGui::ShowDemoWindow();
+        // ImPlot::ShowDemoWindow();
 
     }
 

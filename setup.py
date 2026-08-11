@@ -325,7 +325,7 @@ Common workflows:
                 # continue to compile only if generation was successful
                 if not args.no_build:
                     utils.print_c("\nBuilding project using [cmake --build build]", "blue")
-                    cmake_result = subprocess.run(["cmake", "--build", "build"])
+                    cmake_result = subprocess.run(["cmake", "--build", "build", "--parallel"])
                     if cmake_result.returncode == 0:
                         utils.print_c("BUILD SUCCESSFUL!", "green")
                     else:

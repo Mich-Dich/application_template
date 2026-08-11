@@ -65,9 +65,8 @@
 // Variadic and Debugging Utilities
 #include <cstdarg>
 #include <cassert>
-// #include <cstdlib>
-
 #include <regex>
+#include <cstdint>
 
 // glm math
 #define GLM_ENABLE_EXPERIMENTAL

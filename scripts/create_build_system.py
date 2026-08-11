@@ -121,17 +121,17 @@ file(GLOB IMGUI_OPENGL3_SOURCES
 )
 
 # Add executable with ALL required sources
-add_executable(application_template 
+add_executable({project_name} 
     ${{SOURCES_CONAN}} 
     ${{IMPLOT_SOURCES}} 
     ${{IMGUI_OPENGL3_SOURCES}}
 )
 
 # Precompiled headers (requires CMake 3.16+)
-target_precompile_headers(application_template PRIVATE util/pch.h)
+target_precompile_headers({project_name} PRIVATE util/pch.h)
 
 # Include directories
-target_include_directories(application_template PRIVATE
+target_include_directories({project_name} PRIVATE
     ${{CMAKE_CURRENT_SOURCE_DIR}}
     ${{CMAKE_CURRENT_SOURCE_DIR}}/assets
     ${{CMAKE_CURRENT_SOURCE_DIR}}/../vendor
@@ -147,25 +147,27 @@ target_include_directories(application_template PRIVATE
 )
 
 # Add definitions for application target
-target_compile_definitions(application_template PRIVATE 
+target_compile_definitions({project_name} PRIVATE 
     GLFW_INCLUDE_NONE
     GLEW_STATIC
 )
 
 # Configuration-specific definitions
-target_compile_definitions(application_template PRIVATE 
+target_compile_definitions({project_name} PRIVATE 
     $<$<CONFIG:Debug>:DEBUG>
     $<$<CONFIG:RelWithDebInfo>:RELEASE_WITH_DEBUG_INFO>
     $<$<CONFIG:Release>:RELEASE>
 )
 
 # Link libraries
-target_link_libraries(application_template PRIVATE
+target_link_libraries({project_name} PRIVATE
     imgui
     glfw
     OpenGL::GL
     Qt5::Core
     Qt5::Widgets
+    pulse
+    pulse-simple
 )
 
 # Platform-specific linking
@@ -181,18 +183,18 @@ if(WIN32)
     )
     
     if(GLEW_LIBRARY)
-        target_link_libraries(application_template PRIVATE ${{GLEW_LIBRARY}})
+        target_link_libraries({project_name} PRIVATE ${{GLEW_LIBRARY}})
     else()
         # Fallback: try to find GLEW system-wide or use a different approach
         find_package(GLEW)
         if(GLEW_FOUND)
-            target_link_libraries(application_template PRIVATE GLEW::GLEW)
+            target_link_libraries({project_name} PRIVATE GLEW::GLEW)
         else()
             message(WARNING "GLEW library not found. Please check the path.")
         endif()
     endif()
     
-    target_link_libraries(application_template PRIVATE
+    target_link_libraries({project_name} PRIVATE
         gdi32
         user32
         comdlg32
@@ -201,13 +203,13 @@ if(WIN32)
     )
     
     # Copy assets post-build
-    add_custom_command(TARGET application_template POST_BUILD
+    add_custom_command(TARGET {project_name} POST_BUILD
         COMMAND ${{CMAKE_COMMAND}} -E copy_directory
         ${{CMAKE_SOURCE_DIR}}/assets
-        $<TARGET_FILE_DIR:application_template>/assets
+        $<TARGET_FILE_DIR:{project_name}>/assets
         COMMAND ${{CMAKE_COMMAND}} -E copy_directory
         ${{CMAKE_SOURCE_DIR}}/config
-        $<TARGET_FILE_DIR:application_template>/config
+        $<TARGET_FILE_DIR:{project_name}>/config
     )
 else()
     # Linux-specific GLEW handling
@@ -215,11 +217,11 @@ else()
     pkg_check_modules(GLEW REQUIRED glew)
     
     # Add GLEW include directories and link libraries for Linux
-    target_include_directories(application_template PRIVATE
+    target_include_directories({project_name} PRIVATE
         ${{GLEW_INCLUDE_DIRS}}
     )
     
-    target_link_libraries(application_template PRIVATE
+    target_link_libraries({project_name} PRIVATE
         ${{GLEW_LIBRARIES}}
         GL
         X11
@@ -230,21 +232,21 @@ else()
     # Alternative method if pkg-config doesn't work:
     # find_library(GLEW_LIBRARY NAMES GLEW glew)
     # if(GLEW_LIBRARY)
-    #     target_link_libraries(application_template PRIVATE ${{GLEW_LIBRARY}})
+    #     target_link_libraries({project_name} PRIVATE ${{GLEW_LIBRARY}})
     # endif()
     
     # Copy assets for Linux (create the directories first)
-    add_custom_command(TARGET application_template POST_BUILD
+    add_custom_command(TARGET {project_name} POST_BUILD
         COMMAND ${{CMAKE_COMMAND}} -E make_directory
-        $<TARGET_FILE_DIR:application_template>/assets
+        $<TARGET_FILE_DIR:{project_name}>/assets
         COMMAND ${{CMAKE_COMMAND}} -E make_directory
-        $<TARGET_FILE_DIR:application_template>/config
+        $<TARGET_FILE_DIR:{project_name}>/config
         COMMAND ${{CMAKE_COMMAND}} -E copy_directory
         ${{CMAKE_SOURCE_DIR}}/assets
-        $<TARGET_FILE_DIR:application_template>/assets
+        $<TARGET_FILE_DIR:{project_name}>/assets
         COMMAND ${{CMAKE_COMMAND}} -E copy_directory
         ${{CMAKE_SOURCE_DIR}}/config
-        $<TARGET_FILE_DIR:application_template>/config
+        $<TARGET_FILE_DIR:{project_name}>/config
     )
 endif()
 
